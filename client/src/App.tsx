@@ -5,31 +5,50 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import ProductCatalog from "./pages/ProductCatalog";
+import ProductDetail from "./pages/ProductDetail";
+import ShoppingCart from "./pages/ShoppingCart";
+import Checkout from "./pages/Checkout";
+import OrderTracking from "./pages/OrderTracking";
+import DealerProfile from "./pages/DealerProfile";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminProducts from "./pages/AdminProducts";
+import AdminOrders from "./pages/AdminOrders";
+import AdminQuotations from "./pages/AdminQuotations";
+import AdminDealers from "./pages/AdminDealers";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      {/* Public Pages */}
       <Route path={"/"} component={Home} />
+      <Route path={"/products"} component={ProductCatalog} />
+      <Route path={"/products/:id"} component={ProductDetail} />
+      
+      {/* Dealer/Customer Pages */}
+      <Route path={"/cart"} component={ShoppingCart} />
+      <Route path={"/checkout"} component={Checkout} />
+      <Route path={"/orders/:id"} component={OrderTracking} />
+      <Route path={"/profile"} component={DealerProfile} />
+      
+      {/* Admin Pages */}
+      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin/products"} component={AdminProducts} />
+      <Route path={"/admin/orders"} component={AdminOrders} />
+      <Route path={"/admin/quotations"} component={AdminQuotations} />
+      <Route path={"/admin/dealers"} component={AdminDealers} />
+      
+      {/* 404 */}
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />

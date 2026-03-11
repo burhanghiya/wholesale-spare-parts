@@ -1,28 +1,320 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
+ * Extended with dealer and business information.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
+  email: varchar("email", { length: 320 }).unique(),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "dealer", "sales_rep", "admin"]).default("user").notNull(),
+  
+  // Dealer-specific fields
+  businessName: text("businessName"),
+  gstNumber: varchar("gstNumber", { length: 20 }),
+  businessAddress: text("businessAddress"),
+  businessPhone: varchar("businessPhone", { length: 20 }),
+  businessEmail: varchar("businessEmail", { length: 320 }),
+  
+  // Credit management
+  creditLimit: decimal("creditLimit", { precision: 12, scale: 2 }).default("0"),
+  usedCredit: decimal("usedCredit", { precision: 12, scale: 2 }).default("0"),
+  creditApproved: boolean("creditApproved").default(false),
+  
+  // Sales rep assignment
+  assignedSalesRepId: int("assignedSalesRepId"),
+  
+  // Verification
+  isVerified: boolean("isVerified").default(false),
+  verificationDocuments: json("verificationDocuments"),
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
+}, (table) => ({
+  emailIdx: index("email_idx").on(table.email),
+  roleIdx: index("role_idx").on(table.role),
+}));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Product Categories
+ */
+export const categories = mysqlTable("categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  parentCategoryId: int("parentCategoryId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  nameIdx: index("category_name_idx").on(table.name),
+}));
+
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = typeof categories.$inferInsert;
+
+/**
+ * Products/Spare Parts
+ */
+export const products = mysqlTable("products", {
+  id: int("id").autoincrement().primaryKey(),
+  partNumber: varchar("partNumber", { length: 100 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  categoryId: int("categoryId").notNull(),
+  
+  // Pricing
+  basePrice: decimal("basePrice", { precision: 12, scale: 2 }).notNull(),
+  
+  // Compatibility
+  compatibleModels: json("compatibleModels"), // Array of model names/numbers
+  compatibleBrands: json("compatibleBrands"), // Array of brand names
+  
+  // Cross-reference
+  alternatePartNumbers: json("alternatePartNumbers"), // Array of alternate part numbers
+  
+  // Images and diagrams
+  imageUrl: text("imageUrl"),
+  explodedViewUrl: text("explodedViewUrl"),
+  
+  // Status
+  isActive: boolean("isActive").default(true),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  partNumberIdx: index("part_number_idx").on(table.partNumber),
+  nameIdx: index("product_name_idx").on(table.name),
+  categoryIdx: index("category_id_idx").on(table.categoryId),
+}));
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+/**
+ * Inventory/Stock Management
+ */
+export const inventory = mysqlTable("inventory", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  warehouseLocation: varchar("warehouseLocation", { length: 255 }),
+  quantityInStock: int("quantityInStock").notNull().default(0),
+  minimumOrderQuantity: int("minimumOrderQuantity").notNull().default(1),
+  reorderLevel: int("reorderLevel").notNull().default(10),
+  lastRestockedAt: timestamp("lastRestockedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  productIdx: index("inventory_product_idx").on(table.productId),
+}));
+
+export type Inventory = typeof inventory.$inferSelect;
+export type InsertInventory = typeof inventory.$inferInsert;
+
+/**
+ * Tiered Pricing
+ */
+export const tieredPricing = mysqlTable("tiered_pricing", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  minQuantity: int("minQuantity").notNull(),
+  maxQuantity: int("maxQuantity"),
+  discountPercentage: decimal("discountPercentage", { precision: 5, scale: 2 }).notNull(),
+  specialPrice: decimal("specialPrice", { precision: 12, scale: 2 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  productIdx: index("tiered_pricing_product_idx").on(table.productId),
+}));
+
+export type TieredPricing = typeof tieredPricing.$inferSelect;
+export type InsertTieredPricing = typeof tieredPricing.$inferInsert;
+
+/**
+ * Shopping Cart
+ */
+export const cartItems = mysqlTable("cart_items", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  productId: int("productId").notNull(),
+  quantity: int("quantity").notNull().default(1),
+  addedPrice: decimal("addedPrice", { precision: 12, scale: 2 }), // Price at time of adding
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("cart_user_idx").on(table.userId),
+  productIdx: index("cart_product_idx").on(table.productId),
+}));
+
+export type CartItem = typeof cartItems.$inferSelect;
+export type InsertCartItem = typeof cartItems.$inferInsert;
+
+/**
+ * Orders
+ */
+export const orders = mysqlTable("orders", {
+  id: int("id").autoincrement().primaryKey(),
+  orderNumber: varchar("orderNumber", { length: 50 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  
+  // Order details
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
+  gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull().default("0"),
+  shippingCost: decimal("shippingCost", { precision: 12, scale: 2 }).notNull().default("0"),
+  discountAmount: decimal("discountAmount", { precision: 12, scale: 2 }).default("0"),
+  
+  // Shipping
+  shippingAddress: text("shippingAddress").notNull(),
+  shippingMethod: varchar("shippingMethod", { length: 50 }),
+  
+  // Payment
+  paymentMethod: mysqlEnum("paymentMethod", ["upi", "bank_transfer", "card", "cod", "razorpay"]).notNull(),
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "completed", "failed", "refunded"]).default("pending").notNull(),
+  razorpayOrderId: varchar("razorpayOrderId", { length: 100 }),
+  razorpayPaymentId: varchar("razorpayPaymentId", { length: 100 }),
+  
+  // Order status
+  orderStatus: mysqlEnum("orderStatus", ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]).default("pending").notNull(),
+  
+  // Tracking
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
+  estimatedDeliveryDate: timestamp("estimatedDeliveryDate"),
+  
+  // GST Invoice
+  invoiceNumber: varchar("invoiceNumber", { length: 50 }),
+  invoiceUrl: text("invoiceUrl"),
+  
+  // Notes
+  notes: text("notes"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("order_user_idx").on(table.userId),
+  statusIdx: index("order_status_idx").on(table.orderStatus),
+  orderNumberIdx: index("order_number_idx").on(table.orderNumber),
+}));
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+
+/**
+ * Order Items (Line items in an order)
+ */
+export const orderItems = mysqlTable("order_items", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  productId: int("productId").notNull(),
+  quantity: int("quantity").notNull(),
+  unitPrice: decimal("unitPrice", { precision: 12, scale: 2 }).notNull(),
+  totalPrice: decimal("totalPrice", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  orderIdx: index("order_items_order_idx").on(table.orderId),
+  productIdx: index("order_items_product_idx").on(table.productId),
+}));
+
+export type OrderItem = typeof orderItems.$inferSelect;
+export type InsertOrderItem = typeof orderItems.$inferInsert;
+
+/**
+ * Quotations
+ */
+export const quotations = mysqlTable("quotations", {
+  id: int("id").autoincrement().primaryKey(),
+  quotationNumber: varchar("quotationNumber", { length: 50 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  
+  // Quotation details
+  items: json("items"), // Array of {productId, quantity, requestedPrice}
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }),
+  
+  // Status
+  status: mysqlEnum("status", ["pending", "quoted", "accepted", "rejected", "expired"]).default("pending").notNull(),
+  
+  // Admin notes
+  adminNotes: text("adminNotes"),
+  quotedPrice: decimal("quotedPrice", { precision: 12, scale: 2 }),
+  
+  // Expiry
+  expiryDate: timestamp("expiryDate"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("quotation_user_idx").on(table.userId),
+  statusIdx: index("quotation_status_idx").on(table.status),
+}));
+
+export type Quotation = typeof quotations.$inferSelect;
+export type InsertQuotation = typeof quotations.$inferInsert;
+
+/**
+ * WhatsApp Messages/Support
+ */
+export const whatsappMessages = mysqlTable("whatsapp_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  orderId: int("orderId"),
+  
+  // Message details
+  messageType: mysqlEnum("messageType", ["support", "order_update", "quotation_update", "promotional"]).notNull(),
+  messageContent: text("messageContent").notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  
+  // Status
+  sentStatus: mysqlEnum("sentStatus", ["pending", "sent", "delivered", "failed"]).default("pending").notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("whatsapp_user_idx").on(table.userId),
+  orderIdx: index("whatsapp_order_idx").on(table.orderId),
+}));
+
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+export type InsertWhatsappMessage = typeof whatsappMessages.$inferInsert;
+
+/**
+ * Shipping Calculator Configuration
+ */
+export const shippingRates = mysqlTable("shipping_rates", {
+  id: int("id").autoincrement().primaryKey(),
+  minWeight: decimal("minWeight", { precision: 8, scale: 2 }),
+  maxWeight: decimal("maxWeight", { precision: 8, scale: 2 }),
+  minDistance: int("minDistance"), // in km
+  maxDistance: int("maxDistance"),
+  baseCost: decimal("baseCost", { precision: 12, scale: 2 }).notNull(),
+  costPerKm: decimal("costPerKm", { precision: 8, scale: 2 }),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ShippingRate = typeof shippingRates.$inferSelect;
+export type InsertShippingRate = typeof shippingRates.$inferInsert;
+
+/**
+ * GST Configuration
+ */
+export const gstConfiguration = mysqlTable("gst_configuration", {
+  id: int("id").autoincrement().primaryKey(),
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  gstNumber: varchar("gstNumber", { length: 20 }).notNull(),
+  businessAddress: text("businessAddress"),
+  businessPhone: varchar("businessPhone", { length: 20 }),
+  businessEmail: varchar("businessEmail", { length: 320 }),
+  gstRate: decimal("gstRate", { precision: 5, scale: 2 }).notNull().default("18"),
+  invoicePrefix: varchar("invoicePrefix", { length: 10 }).default("INV"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GstConfiguration = typeof gstConfiguration.$inferSelect;
+export type InsertGstConfiguration = typeof gstConfiguration.$inferInsert;
