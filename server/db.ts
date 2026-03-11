@@ -1,11 +1,13 @@
-import { eq, and, gte, lte, like, desc, asc } from "drizzle-orm";
+import { eq, and, like, desc, asc, sql, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, products, inventory, cartItems, orders, orderItems, quotations, categories, tieredPricing, gstConfiguration } from "../drizzle/schema";
+import {
+  InsertUser, users, products, inventory, cartItems, orders, orderItems,
+  quotations, categories, tieredPricing, gstConfiguration, shippingRates
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -18,26 +20,20 @@ export async function getDb() {
   return _db;
 }
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
+// ========================
+// USER FUNCTIONS
+// ========================
 
+export async function upsertUser(user: InsertUser): Promise<void> {
+  if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
+  if (!db) { console.warn("[Database] Cannot upsert user: database not available"); return; }
 
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
+    const values: InsertUser = { openId: user.openId };
     const updateSet: Record<string, unknown> = {};
-
     const textFields = ["name", "email", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
-
     const assignNullable = (field: TextField) => {
       const value = user[field];
       if (value === undefined) return;
@@ -45,32 +41,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values[field] = normalized;
       updateSet[field] = normalized;
     };
-
     textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
+    if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
+    else if (user.openId === ENV.ownerOpenId) { values.role = 'admin'; updateSet.role = 'admin'; }
+    if (!values.lastSignedIn) values.lastSignedIn = new Date();
+    if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
+    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -79,13 +56,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -96,7 +68,34 @@ export async function getUserById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// Product queries
+export async function getAllUsers(limit = 50, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(users).orderBy(desc(users.createdAt)).limit(limit).offset(offset);
+}
+
+export async function updateUserProfile(userId: number, data: Record<string, unknown>) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(users).set({ ...data, updatedAt: new Date() } as any).where(eq(users.id, userId));
+  return true;
+}
+
+export async function updateUserCreditLimit(userId: number, creditLimit: number, creditApproved: boolean) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(users).set({
+    creditLimit: String(creditLimit),
+    creditApproved,
+    updatedAt: new Date()
+  } as any).where(eq(users.id, userId));
+  return true;
+}
+
+// ========================
+// PRODUCT FUNCTIONS
+// ========================
+
 export async function getProductsByCategory(categoryId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -106,18 +105,17 @@ export async function getProductsByCategory(categoryId: number) {
 export async function searchProducts(query: string, categoryId?: number) {
   const db = await getDb();
   if (!db) return [];
-  
+  const searchPattern = `%${query}%`;
   const conditions = [
     eq(products.isActive, true),
-    ...(categoryId ? [eq(products.categoryId, categoryId)] : [])
-  ];
-  
-  return await db.select().from(products).where(
-    and(
-      ...conditions,
-      like(products.partNumber, `%${query}%`)
+    or(
+      like(products.partNumber, searchPattern),
+      like(products.name, searchPattern),
+      like(products.description, searchPattern)
     )
-  );
+  ];
+  if (categoryId) conditions.push(eq(products.categoryId, categoryId));
+  return await db.select().from(products).where(and(...conditions));
 }
 
 export async function getProductById(id: number) {
@@ -140,7 +138,53 @@ export async function getAllProducts(limit = 50, offset = 0) {
   return await db.select().from(products).where(eq(products.isActive, true)).limit(limit).offset(offset);
 }
 
-// Inventory queries
+export async function getAllProductsAdmin(limit = 100, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
+}
+
+export async function createProduct(data: any) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.insert(products).values(data);
+  return result;
+}
+
+export async function updateProduct(id: number, data: Record<string, unknown>) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(products).set({ ...data, updatedAt: new Date() } as any).where(eq(products.id, id));
+  return true;
+}
+
+export async function deleteProduct(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(products).set({ isActive: false, updatedAt: new Date() } as any).where(eq(products.id, id));
+  return true;
+}
+
+// ========================
+// CATEGORY FUNCTIONS
+// ========================
+
+export async function getAllCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(categories);
+}
+
+export async function createCategory(data: any) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return await db.insert(categories).values(data);
+}
+
+// ========================
+// INVENTORY FUNCTIONS
+// ========================
+
 export async function getInventoryByProductId(productId: number) {
   const db = await getDb();
   if (!db) return undefined;
@@ -148,7 +192,28 @@ export async function getInventoryByProductId(productId: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// Cart queries
+export async function getAllInventory() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(inventory);
+}
+
+export async function upsertInventory(productId: number, data: any) {
+  const db = await getDb();
+  if (!db) return false;
+  const existing = await getInventoryByProductId(productId);
+  if (existing) {
+    await db.update(inventory).set({ ...data, updatedAt: new Date() } as any).where(eq(inventory.id, existing.id));
+  } else {
+    await db.insert(inventory).values({ productId, ...data } as any);
+  }
+  return true;
+}
+
+// ========================
+// CART FUNCTIONS
+// ========================
+
 export async function getCartItems(userId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -158,27 +223,14 @@ export async function getCartItems(userId: number) {
 export async function addToCart(userId: number, productId: number, quantity: number, price?: number) {
   const db = await getDb();
   if (!db) return undefined;
-  
   const existing = await db.select().from(cartItems).where(
     and(eq(cartItems.userId, userId), eq(cartItems.productId, productId))
   ).limit(1);
-  
   if (existing.length > 0) {
-    await db.update(cartItems).set({
-      quantity: existing[0].quantity + quantity,
-      updatedAt: new Date()
-    }).where(eq(cartItems.id, existing[0].id));
+    await db.update(cartItems).set({ quantity: existing[0].quantity + quantity, updatedAt: new Date() }).where(eq(cartItems.id, existing[0].id));
     return existing[0];
   }
-  
-  const result = await db.insert(cartItems).values({
-    productId,
-    quantity,
-    userId,
-    addedPrice: price ? String(price) : undefined
-  } as any);
-  
-  return result;
+  return await db.insert(cartItems).values({ productId, quantity, userId, addedPrice: price ? String(price) : undefined } as any);
 }
 
 export async function removeFromCart(cartItemId: number) {
@@ -195,13 +247,14 @@ export async function clearCart(userId: number) {
   return true;
 }
 
-// Order queries
+// ========================
+// ORDER FUNCTIONS
+// ========================
+
 export async function createOrder(orderData: any) {
   const db = await getDb();
   if (!db) return undefined;
-  
-  const result = await db.insert(orders).values(orderData);
-  return result;
+  return await db.insert(orders).values(orderData);
 }
 
 export async function getOrderById(id: number) {
@@ -226,23 +279,15 @@ export async function getAllOrders(limit = 50, offset = 0) {
 export async function updateOrderStatus(orderId: number, status: string) {
   const db = await getDb();
   if (!db) return false;
-  await db.update(orders).set({
-    orderStatus: status as any,
-    updatedAt: new Date()
-  }).where(eq(orders.id, orderId));
+  await db.update(orders).set({ orderStatus: status as any, updatedAt: new Date() }).where(eq(orders.id, orderId));
   return true;
 }
 
-// Order items queries
 export async function addOrderItems(orderId: number, items: any[]) {
   const db = await getDb();
   if (!db) return false;
-  
   for (const item of items) {
-    await db.insert(orderItems).values({
-      orderId,
-      ...item
-    });
+    await db.insert(orderItems).values({ orderId, ...item });
   }
   return true;
 }
@@ -253,13 +298,14 @@ export async function getOrderItems(orderId: number) {
   return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
 }
 
-// Quotation queries
+// ========================
+// QUOTATION FUNCTIONS
+// ========================
+
 export async function createQuotation(quotationData: any) {
   const db = await getDb();
   if (!db) return undefined;
-  
-  const result = await db.insert(quotations).values(quotationData);
-  return result;
+  return await db.insert(quotations).values(quotationData);
 }
 
 export async function getQuotationById(id: number) {
@@ -284,28 +330,16 @@ export async function getAllQuotations(limit = 50, offset = 0) {
 export async function updateQuotationStatus(quotationId: number, status: string, quotedPrice?: number) {
   const db = await getDb();
   if (!db) return false;
-  
-  const updateData: any = {
-    status: status as any,
-    updatedAt: new Date()
-  };
-  
-  if (quotedPrice) {
-    updateData.quotedPrice = quotedPrice;
-  }
-  
+  const updateData: any = { status: status as any, updatedAt: new Date() };
+  if (quotedPrice) updateData.quotedPrice = quotedPrice;
   await db.update(quotations).set(updateData).where(eq(quotations.id, quotationId));
   return true;
 }
 
-// Category queries
-export async function getAllCategories() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(categories);
-}
+// ========================
+// TIERED PRICING
+// ========================
 
-// Tiered pricing queries
 export async function getTieredPricingForProduct(productId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -313,27 +347,32 @@ export async function getTieredPricingForProduct(productId: number) {
 }
 
 export async function calculatePrice(productId: number, quantity: number, basePrice: number) {
-  const db = await getDb();
-  if (!db) return basePrice * quantity;
-  
   const pricing = await getTieredPricingForProduct(productId);
-  
   let discountPercentage = 0;
   for (const tier of pricing) {
     if (quantity >= tier.minQuantity && (!tier.maxQuantity || quantity <= tier.maxQuantity)) {
-      if (tier.specialPrice) {
-        return Number(tier.specialPrice) * quantity;
-      }
+      if (tier.specialPrice) return Number(tier.specialPrice) * quantity;
       discountPercentage = Number(tier.discountPercentage);
       break;
     }
   }
-  
-  const discountedPrice = basePrice * (1 - discountPercentage / 100);
-  return discountedPrice * quantity;
+  return basePrice * (1 - discountPercentage / 100) * quantity;
 }
 
-// GST Configuration
+export async function upsertTieredPricing(productId: number, tiers: any[]) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(tieredPricing).where(eq(tieredPricing.productId, productId));
+  for (const tier of tiers) {
+    await db.insert(tieredPricing).values({ productId, ...tier } as any);
+  }
+  return true;
+}
+
+// ========================
+// GST CONFIGURATION
+// ========================
+
 export async function getGstConfiguration() {
   const db = await getDb();
   if (!db) return undefined;
@@ -344,21 +383,36 @@ export async function getGstConfiguration() {
 export async function updateGstConfiguration(data: any) {
   const db = await getDb();
   if (!db) return false;
-  
   const existing = await getGstConfiguration();
-  
   if (existing) {
-    await db.update(gstConfiguration).set({
-      ...data,
-      updatedAt: new Date()
-    }).where(eq(gstConfiguration.id, existing.id));
+    await db.update(gstConfiguration).set({ ...data, updatedAt: new Date() }).where(eq(gstConfiguration.id, existing.id));
   } else {
-    await db.insert(gstConfiguration).values({
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+    await db.insert(gstConfiguration).values({ ...data, createdAt: new Date(), updatedAt: new Date() });
   }
-  
   return true;
+}
+
+// ========================
+// ADMIN DASHBOARD STATS
+// ========================
+
+export async function getDashboardStats() {
+  const db = await getDb();
+  if (!db) return { totalProducts: 0, totalOrders: 0, totalRevenue: 0, totalUsers: 0, pendingOrders: 0, pendingQuotations: 0 };
+
+  const [productCount] = await db.select({ count: sql<number>`count(*)` }).from(products).where(eq(products.isActive, true));
+  const [orderCount] = await db.select({ count: sql<number>`count(*)` }).from(orders);
+  const [revenueResult] = await db.select({ total: sql<string>`COALESCE(SUM(totalAmount), 0)` }).from(orders).where(eq(orders.paymentStatus, 'completed'));
+  const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
+  const [pendingOrderCount] = await db.select({ count: sql<number>`count(*)` }).from(orders).where(eq(orders.orderStatus, 'pending'));
+  const [pendingQuoteCount] = await db.select({ count: sql<number>`count(*)` }).from(quotations).where(eq(quotations.status, 'pending'));
+
+  return {
+    totalProducts: productCount?.count || 0,
+    totalOrders: orderCount?.count || 0,
+    totalRevenue: Number(revenueResult?.total || 0),
+    totalUsers: userCount?.count || 0,
+    pendingOrders: pendingOrderCount?.count || 0,
+    pendingQuotations: pendingQuoteCount?.count || 0,
+  };
 }

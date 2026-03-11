@@ -1,203 +1,159 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChevronLeft, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, CreditCard, Banknote, Smartphone, Wallet } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { toast } from "sonner";
 
 export default function Checkout() {
   const [, setLocation] = useLocation();
   const [shippingAddress, setShippingAddress] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "bank_transfer" | "card" | "cod" | "razorpay">("razorpay");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch cart items for order summary
   const { data: cartItems } = trpc.cart.list.useQuery();
 
-  // Create order mutation
   const createOrderMutation = trpc.orders.create.useMutation({
     onSuccess: (data) => {
-      alert(`Order created! Order #: ${data.orderNumber}`);
-      setLocation(`/orders/${data.orderNumber}`);
+      toast.success(`Order placed! #${data.orderNumber}`);
+      setLocation("/profile");
     },
     onError: (error) => {
-      alert(`Error: ${error.message}`);
+      toast.error(error.message);
       setIsProcessing(false);
     },
   });
 
-  // Calculate totals
   let subtotal = 0;
   cartItems?.forEach((item) => {
-    if (item.product) {
-      subtotal += Number(item.product.basePrice) * item.quantity;
-    }
+    if (item.product) subtotal += Number(item.product.basePrice) * item.quantity;
   });
   const gstAmount = subtotal * 0.18;
-  const shippingCost = 100;
+  const shippingCost = subtotal >= 5000 ? 0 : 100;
   const total = subtotal + gstAmount + shippingCost;
 
   const handleSubmitOrder = async () => {
     if (!shippingAddress.trim()) {
-      alert("Please enter shipping address");
+      toast.error("Please enter shipping address");
       return;
     }
-
     setIsProcessing(true);
-
-    if (paymentMethod === "razorpay") {
-      // Initialize Razorpay
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.async = true;
-      script.onload = () => {
-        const options = {
-          key: process.env.VITE_RAZORPAY_KEY_ID || "",
-          amount: Math.round(total * 100), // Amount in paise
-          currency: "INR",
-          name: "Patel Electricals",
-          description: "Wholesale Spare Parts Order",
-          handler: (response: any) => {
-            createOrderMutation.mutate({
-              shippingAddress,
-              paymentMethod: "razorpay",
-            });
-          },
-          prefill: {
-            email: "customer@example.com",
-            contact: "9999999999",
-          },
-          theme: {
-            color: "#3b82f6",
-          },
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
-      };
-      document.body.appendChild(script);
-    } else {
-      createOrderMutation.mutate({
-        shippingAddress,
-        paymentMethod,
-      });
-    }
+    createOrderMutation.mutate({ shippingAddress, paymentMethod });
   };
 
+  const paymentOptions = [
+    { value: "razorpay", label: "Razorpay (Cards, UPI, Wallets)", desc: "Pay securely via Razorpay gateway", icon: CreditCard },
+    { value: "upi", label: "Direct UPI", desc: "Pay directly via UPI ID", icon: Smartphone },
+    { value: "bank_transfer", label: "Bank Transfer / NEFT / RTGS", desc: "Transfer to our bank account", icon: Banknote },
+    { value: "cod", label: "Cash on Delivery", desc: "Pay when you receive the order", icon: Wallet },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-background/95 backdrop-blur">
-        <div className="container py-4">
-          <Button variant="ghost" size="sm" onClick={() => setLocation("/cart")} className="mb-4">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Cart
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+
+      <div className="bg-[oklch(0.22_0.05_260)] py-10">
+        <div className="container">
+          <Button variant="ghost" size="sm" className="text-white/60 hover:text-white mb-2" onClick={() => setLocation("/cart")}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Cart
           </Button>
-          <h1 className="text-3xl font-bold">Checkout</h1>
+          <h1 className="text-3xl font-bold text-white">Checkout</h1>
         </div>
       </div>
 
-      <div className="container py-8">
-        <div className="grid gap-8 md:grid-cols-3">
-          {/* Checkout Form */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Shipping Address */}
+      <div className="container py-8 flex-1">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Shipping */}
             <Card>
               <CardHeader>
-                <CardTitle>Shipping Address</CardTitle>
+                <CardTitle className="text-lg">Shipping Address</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="address">Full Address</Label>
+                  <Label htmlFor="address">Full Delivery Address *</Label>
                   <textarea
                     id="address"
-                    placeholder="Enter your complete shipping address"
+                    placeholder="Enter complete address with pincode..."
                     value={shippingAddress}
                     onChange={(e) => setShippingAddress(e.target.value)}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground mt-2 min-h-24"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground mt-2 min-h-24 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="gst">GST Number (Optional - for GST invoice)</Label>
+                  <Input
+                    id="gst"
+                    placeholder="e.g., 24AABCU9603R1ZM"
+                    value={gstNumber}
+                    onChange={(e) => setGstNumber(e.target.value)}
+                    className="mt-2"
                   />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Payment Method */}
+            {/* Payment */}
             <Card>
               <CardHeader>
-                <CardTitle>Payment Method</CardTitle>
+                <CardTitle className="text-lg">Payment Method</CardTitle>
               </CardHeader>
               <CardContent>
                 <RadioGroup value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2 p-3 border border-input rounded-lg cursor-pointer hover:bg-muted/50">
-                      <RadioGroupItem value="razorpay" id="razorpay" />
-                      <Label htmlFor="razorpay" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">Razorpay</div>
-                        <div className="text-sm text-muted-foreground">Credit/Debit Card, UPI, Wallets</div>
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2 p-3 border border-input rounded-lg cursor-pointer hover:bg-muted/50">
-                      <RadioGroupItem value="upi" id="upi" />
-                      <Label htmlFor="upi" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">UPI</div>
-                        <div className="text-sm text-muted-foreground">Direct bank transfer via UPI</div>
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2 p-3 border border-input rounded-lg cursor-pointer hover:bg-muted/50">
-                      <RadioGroupItem value="bank_transfer" id="bank_transfer" />
-                      <Label htmlFor="bank_transfer" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">Bank Transfer</div>
-                        <div className="text-sm text-muted-foreground">Direct bank account transfer</div>
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2 p-3 border border-input rounded-lg cursor-pointer hover:bg-muted/50">
-                      <RadioGroupItem value="cod" id="cod" />
-                      <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">Cash on Delivery</div>
-                        <div className="text-sm text-muted-foreground">Pay when you receive the order</div>
-                      </Label>
-                    </div>
+                  <div className="space-y-3">
+                    {paymentOptions.map((option) => (
+                      <label
+                        key={option.value}
+                        className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
+                          paymentMethod === option.value ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <RadioGroupItem value={option.value} id={option.value} />
+                        <option.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-sm">{option.label}</p>
+                          <p className="text-xs text-muted-foreground">{option.desc}</p>
+                        </div>
+                      </label>
+                    ))}
                   </div>
                 </RadioGroup>
               </CardContent>
             </Card>
 
-            {/* GST Information */}
-            <Card className="bg-blue-50 border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-blue-600" />
-                  GST Invoice
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-blue-900">
-                  A GST invoice will be automatically generated and sent to your email after order confirmation.
-                </p>
-              </CardContent>
-            </Card>
+            {/* GST Invoice Info */}
+            <Alert className="border-blue-200 bg-blue-50">
+              <CheckCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 text-sm">
+                GST invoice will be automatically generated and emailed after order confirmation. 18% GST is included in the total.
+              </AlertDescription>
+            </Alert>
           </div>
 
-          {/* Order Summary */}
-          <div className="md:col-span-1">
-            <Card className="sticky top-4">
+          {/* Summary */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-20">
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm max-h-64 overflow-y-auto">
+                <div className="space-y-2 text-sm max-h-48 overflow-y-auto">
                   {cartItems?.map((item) => (
                     <div key={item.id} className="flex justify-between py-2 border-b last:border-0">
-                      <span className="text-muted-foreground">
-                        {item.product?.name} x{item.quantity}
-                      </span>
-                      <span>₹{(Number(item.product?.basePrice) * item.quantity).toFixed(2)}</span>
+                      <div className="flex-1 min-w-0 mr-2">
+                        <p className="font-medium truncate text-xs">{item.product?.name}</p>
+                        <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                      </div>
+                      <span className="font-medium flex-shrink-0">₹{(Number(item.product?.basePrice) * item.quantity).toFixed(0)}</span>
                     </div>
                   ))}
                 </div>
@@ -213,43 +169,32 @@ export default function Checkout() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span>₹{shippingCost.toFixed(2)}</span>
+                    <span>{shippingCost === 0 ? "FREE" : `₹${shippingCost.toFixed(2)}`}</span>
                   </div>
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <div className="flex justify-between items-center text-lg font-bold mb-4">
+                  <div className="flex justify-between items-center text-xl font-bold">
                     <span>Total</span>
                     <span>₹{total.toFixed(2)}</span>
                   </div>
-
-                  <Alert className="mb-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                      Please enter your shipping address to proceed.
-                    </AlertDescription>
-                  </Alert>
-
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    disabled={!shippingAddress.trim() || isProcessing || createOrderMutation.isPending}
-                    onClick={handleSubmitOrder}
-                  >
-                    {isProcessing || createOrderMutation.isPending ? "Processing..." : "Place Order"}
-                  </Button>
                 </div>
 
-                <div className="text-xs text-muted-foreground space-y-1 pt-4 border-t">
-                  <p>✓ Secure payment</p>
-                  <p>✓ GST invoice included</p>
-                  <p>✓ Order tracking available</p>
-                </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  disabled={!shippingAddress.trim() || isProcessing || createOrderMutation.isPending}
+                  onClick={handleSubmitOrder}
+                >
+                  {isProcessing || createOrderMutation.isPending ? "Processing..." : `Place Order - ₹${total.toFixed(0)}`}
+                </Button>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

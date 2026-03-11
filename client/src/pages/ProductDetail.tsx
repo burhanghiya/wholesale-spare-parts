@@ -2,40 +2,49 @@ import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChevronLeft, ShoppingCart, AlertCircle, CheckCircle } from "lucide-react";
+import { ShoppingCart, AlertCircle, CheckCircle, Package, ArrowLeft, MessageCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { toast } from "sonner";
+
+const WHATSAPP_URL = `https://wa.me/918780657095?text=`;
 
 export default function ProductDetail() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/products/:id");
   const productId = params?.id ? parseInt(params.id) : 0;
-
   const [quantity, setQuantity] = useState(1);
   const [selectedModel, setSelectedModel] = useState("");
 
-  // Fetch product details
-  const { data: productData, isLoading } = trpc.products.getById.useQuery(productId, {
-    enabled: productId > 0,
-  });
+  const { data: productData, isLoading } = trpc.products.getById.useQuery(productId, { enabled: productId > 0 });
 
-  // Add to cart mutation
+  const utils = trpc.useUtils();
   const addToCartMutation = trpc.cart.add.useMutation({
     onSuccess: () => {
-      alert("Product added to cart!");
+      toast.success("Product added to cart!");
+      utils.cart.list.invalidate();
       setQuantity(1);
     },
     onError: (error) => {
-      alert(`Error: ${error.message}`);
+      toast.error(error.message);
     },
   });
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading product...</p>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container py-20 text-center">
+          <div className="animate-pulse space-y-4 max-w-2xl mx-auto">
+            <div className="h-64 bg-muted rounded-lg" />
+            <div className="h-8 bg-muted rounded w-1/2 mx-auto" />
+            <div className="h-4 bg-muted rounded w-3/4 mx-auto" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -43,12 +52,13 @@ export default function ProductDetail() {
   if (!productData?.product) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container py-8">
-          <Button variant="ghost" onClick={() => setLocation("/products")} className="mb-4">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Catalog
+        <Navbar />
+        <div className="container py-20 text-center">
+          <Package className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Product Not Found</h2>
+          <Button variant="outline" onClick={() => setLocation("/products")}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Catalog
           </Button>
-          <p className="text-muted-foreground">Product not found</p>
         </div>
       </div>
     );
@@ -58,7 +68,6 @@ export default function ProductDetail() {
   const basePrice = Number(product.basePrice);
   const totalPrice = basePrice * quantity;
 
-  // Find applicable pricing tier
   let discountedPrice = totalPrice;
   let discountPercentage = 0;
   if (pricing && pricing.length > 0) {
@@ -75,70 +84,101 @@ export default function ProductDetail() {
     }
   }
 
-  const isCompatible = selectedModel && product.compatibleModels
-    ? JSON.parse(product.compatibleModels as any).includes(selectedModel)
-    : true;
+  let compatibleModels: string[] = [];
+  try {
+    if (product.compatibleModels) compatibleModels = JSON.parse(product.compatibleModels as string);
+  } catch {}
+
+  let alternatePartNumbers: string[] = [];
+  try {
+    if (product.alternatePartNumbers) alternatePartNumbers = JSON.parse(product.alternatePartNumbers as string);
+  } catch {}
+
+  const isCompatible = !selectedModel || compatibleModels.includes(selectedModel);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-background/95 backdrop-blur">
-        <div className="container py-4">
-          <Button variant="ghost" size="sm" onClick={() => setLocation("/products")} className="mb-4">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Catalog
-          </Button>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+
+      {/* Breadcrumb */}
+      <div className="border-b border-border bg-secondary/30">
+        <div className="container py-3 flex items-center gap-2 text-sm">
+          <Button variant="link" className="p-0 h-auto text-muted-foreground" onClick={() => setLocation("/")}>Home</Button>
+          <span className="text-muted-foreground">/</span>
+          <Button variant="link" className="p-0 h-auto text-muted-foreground" onClick={() => setLocation("/products")}>Products</Button>
+          <span className="text-muted-foreground">/</span>
+          <span className="font-medium truncate">{product.name}</span>
         </div>
       </div>
 
-      <div className="container py-8">
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Product Image */}
-          <div className="bg-muted rounded-lg h-96 flex items-center justify-center">
-            {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-            ) : (
-              <div className="text-muted-foreground text-center">
-                <p>Product Image</p>
-                <p className="text-sm">{product.partNumber}</p>
-              </div>
+      <div className="container py-8 flex-1">
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* Left: Product Image */}
+          <div>
+            <div className="bg-gradient-to-br from-secondary to-muted rounded-xl h-80 md:h-96 flex items-center justify-center overflow-hidden">
+              {product.imageUrl ? (
+                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+              ) : (
+                <Package className="h-24 w-24 text-muted-foreground/20" />
+              )}
+            </div>
+
+            {/* Exploded View */}
+            {product.explodedViewUrl && (
+              <Card className="mt-4">
+                <CardHeader><CardTitle className="text-base">Exploded View Diagram</CardTitle></CardHeader>
+                <CardContent>
+                  <img src={product.explodedViewUrl} alt="Exploded View" className="w-full rounded-lg" />
+                </CardContent>
+              </Card>
             )}
           </div>
 
-          {/* Product Details */}
+          {/* Right: Product Info */}
           <div className="space-y-6">
             <div>
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between gap-4 mb-3">
                 <div>
-                  <h1 className="text-3xl font-bold">{product.name}</h1>
-                  <p className="text-muted-foreground">Part #: {product.partNumber}</p>
+                  <p className="text-sm text-muted-foreground font-mono mb-1">Part #{product.partNumber}</p>
+                  <h1 className="text-2xl md:text-3xl font-bold">{product.name}</h1>
                 </div>
-                <Badge variant={inventory?.quantityInStock ? "default" : "destructive"}>
+                <Badge variant={inventory?.quantityInStock ? "default" : "destructive"} className="flex-shrink-0">
                   {inventory?.quantityInStock ? `${inventory.quantityInStock} in stock` : "Out of Stock"}
                 </Badge>
               </div>
               {product.description && (
-                <p className="text-muted-foreground mt-4">{product.description}</p>
+                <p className="text-muted-foreground leading-relaxed">{product.description}</p>
               )}
             </div>
 
-            {/* Pricing Tiers */}
+            {/* Pricing */}
+            <Card className="border-2 border-primary/20 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold">₹{basePrice.toFixed(2)}</span>
+                  <span className="text-sm text-muted-foreground">per unit (excl. GST)</span>
+                </div>
+                {inventory?.minimumOrderQuantity && (
+                  <p className="text-sm text-amber-600 font-medium">
+                    Minimum order: {inventory.minimumOrderQuantity} units
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Volume Pricing */}
             {pricing && pricing.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Volume Pricing</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">Volume Pricing (Buy More, Save More)</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="space-y-2 text-sm">
+                  <div className="grid grid-cols-3 gap-3">
                     {pricing.map((tier, idx) => (
-                      <div key={idx} className="flex justify-between py-1 border-b last:border-0">
-                        <span className="text-muted-foreground">
-                          {tier.minQuantity}+ units
-                        </span>
+                      <div key={idx} className={`rounded-lg p-3 text-center border ${quantity >= tier.minQuantity ? "border-primary bg-primary/5" : "border-border"}`}>
+                        <p className="text-xs text-muted-foreground mb-1">{tier.minQuantity}+ units</p>
                         {tier.specialPrice ? (
-                          <span className="font-semibold">₹{Number(tier.specialPrice).toFixed(2)} each</span>
+                          <p className="font-bold text-lg">₹{Number(tier.specialPrice).toFixed(0)}</p>
                         ) : (
-                          <span className="font-semibold">{Number(tier.discountPercentage)}% off</span>
+                          <p className="font-bold text-lg text-green-600">{Number(tier.discountPercentage)}% off</p>
                         )}
                       </div>
                     ))}
@@ -148,129 +188,95 @@ export default function ProductDetail() {
             )}
 
             {/* Compatibility Checker */}
-            {product.compatibleModels && JSON.parse(product.compatibleModels as any).length > 0 && (
+            {compatibleModels.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Compatibility Checker</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Select Your Model</label>
-                      <select
-                        value={selectedModel}
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
-                      >
-                        <option value="">Choose a model...</option>
-                        {JSON.parse(product.compatibleModels as any).map((model: string) => (
-                          <option key={model} value={model}>
-                            {model}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {selectedModel && (
-                      <Alert className={isCompatible ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-                        <div className="flex items-center gap-2">
-                          {isCompatible ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <AlertDescription className={isCompatible ? "text-green-800" : "text-red-800"}>
-                            {isCompatible ? "Compatible with your model" : "Not compatible with your model"}
-                          </AlertDescription>
-                        </div>
-                      </Alert>
-                    )}
-                  </div>
+                <CardHeader><CardTitle className="text-base">Compatibility Checker</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm"
+                  >
+                    <option value="">Select your model...</option>
+                    {compatibleModels.map((model: string) => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                  {selectedModel && (
+                    <Alert className={isCompatible ? "border-green-300 bg-green-50 text-green-800" : "border-red-300 bg-red-50 text-red-800"}>
+                      <div className="flex items-center gap-2">
+                        {isCompatible ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                        <AlertDescription>
+                          {isCompatible ? "Compatible with your model!" : "Not compatible with this model."}
+                        </AlertDescription>
+                      </div>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             )}
 
             {/* Alternate Part Numbers */}
-            {product.alternatePartNumbers && JSON.parse(product.alternatePartNumbers as any).length > 0 && (
+            {alternatePartNumbers.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Alternate Part Numbers</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">Cross-Reference Part Numbers</CardTitle></CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {JSON.parse(product.alternatePartNumbers as any).map((part: string) => (
-                      <Badge key={part} variant="secondary">{part}</Badge>
+                    {alternatePartNumbers.map((part: string) => (
+                      <Badge key={part} variant="secondary" className="font-mono">{part}</Badge>
                     ))}
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Add to Cart Section */}
-            <Card className="bg-primary/5">
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Quantity</label>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      >
-                        −
-                      </Button>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="w-20 text-center"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setQuantity(quantity + 1)}
-                      >
-                        +
-                      </Button>
-                    </div>
-                    {inventory?.minimumOrderQuantity && quantity < inventory.minimumOrderQuantity && (
-                      <p className="text-xs text-amber-600 mt-2">
-                        Minimum order: {inventory.minimumOrderQuantity} units
-                      </p>
-                    )}
+            {/* Add to Cart */}
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Quantity</label>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</Button>
+                    <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} className="w-24 text-center" />
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 1)}>+</Button>
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 10)}>+10</Button>
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 50)}>+50</Button>
                   </div>
+                </div>
 
-                  <div className="border-t border-border pt-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-muted-foreground">Base Price:</span>
-                      <span>₹{basePrice.toFixed(2)}</span>
-                    </div>
-                    {discountPercentage > 0 && (
-                      <div className="flex justify-between items-center mb-4 text-green-600">
-                        <span>Discount ({discountPercentage}%):</span>
-                        <span>-₹{(totalPrice - discountedPrice).toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center text-lg font-bold">
-                      <span>Total:</span>
-                      <span>₹{discountedPrice.toFixed(2)}</span>
-                    </div>
+                <div className="border-t border-border pt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal ({quantity} units):</span>
+                    <span>₹{totalPrice.toFixed(2)}</span>
                   </div>
+                  {discountPercentage > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Volume Discount ({discountPercentage}%):</span>
+                      <span>-₹{(totalPrice - discountedPrice).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                    <span>Total:</span>
+                    <span>₹{discountedPrice.toFixed(2)}</span>
+                  </div>
+                </div>
 
+                <div className="flex gap-3">
                   <Button
                     size="lg"
-                    className="w-full"
+                    className="flex-1"
                     disabled={!inventory?.quantityInStock || addToCartMutation.isPending}
-                    onClick={() => {
-                      addToCartMutation.mutate({
-                        productId,
-                        quantity,
-                      });
-                    }}
+                    onClick={() => addToCartMutation.mutate({ productId, quantity })}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => window.open(`${WHATSAPP_URL}Hi, I want to enquire about ${product.name} (Part #${product.partNumber}), Qty: ${quantity}`, "_blank")}
+                  >
+                    <MessageCircle className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -278,6 +284,8 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

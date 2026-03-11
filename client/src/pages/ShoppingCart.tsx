@@ -1,206 +1,145 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChevronLeft, Trash2, Plus, Minus, AlertCircle } from "lucide-react";
+import { Trash2, Package, ShoppingBag, ArrowRight } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { toast } from "sonner";
 
 export default function ShoppingCart() {
   const [, setLocation] = useLocation();
-  const [quantities, setQuantities] = useState<Record<number, number>>({});
-
-  // Fetch cart items
   const { data: cartItems, isLoading, refetch } = trpc.cart.list.useQuery();
 
-  // Mutations
   const removeFromCartMutation = trpc.cart.remove.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => { refetch(); toast.success("Item removed"); },
   });
-
   const clearCartMutation = trpc.cart.clear.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => { refetch(); toast.success("Cart cleared"); },
   });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading cart...</p>
-      </div>
-    );
-  }
 
   const cartItemsList = cartItems || [];
-
-  // Calculate totals
   let subtotal = 0;
-  let gstAmount = 0;
   cartItemsList.forEach((item) => {
-    if (item.product) {
-      const itemTotal = Number(item.product.basePrice) * item.quantity;
-      subtotal += itemTotal;
-    }
+    if (item.product) subtotal += Number(item.product.basePrice) * item.quantity;
   });
-  gstAmount = subtotal * 0.18;
-  const shippingCost = 100;
+  const gstAmount = subtotal * 0.18;
+  const shippingCost = subtotal >= 5000 ? 0 : 100;
   const total = subtotal + gstAmount + shippingCost;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-background/95 backdrop-blur">
-        <div className="container py-4">
-          <Button variant="ghost" size="sm" onClick={() => setLocation("/products")} className="mb-4">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Continue Shopping
-          </Button>
-          <h1 className="text-3xl font-bold">Shopping Cart</h1>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+
+      <div className="bg-[oklch(0.22_0.05_260)] py-10">
+        <div className="container">
+          <h1 className="text-3xl font-bold text-white mb-2">Shopping Cart</h1>
+          <p className="text-white/60">{cartItemsList.length} item(s) in your cart</p>
         </div>
       </div>
 
-      <div className="container py-8">
-        {cartItemsList.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg mb-4">Your cart is empty</p>
-            <Button onClick={() => setLocation("/products")}>
-              Start Shopping
-            </Button>
+      <div className="container py-8 flex-1">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="animate-pulse"><CardContent className="p-6"><div className="h-20 bg-muted rounded" /></CardContent></Card>
+            ))}
+          </div>
+        ) : cartItemsList.length === 0 ? (
+          <div className="text-center py-20">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Your cart is empty</h3>
+            <p className="text-muted-foreground mb-6">Add some products to get started</p>
+            <Button onClick={() => setLocation("/products")}>Browse Products</Button>
           </div>
         ) : (
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 lg:grid-cols-3">
             {/* Cart Items */}
-            <div className="md:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-4">
               {cartItemsList.map((item) => (
-                <Card key={item.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex gap-4">
-                      {/* Product Image */}
-                      <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                        {item.product?.imageUrl ? (
-                          <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover rounded" />
-                        ) : (
-                          <span className="text-xs text-muted-foreground text-center px-2">
-                            {item.product?.partNumber}
-                          </span>
-                        )}
+                <Card key={item.id} className="overflow-hidden">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="w-20 h-20 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                      {item.product?.imageUrl ? (
+                        <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover rounded-lg" />
+                      ) : (
+                        <Package className="h-8 w-8 text-muted-foreground/30" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{item.product?.name}</h3>
+                      <p className="text-xs text-muted-foreground font-mono">#{item.product?.partNumber}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-sm text-muted-foreground">Qty: {item.quantity}</span>
+                        <span className="text-sm text-muted-foreground">@ ₹{Number(item.product?.basePrice).toFixed(2)}</span>
                       </div>
-
-                      {/* Product Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold">{item.product?.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Part #: {item.product?.partNumber}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFromCartMutation.mutate(item.id)}
-                            disabled={removeFromCartMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-
-                        {/* Quantity and Price */}
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" disabled>
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <Input
-                              type="number"
-                              value={item.quantity}
-                              readOnly
-                              className="w-16 text-center"
-                            />
-                            <Button variant="outline" size="sm" disabled>
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground">
-                              ₹{Number(item.product?.basePrice).toFixed(2)} each
-                            </p>
-                            <p className="text-lg font-bold">
-                              ₹{(Number(item.product?.basePrice) * item.quantity).toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-lg font-bold">₹{(Number(item.product?.basePrice) * item.quantity).toFixed(2)}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive mt-1"
+                        onClick={() => removeFromCartMutation.mutate(item.id)}
+                        disabled={removeFromCartMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
 
-              {/* Bulk Actions */}
-              <Card className="bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="text-lg">Bulk Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full">
-                    Request Quotation
-                  </Button>
-                  <Button variant="outline" className="w-full" onClick={() => clearCartMutation.mutate()}>
-                    Clear Cart
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setLocation("/products")}>Continue Shopping</Button>
+                <Button variant="outline" className="text-destructive" onClick={() => clearCartMutation.mutate()}>Clear Cart</Button>
+              </div>
             </div>
 
             {/* Order Summary */}
-            <div className="md:col-span-1">
-              <Card className="sticky top-4">
+            <div className="lg:col-span-1">
+              <Card className="sticky top-20">
                 <CardHeader>
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>₹{subtotal.toFixed(2)}</span>
+                      <span className="text-muted-foreground">Subtotal ({cartItemsList.length} items)</span>
+                      <span className="font-medium">₹{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">GST (18%)</span>
-                      <span>₹{gstAmount.toFixed(2)}</span>
+                      <span className="font-medium">₹{gstAmount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Shipping</span>
-                      <span>₹{shippingCost.toFixed(2)}</span>
+                      <span className="font-medium">{shippingCost === 0 ? <Badge variant="secondary" className="text-green-600">FREE</Badge> : `₹${shippingCost.toFixed(2)}`}</span>
                     </div>
+                    {shippingCost > 0 && (
+                      <p className="text-xs text-muted-foreground">Free shipping on orders above ₹5,000</p>
+                    )}
                   </div>
 
                   <div className="border-t border-border pt-4">
-                    <div className="flex justify-between items-center text-lg font-bold mb-4">
+                    <div className="flex justify-between items-center text-xl font-bold">
                       <span>Total</span>
                       <span>₹{total.toFixed(2)}</span>
                     </div>
-
-                    <Alert className="mb-4">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="text-xs">
-                        Prices include GST. Tiered discounts apply at checkout.
-                      </AlertDescription>
-                    </Alert>
-
-                    <Button
-                      className="w-full"
-                      size="lg"
-                      onClick={() => setLocation("/checkout")}
-                    >
-                      Proceed to Checkout
-                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">Including GST</p>
                   </div>
 
-                  <div className="text-xs text-muted-foreground space-y-1 pt-4 border-t">
-                    <p>✓ Free shipping on orders over ₹5000</p>
-                    <p>✓ 18% GST included</p>
-                    <p>✓ Secure payment</p>
+                  <Button className="w-full" size="lg" onClick={() => setLocation("/checkout")}>
+                    Proceed to Checkout
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+
+                  <div className="text-xs text-muted-foreground space-y-1 pt-2">
+                    <p>✓ Secure payment via Razorpay</p>
+                    <p>✓ GST invoice on all orders</p>
+                    <p>✓ Free shipping above ₹5,000</p>
                   </div>
                 </CardContent>
               </Card>
@@ -208,6 +147,8 @@ export default function ShoppingCart() {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 }
