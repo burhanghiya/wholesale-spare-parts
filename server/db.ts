@@ -251,10 +251,12 @@ export async function clearCart(userId: number) {
 // ORDER FUNCTIONS
 // ========================
 
-export async function createOrder(orderData: any) {
+export async function createOrder(orderData: any): Promise<number | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  return await db.insert(orders).values(orderData);
+  const result = await db.insert(orders).values(orderData);
+  // MySQL returns insertId in the result
+  return (result as any)[0]?.insertId || (result as any).insertId || undefined;
 }
 
 export async function getOrderById(id: number) {
@@ -276,10 +278,12 @@ export async function getAllOrders(limit = 50, offset = 0) {
   return await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
 }
 
-export async function updateOrderStatus(orderId: number, status: string) {
+export async function updateOrderStatus(orderId: number, status: string, trackingNumber?: string) {
   const db = await getDb();
   if (!db) return false;
-  await db.update(orders).set({ orderStatus: status as any, updatedAt: new Date() }).where(eq(orders.id, orderId));
+  const updateData: any = { orderStatus: status as any, updatedAt: new Date() };
+  if (trackingNumber) updateData.trackingNumber = trackingNumber;
+  await db.update(orders).set(updateData).where(eq(orders.id, orderId));
   return true;
 }
 
@@ -415,4 +419,48 @@ export async function getDashboardStats() {
     pendingOrders: pendingOrderCount?.count || 0,
     pendingQuotations: pendingQuoteCount?.count || 0,
   };
+}
+
+
+// ========================
+// ADDITIONAL HELPER FUNCTIONS
+// ========================
+
+export async function findOrCreateCategory(name: string): Promise<number> {
+  const db = await getDb();
+  if (!db) return 1;
+  const existing = await db.select().from(categories).where(eq(categories.name, name)).limit(1);
+  if (existing.length > 0) return existing[0].id;
+  const result = await db.insert(categories).values({ name, createdAt: new Date(), updatedAt: new Date() });
+  // Get the newly created category
+  const newCat = await db.select().from(categories).where(eq(categories.name, name)).limit(1);
+  return newCat.length > 0 ? newCat[0].id : 1;
+}
+
+export async function getCategoryById(id: number | null) {
+  if (!id) return undefined;
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function deleteCategory(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(categories).where(eq(categories.id, id));
+  return true;
+}
+
+export async function getShippingRates() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(shippingRates);
+}
+
+export async function updateCartItemQuantity(cartItemId: number, quantity: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(cartItems).set({ quantity, updatedAt: new Date() }).where(eq(cartItems.id, cartItemId));
+  return true;
 }

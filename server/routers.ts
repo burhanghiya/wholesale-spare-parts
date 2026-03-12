@@ -5,6 +5,8 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { TRPCError } from "@trpc/server";
+import { storagePut } from "./storage";
+import { nanoid } from "nanoid";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
@@ -53,7 +55,8 @@ export const appRouter = router({
     create: adminProcedure
       .input(z.object({
         partNumber: z.string(), name: z.string(), description: z.string().optional(),
-        categoryId: z.number(), basePrice: z.number(),
+        categoryName: z.string().default("General"),
+        basePrice: z.number(),
         compatibleModels: z.array(z.string()).optional(),
         compatibleBrands: z.array(z.string()).optional(),
         alternatePartNumbers: z.array(z.string()).optional(),
@@ -61,24 +64,25 @@ export const appRouter = router({
         stock: z.number().optional(), moq: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { stock, moq, ...productData } = input;
-        const result = await db.createProduct({
-          ...productData,
+        const { stock, moq, categoryName, ...rest } = input;
+        // Find or create category by name
+        const categoryId = await db.findOrCreateCategory(categoryName);
+        const productData = {
+          ...rest,
+          categoryId,
           basePrice: String(input.basePrice),
           compatibleModels: input.compatibleModels ? JSON.stringify(input.compatibleModels) : null,
           compatibleBrands: input.compatibleBrands ? JSON.stringify(input.compatibleBrands) : null,
           alternatePartNumbers: input.alternatePartNumbers ? JSON.stringify(input.alternatePartNumbers) : null,
-        });
-        // Create inventory entry
-        if (result) {
-          const productResult = await db.getProductByPartNumber(input.partNumber);
-          if (productResult) {
-            await db.upsertInventory(productResult.id, {
-              quantityInStock: stock || 0,
-              minimumOrderQuantity: moq || 1,
-              reorderLevel: 10,
-            });
-          }
+        };
+        await db.createProduct(productData);
+        const productResult = await db.getProductByPartNumber(input.partNumber);
+        if (productResult) {
+          await db.upsertInventory(productResult.id, {
+            quantityInStock: stock || 0,
+            minimumOrderQuantity: moq || 1,
+            reorderLevel: 10,
+          });
         }
         return { success: true };
       }),
@@ -89,14 +93,26 @@ export const appRouter = router({
         data: z.object({
           name: z.string().optional(), description: z.string().optional(),
           basePrice: z.number().optional(), isActive: z.boolean().optional(),
-          partNumber: z.string().optional(), categoryId: z.number().optional(),
+          partNumber: z.string().optional(), categoryName: z.string().optional(),
           imageUrl: z.string().optional(),
+          stock: z.number().optional(), moq: z.number().optional(),
         }),
       }))
       .mutation(async ({ input }) => {
-        const updateData: any = { ...input.data };
+        const { categoryName, stock, moq, ...restData } = input.data;
+        const updateData: any = { ...restData };
         if (updateData.basePrice) updateData.basePrice = String(updateData.basePrice);
+        if (categoryName) {
+          updateData.categoryId = await db.findOrCreateCategory(categoryName);
+        }
         await db.updateProduct(input.id, updateData);
+        // Update inventory if stock/moq provided
+        if (stock !== undefined || moq !== undefined) {
+          const invData: any = {};
+          if (stock !== undefined) invData.quantityInStock = stock;
+          if (moq !== undefined) invData.minimumOrderQuantity = moq;
+          await db.upsertInventory(input.id, invData);
+        }
         return { success: true };
       }),
 
@@ -109,7 +125,29 @@ export const appRouter = router({
 
     adminList: adminProcedure
       .input(z.object({ limit: z.number().default(100), offset: z.number().default(0) }))
-      .query(async ({ input }) => db.getAllProductsAdmin(input.limit, input.offset)),
+      .query(async ({ input }) => {
+        const prods = await db.getAllProductsAdmin(input.limit, input.offset);
+        // Attach inventory info to each product
+        const result = await Promise.all(prods.map(async (p) => {
+          const inv = await db.getInventoryByProductId(p.id);
+          const cat = await db.getCategoryById(p.categoryId);
+          return { ...p, inventory: inv, categoryName: cat?.name || "General" };
+        }));
+        return result;
+      }),
+  }),
+
+  // Image upload endpoint
+  upload: router({
+    image: adminProcedure
+      .input(z.object({ base64: z.string(), filename: z.string(), contentType: z.string() }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.base64, 'base64');
+        const ext = input.filename.split('.').pop() || 'jpg';
+        const key = `products/${nanoid()}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.contentType);
+        return { url };
+      }),
   }),
 
   cart: router({
@@ -117,7 +155,8 @@ export const appRouter = router({
       const items = await db.getCartItems(ctx.user.id);
       return await Promise.all(items.map(async (item) => {
         const product = await db.getProductById(item.productId);
-        return { ...item, product };
+        const inv = await db.getInventoryByProductId(item.productId);
+        return { ...item, product, inventory: inv };
       }));
     }),
 
@@ -127,6 +166,13 @@ export const appRouter = router({
         const product = await db.getProductById(input.productId);
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
         return await db.addToCart(ctx.user.id, input.productId, input.quantity, Number(product.basePrice));
+      }),
+
+    updateQuantity: protectedProcedure
+      .input(z.object({ cartItemId: z.number(), quantity: z.number().min(1) }))
+      .mutation(async ({ input }) => {
+        await db.updateCartItemQuantity(input.cartItemId, input.quantity);
+        return { success: true };
       }),
 
     remove: protectedProcedure.input(z.number()).mutation(async ({ input }) => db.removeFromCart(input)),
@@ -139,18 +185,25 @@ export const appRouter = router({
     getById: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
       const order = await db.getOrderById(input);
       if (!order) throw new TRPCError({ code: 'NOT_FOUND' });
-      // Admin can see all orders, users only their own
       if (order.userId !== ctx.user.id && ctx.user.role !== 'admin') {
         throw new TRPCError({ code: 'NOT_FOUND' });
       }
       const items = await db.getOrderItems(input);
-      return { order, items };
+      // Attach product info to each item
+      const itemsWithProduct = await Promise.all(items.map(async (item) => {
+        const product = await db.getProductById(item.productId);
+        return { ...item, product };
+      }));
+      return { order, items: itemsWithProduct };
     }),
 
     create: protectedProcedure
       .input(z.object({
         shippingAddress: z.string(),
         paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay']),
+        includeGst: z.boolean().default(true),
+        gstNumber: z.string().optional(),
+        shippingPincode: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const cartItemsList = await db.getCartItems(ctx.user.id);
@@ -163,35 +216,61 @@ export const appRouter = router({
           if (!product) continue;
           const itemTotal = await db.calculatePrice(item.productId, item.quantity, Number(product.basePrice));
           totalAmount += itemTotal;
-          orderItemsData.push({ productId: item.productId, quantity: item.quantity, unitPrice: String(Number(product.basePrice)), totalPrice: String(itemTotal) });
+          orderItemsData.push({
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: String(Number(product.basePrice)),
+            totalPrice: String(itemTotal),
+          });
         }
 
-        const gstAmount = totalAmount * 0.18;
-        const shippingCost = totalAmount >= 5000 ? 0 : 100;
+        const gstAmount = input.includeGst ? totalAmount * 0.18 : 0;
+        // Shipping: free above 5000, else based on distance
+        const shippingCost = totalAmount >= 5000 ? 0 : 150;
         const orderNumber = `ORD-${Date.now()}`;
 
-        await db.createOrder({
+        // Create order with PENDING status - admin must confirm
+        const orderId = await db.createOrder({
           orderNumber, userId: ctx.user.id,
           totalAmount: String(totalAmount), gstAmount: String(gstAmount),
           shippingCost: String(shippingCost), shippingAddress: input.shippingAddress,
           paymentMethod: input.paymentMethod,
-          paymentStatus: 'pending', orderStatus: 'pending',
+          paymentStatus: input.paymentMethod === 'cod' ? 'pending' : 'pending',
+          orderStatus: 'pending', // Always start as pending
+          notes: input.gstNumber ? `GST: ${input.gstNumber}` : null,
         });
 
+        // Add order items
+        if (orderId) {
+          await db.addOrderItems(orderId, orderItemsData);
+        }
+
         await db.clearCart(ctx.user.id);
-        return { orderNumber, totalAmount: totalAmount + gstAmount + shippingCost };
+        return { orderNumber, totalAmount: totalAmount + gstAmount + shippingCost, orderId };
       }),
 
     getAllOrders: adminProcedure
       .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
-      .query(async ({ input }) => db.getAllOrders(input.limit, input.offset)),
+      .query(async ({ input }) => {
+        const ordersList = await db.getAllOrders(input.limit, input.offset);
+        // Attach user info
+        const result = await Promise.all(ordersList.map(async (order) => {
+          const user = await db.getUserById(order.userId);
+          return { ...order, userName: user?.name || user?.email || 'Unknown' };
+        }));
+        return result;
+      }),
 
     updateStatus: adminProcedure
       .input(z.object({
         orderId: z.number(),
         status: z.enum(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']),
+        trackingNumber: z.string().optional(),
       }))
-      .mutation(async ({ input }) => db.updateOrderStatus(input.orderId, input.status)),
+      .mutation(async ({ input }) => {
+        await db.updateOrderStatus(input.orderId, input.status, input.trackingNumber);
+        return { success: true };
+      }),
   }),
 
   quotations: router({
@@ -207,6 +286,7 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         items: z.array(z.object({ productId: z.number(), quantity: z.number(), requestedPrice: z.number().optional() })),
+        notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         let totalAmount = 0;
@@ -219,6 +299,7 @@ export const appRouter = router({
           quotationNumber, userId: ctx.user.id,
           items: JSON.stringify(input.items), totalAmount: String(totalAmount),
           status: 'pending', expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          adminNotes: input.notes || null,
         });
         return { quotationNumber };
       }),
@@ -232,6 +313,7 @@ export const appRouter = router({
         quotationId: z.number(),
         status: z.enum(['pending', 'quoted', 'accepted', 'rejected', 'expired']),
         quotedPrice: z.number().optional(),
+        adminNotes: z.string().optional(),
       }))
       .mutation(async ({ input }) => db.updateQuotationStatus(input.quotationId, input.status, input.quotedPrice)),
   }),
@@ -283,6 +365,30 @@ export const appRouter = router({
         await db.createCategory(input);
         return { success: true };
       }),
+
+    deleteCategory: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input }) => {
+        await db.deleteCategory(input);
+        return { success: true };
+      }),
+
+    // GST Configuration
+    getGstConfig: adminProcedure.query(async () => db.getGstConfiguration()),
+    updateGstConfig: adminProcedure
+      .input(z.object({
+        businessName: z.string(), gstNumber: z.string(),
+        businessAddress: z.string().optional(), businessPhone: z.string().optional(),
+        businessEmail: z.string().optional(), gstRate: z.number().optional(),
+        invoicePrefix: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateGstConfiguration({ ...input, gstRate: input.gstRate ? String(input.gstRate) : undefined });
+        return { success: true };
+      }),
+
+    // Shipping configuration
+    getShippingRates: adminProcedure.query(async () => db.getShippingRates()),
   }),
 });
 

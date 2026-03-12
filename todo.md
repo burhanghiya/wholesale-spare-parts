@@ -158,3 +158,19 @@
 - [x] Add shared Navbar and Footer components
 - [x] Test all pages and fix bugs
 - [x] All 15 vitest tests passing
+
+## Phase 12: Bug Fixes (User Reported Issues)
+- [ ] BUG: Category dropdown shows only "Default" - change to text input so admin can type any category name
+- [ ] BUG: Product add form has Image URL field - replace with direct image upload button
+- [ ] BUG: Price field shows leading zeros (0950) - fix to proper number input
+- [ ] BUG: Order auto-confirms and shows "Shipped" immediately - should stay "Pending" until admin accepts
+- [ ] BUG: Checkout page missing shipping address form
+- [ ] BUG: Checkout page missing payment method selection (UPI, Bank Transfer, Card, COD)
+- [ ] BUG: No GST toggle option (add/remove GST)
+- [ ] BUG: Shipping calculator not working properly
+- [ ] BUG: Home page stats hardcoded (5000+ Products, 500+ Dealers) - should show real data
+- [ ] BUG: Home page "15+ Years Experience" - should show actual data
+- [ ] REMOVE: Credit Facility section from home page
+- [ ] FIX: All admin panel options should be fully editable by admin
+- [ ] FIX: Order should only show confirmed/shipped after admin approves
+- [ ] FIX: Category should be free text input, not dropdown select
