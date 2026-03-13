@@ -167,11 +167,10 @@ export default function OrderTracking() {
             <Card>
               <CardHeader><CardTitle className="text-base">Payment Summary</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>₹{Number(order.totalAmount).toLocaleString()}</span></div>
-                {Number(order.gstAmount) > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">GST (18%)</span><span>₹{Number(order.gstAmount).toLocaleString()}</span></div>}
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal (with GST 18%)</span><span>₹{Number(order.totalAmount).toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Shipping</span><span>{Number(order.shippingCost) === 0 ? "FREE" : `₹${Number(order.shippingCost).toLocaleString()}`}</span></div>
                 <Separator />
-                <div className="flex justify-between font-bold"><span>Total</span><span>₹{(Number(order.totalAmount) + Number(order.gstAmount) + Number(order.shippingCost)).toLocaleString()}</span></div>
+                <div className="flex justify-between font-bold"><span>Total</span><span>₹{(Number(order.totalAmount) + Number(order.shippingCost)).toLocaleString()}</span></div>
                 <div className="pt-2 text-sm">
                   <div className="flex justify-between"><span className="text-muted-foreground">Payment Method</span><span className="capitalize">{order.paymentMethod?.replace("_", " ")}</span></div>
                   <div className="flex justify-between mt-1"><span className="text-muted-foreground">Payment Status</span><Badge variant={order.paymentStatus === "completed" ? "default" : "secondary"} className="text-xs">{order.paymentStatus}</Badge></div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +47,15 @@ export default function Checkout() {
   // Totals
   const subtotal = cartItems?.reduce((sum, item) => sum + Number(item.product?.basePrice || 0) * item.quantity, 0) || 0;
   const gstAmount = Math.round(subtotal * 0.18);
-  const shippingCost = subtotal >= 5000 ? 0 : 150;
+  
+  // Calculate shipping based on pincode - default ₹150 for now, can be enhanced with pincode database
+  const getShippingCost = (pincode: string, subtotal: number): number => {
+    if (subtotal >= 5000) return 0; // Free shipping for orders above ₹5000
+    // Default shipping cost
+    return 150;
+  };
+  
+  const shippingCost = getShippingCost(address.pincode, subtotal);
   const totalAmount = subtotal + gstAmount + shippingCost;
 
   const handlePlaceOrder = () => {
@@ -66,18 +75,20 @@ export default function Checkout() {
     if (!address.fullName || !address.phone || !address.addressLine1 || !address.city || !address.pincode) {
       toast.error("Please fill all address fields!"); setStep(1); return;
     }
+    
     const fullAddress = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => {
+    const finalShippingCost = getShippingCost(address.pincode, subtotal);
+    const finalTotal = subtotal + gstAmount + finalShippingCost;
+    
+    const openPayment = () => {
       const options = {
         key: 'rzp_live_SOMzJthXoqUsMU',
-        amount: Math.round(totalAmount * 100),
+        amount: Math.round(finalTotal * 100),
         currency: 'INR',
         name: 'Patel Electricals',
         description: `Order for ${address.fullName}`,
         prefill: { name: address.fullName, email: user?.email, contact: address.phone },
-        handler: () => {
+        handler: (response: any) => {
           createOrder.mutate({
             shippingAddress: fullAddress,
             paymentMethod: 'razorpay',
@@ -87,10 +98,25 @@ export default function Checkout() {
         },
         modal: { ondismiss: () => toast.error('Payment cancelled') }
       };
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
+      
+      try {
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } catch (e) {
+        toast.error('Payment gateway error');
+      }
     };
-    document.body.appendChild(script);
+    
+    if ((window as any).Razorpay) {
+      openPayment();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = openPayment;
+      script.onerror = () => toast.error('Failed to load payment gateway');
+      document.body.appendChild(script);
+    }
   };
 
   if (!loading && !isAuthenticated) {
@@ -289,7 +315,7 @@ export default function Checkout() {
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({cartItems?.length || 0} items)</span><span>₹{subtotal.toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">GST (18%)</span><span>₹{gstAmount.toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground flex items-center gap-1"><Truck className="h-3.5 w-3.5" /> Shipping</span>
+                  <span className="text-muted-foreground flex items-center gap-1"><Truck className="h-3.5 w-3.5" /> Shipping {address.pincode && `(${address.pincode})`}</span>
                   <span className={shippingCost === 0 ? "text-green-600 font-medium" : ""}>{shippingCost === 0 ? "FREE" : `₹${shippingCost}`}</span>
                 </div>
                 {shippingCost > 0 && <p className="text-xs text-muted-foreground">Free shipping on orders above ₹5,000</p>}

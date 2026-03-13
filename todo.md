@@ -181,3 +181,11 @@
 - [x] FIX: Order tracking accessibility - ensure View My Orders works and shows orders
 - [x] TEST: All vitest tests passing (15/15)
 - [x] TEST: Dev server running without errors
+
+## Phase 14: Critical Issues - Payment & Shipping
+- [x] FIX: Razorpay payment modal not opening on checkout - Fixed with proper script loading and error handling
+- [x] FIX: Shipping not calculating properly - Implemented pincode-based calculation with ₹150 default
+- [x] FIX: Order placement flow - Payment handler properly integrated
+- [x] FIX: Remove GST (18%) display line from order tracking page - GST now shown as part of subtotal
+- [x] TEST: All 15 vitest tests passing
+- [x] TEST: Dev server running without errors
