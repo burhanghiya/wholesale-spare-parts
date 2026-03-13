@@ -95,9 +95,6 @@ export default function Home() {
                 India's trusted B2B platform for electrical spare parts. Get competitive wholesale prices, bulk discounts, and doorstep delivery across Gujarat.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Button size="lg" className="bg-[oklch(0.65_0.15_85)] text-[oklch(0.15_0.04_260)] hover:bg-[oklch(0.70_0.15_85)] font-semibold px-8" onClick={() => setLocation("/products")}>
-                  Browse Catalog <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 font-semibold" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
                   <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp Us
                 </Button>
@@ -149,7 +146,6 @@ export default function Home() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: Search, title: "Smart Part Search", desc: "Find parts by number, model, or brand. Cross-reference alternate part numbers." },
-              { icon: TrendingUp, title: "Tiered Wholesale Pricing", desc: "Buy more, save more. Volume-based discounts up to 25% on bulk orders." },
               { icon: Shield, title: "100% Genuine Parts", desc: "All products sourced directly from authorized manufacturers and distributors." },
               { icon: Truck, title: "Fast Delivery", desc: "Quick dispatch for in-stock items. Real-time order tracking available." },
               { icon: MessageCircle, title: "WhatsApp Support", desc: "Quick assistance via WhatsApp. Get quotes, track orders, and resolve issues." },
