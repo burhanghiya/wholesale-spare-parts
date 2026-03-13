@@ -17,8 +17,12 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [showResults, setShowResults] = React.useState(false);
+  const [searchTimeout, setSearchTimeout] = React.useState<NodeJS.Timeout | null>(null);
   const { data: stats, isLoading: statsLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: categories, isLoading: catsLoading } = trpc.products.getCategories.useQuery();
+  const { data: searchData } = trpc.products.search.useQuery({ query: searchQuery.trim() }, { enabled: false });
 
   // Fallback stats
   const displayStats = [
@@ -59,25 +63,25 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-1">
-            <Button variant="ghost" className="font-medium" onClick={() => setLocation("/")}>Home</Button>
-            <Button variant="ghost" className="font-medium" onClick={() => setLocation("/products")}>Products</Button>
+            <button className="px-3 py-2 text-sm font-medium hover:bg-accent rounded-md transition-colors" onClick={() => setLocation("/")}>Home</button>
+            <button className="px-3 py-2 text-sm font-medium hover:bg-accent rounded-md transition-colors" onClick={() => setLocation("/products")}>Products</button>
             {isAuthenticated && (
               <>
-                <Button variant="ghost" className="font-medium" onClick={() => setLocation("/cart")}><ShoppingCart className="h-4 w-4 mr-1.5" />Cart</Button>
-                <Button variant="ghost" className="font-medium" onClick={() => setLocation("/profile")}>My Orders</Button>
-                {user?.role === "admin" && <Button variant="ghost" className="font-medium text-[oklch(0.65_0.15_85)]" onClick={() => setLocation("/admin")}>Admin Panel</Button>}
+                <button className="px-3 py-2 text-sm font-medium hover:bg-accent rounded-md transition-colors flex items-center gap-1.5" onClick={() => setLocation("/cart")}><ShoppingCart className="h-4 w-4" />Cart</button>
+                <button className="px-3 py-2 text-sm font-medium hover:bg-accent rounded-md transition-colors" onClick={() => setLocation("/profile")}>My Orders</button>
+                {user?.role === "admin" && <button className="px-3 py-2 text-sm font-medium text-[oklch(0.65_0.15_85)] hover:bg-accent rounded-md transition-colors" onClick={() => setLocation("/admin")}>Admin Panel</button>}
               </>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
                 <span className="hidden sm:inline text-sm text-muted-foreground">Hi, <span className="font-semibold text-foreground">{user?.name || "Dealer"}</span></span>
-                <Button variant="outline" size="sm" onClick={() => setLocation("/profile")}>Profile</Button>
+                <button className="inline-flex items-center justify-center px-3 py-1.5 rounded-md border border-input hover:bg-accent text-sm font-medium transition-colors" onClick={() => setLocation("/profile")}>Profile</button>
               </div>
             ) : (
-              <Button size="sm" onClick={() => window.location.href = getLoginUrl()}>Login / Register</Button>
+              <button className="inline-flex items-center justify-center px-3 py-1.5 rounded-md bg-[oklch(0.65_0.15_85)] text-[oklch(0.22_0.05_260)] text-sm font-medium hover:bg-[oklch(0.65_0.15_85)]/90 transition-colors" onClick={() => window.location.href = getLoginUrl()}>Login / Register</button>
             )}
           </div>
         </div>
@@ -94,25 +98,79 @@ export default function Home() {
                 Wholesale <span className="text-[oklch(0.65_0.15_85)]">Electrical</span> Spare Parts
               </h1>
 
-              <div className="mb-6 max-w-md">
+              <div className="mb-6 max-w-md relative">
                 <input 
                   type="text" 
                   placeholder="Search parts..." 
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    const query = e.target.value;
+                    setSearchQuery(query);
+                    setShowResults(true);
+                    
+                    // Clear previous timeout
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    
+                    if (query.trim().length > 0) {
+                      // Debounce search
+                      const timeout = setTimeout(async () => {
+                        try {
+                          const results = await (trpc.products.search as any).query({ query: query.trim() });
+                          setSearchResults(results || []);
+                        } catch (error) {
+                          console.error('Search error:', error);
+                          setSearchResults([]);
+                        }
+                      }, 300);
+                      setSearchTimeout(timeout);
+                    } else {
+                      setSearchResults([]);
+                    }
+                  }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
                       setLocation(`/products?search=${encodeURIComponent(searchQuery)}`);
+                      setShowResults(false);
                     }
                   }}
+                  onFocus={() => searchQuery.trim().length > 0 && setShowResults(true)}
+                  onBlur={() => setTimeout(() => setShowResults(false), 200)}
                   className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" 
                 />
+                
+                {/* Live Search Results Dropdown */}
+                {showResults && searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-input rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                    {searchResults.slice(0, 8).map((product: any) => (
+                      <div
+                        key={product.id}
+                        className="px-4 py-3 hover:bg-secondary cursor-pointer border-b border-border last:border-b-0 transition-colors"
+                        onClick={() => {
+                          setLocation(`/products/${product.id}`);
+                          setShowResults(false);
+                          setSearchQuery("");
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          {product.imageUrl && (
+                            <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded object-cover" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{product.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">Part #: {product.partNumber}</p>
+                            <p className="text-sm font-semibold text-[oklch(0.65_0.15_85)] mt-1">₹{product.basePrice}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 font-semibold" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
+                <button className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/30 text-white hover:bg-white/10 font-semibold transition-colors" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
                   <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp Us
-                </Button>
+                </button>
               </div>
             </div>
 
@@ -132,8 +190,8 @@ export default function Home() {
             {catsLoading ? (
               <div className="col-span-full flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : categories && categories.length > 0 ? (
-              categories.map((cat) => (
-                <Card key={cat.id} className="group cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-300" onClick={() => setLocation("/products")}>
+              categories.map((cat: any) => (
+                <Card key={cat.id} className="group cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-300" onClick={() => setLocation(`/products?category=${encodeURIComponent(cat.name)}`)}>
                   <CardContent className="p-6 text-center">
                     <div className="text-4xl mb-3">📦</div>
                     <h3 className="font-semibold text-sm mb-1">{cat.name}</h3>
@@ -155,9 +213,9 @@ export default function Home() {
             <h2 className="text-3xl font-bold mb-3">Why Dealers Choose Us</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">Everything you need for your wholesale electrical parts business</p>
           </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: Search, title: "Smart Part Search", desc: "Find parts by number, model, or brand. Cross-reference alternate part numbers." },
+              { icon: Search, title: "Smart Part Search", desc: "Find parts by number, model, or brand. Instant live search results." },
               { icon: Shield, title: "100% Genuine Parts", desc: "All products sourced directly from authorized manufacturers and distributors." },
               { icon: Truck, title: "Fast Delivery", desc: "Quick dispatch for in-stock items. Real-time order tracking available." },
               { icon: MessageCircle, title: "WhatsApp Support", desc: "Quick assistance via WhatsApp. Get quotes, track orders, and resolve issues." },
@@ -181,7 +239,7 @@ export default function Home() {
       <section className="py-16 md:py-20 bg-background">
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {displayStats.map((stat) => (
+            {displayStats.map((stat: any) => (
               <div key={stat.label} className="bg-secondary/50 rounded-xl p-6 border border-border text-center">
                 <stat.icon className="h-8 w-8 text-[oklch(0.65_0.15_85)] mb-3 mx-auto" />
                 <p className="text-2xl font-bold text-foreground">{stat.value}</p>
