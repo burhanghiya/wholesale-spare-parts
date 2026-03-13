@@ -92,6 +92,10 @@ export default function Home() {
                 Wholesale <span className="text-[oklch(0.65_0.15_85)]">Electrical</span> Spare Parts
               </h1>
 
+              <div className="mb-6 max-w-md">
+                <input type="text" placeholder="Search parts..." className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" />
+              </div>
+
               <div className="flex flex-wrap gap-3">
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 font-semibold" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
                   <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp Us
@@ -135,9 +139,6 @@ export default function Home() {
       <section className="py-16 md:py-20 bg-secondary/50">
         <div className="container">
           <div className="text-center mb-8">
-            <div className="mb-8 max-w-md mx-auto">
-              <input type="text" placeholder="Search parts..." className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" />
-            </div>
             <h2 className="text-3xl font-bold mb-3">Why Dealers Choose Us</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">Everything you need for your wholesale electrical parts business</p>
           </div>
