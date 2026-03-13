@@ -67,8 +67,17 @@ export default function ProductCatalog() {
       {/* Page Header */}
       <div className="bg-[oklch(0.22_0.05_260)] py-10">
         <div className="container">
-          <h1 className="text-3xl font-bold text-white mb-2">Product Catalog</h1>
-          <p className="text-white/60">Browse our complete range of wholesale electrical spare parts</p>
+          {hasUrlSearch ? (
+            <>
+              <h1 className="text-3xl font-bold text-white mb-2">Search Results</h1>
+              <p className="text-white/60">Showing products matching your search</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-white mb-2">Product Catalog</h1>
+              <p className="text-white/60">Browse our complete range of wholesale electrical spare parts</p>
+            </>
+          )}
         </div>
       </div>
 
