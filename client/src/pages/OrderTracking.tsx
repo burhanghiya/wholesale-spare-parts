@@ -165,16 +165,10 @@ export default function OrderTracking() {
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             <Card>
-              <CardHeader><CardTitle className="text-base">Payment Summary</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Order Summary</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal (with GST 18%)</span><span>₹{Number(order.totalAmount).toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Shipping</span><span>{Number(order.shippingCost) === 0 ? "FREE" : `₹${Number(order.shippingCost).toLocaleString()}`}</span></div>
-                <Separator />
-                <div className="flex justify-between font-bold"><span>Total</span><span>₹{(Number(order.totalAmount) + Number(order.shippingCost)).toLocaleString()}</span></div>
-                <div className="pt-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Payment Method</span><span className="capitalize">{order.paymentMethod?.replace("_", " ")}</span></div>
-                  <div className="flex justify-between mt-1"><span className="text-muted-foreground">Payment Status</span><Badge variant={order.paymentStatus === "completed" ? "default" : "secondary"} className="text-xs">{order.paymentStatus}</Badge></div>
-                </div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Amount</span><span className="font-bold">₹{Number(order.totalAmount).toLocaleString()}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Order Status</span><Badge variant={order.orderStatus === "delivered" ? "default" : "secondary"} className="text-xs">{order.orderStatus}</Badge></div>
               </CardContent>
             </Card>
 
