@@ -208,3 +208,7 @@
 - [x] Display matching products in dropdown below search input
 - [x] Allow clicking product to navigate to product detail page
 - [x] All 15 vitest tests passing
+
+- [x] Hide search box on ProductCatalog when search query from URL exists
+- [x] Show only search results when user searches from home page
+- [x] All 15 vitest tests passing

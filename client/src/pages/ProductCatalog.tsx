@@ -11,18 +11,34 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function ProductCatalog() {
+  const [location] = useLocation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  
+  // Check if search query exists in URL
+  const hasUrlSearch = location.includes("search=");
 
+  // Get search query from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(location.split('?')[1]);
+    const urlSearch = params.get('search');
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+      setDebouncedSearch(urlSearch);
+    }
+  }, [location]);
+  
   // Debounce search
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+    if (!hasUrlSearch) {
+      const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, hasUrlSearch]);
 
   const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
   const { data: categoriesData } = trpc.products.getCategories.useQuery();
@@ -59,6 +75,7 @@ export default function ProductCatalog() {
       <div className="container py-8 flex-1">
         {/* Toolbar */}
         <div className="flex flex-col md:flex-row gap-4 mb-8 items-start md:items-center justify-between">
+          {!hasUrlSearch && (
           <div className="flex flex-1 gap-3 w-full md:w-auto">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -91,6 +108,7 @@ export default function ProductCatalog() {
               </SelectContent>
             </Select>
           </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{displayProducts.length} products</span>
             <div className="flex border border-border rounded-md">
