@@ -394,6 +394,29 @@ export const appRouter = router({
         const cost = await db.calculateShippingCost(input.distanceKm);
         return { shippingCost: cost };
       }),
+
+    calculateShippingByPinCode: publicProcedure
+      .input(z.object({ pinCode: z.string().length(6) }))
+      .query(async ({ input }) => {
+        const cost = await db.calculateShippingByPinCode(input.pinCode);
+        return { shippingCost: cost };
+      }),
+
+    getPinCodeZones: adminProcedure
+      .query(async () => db.getAllPinCodeZones()),
+
+    upsertPinCodeZone: adminProcedure
+      .input(z.object({
+        pinCodeStart: z.string().length(6),
+        pinCodeEnd: z.string().length(6),
+        zone: z.string().min(1),
+        shippingCost: z.number().min(0),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await db.upsertPinCodeZone(input);
+        return result || { success: false };
+      }),
   }),
 });
 

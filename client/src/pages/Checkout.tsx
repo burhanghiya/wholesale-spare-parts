@@ -35,9 +35,11 @@ export default function Checkout() {
     onError: (err) => toast.error(err.message),
   });
 
-  // Shipping distance (default to 50km)
-  const [distanceKm, setDistanceKm] = useState(50);
-  const { data: shippingData } = trpc.admin.calculateShipping.useQuery({ distanceKm }, { enabled: distanceKm > 0 });
+  // Calculate shipping based on PIN code
+  const { data: shippingData } = trpc.admin.calculateShippingByPinCode.useQuery(
+    { pinCode: address.pincode },
+    { enabled: address.pincode.length === 6 }
+  );
   const shippingCost = shippingData?.shippingCost || 0;
 
   // Totals
@@ -192,18 +194,6 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
-            {/* Distance Input */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">Shipping Distance</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label>Distance from warehouse (km)</Label>
-                  <Input type="number" min="1" value={distanceKm} onChange={(e) => setDistanceKm(Number(e.target.value))} placeholder="Enter distance in km" />
-                  <p className="text-xs text-muted-foreground">Shipping cost will be auto-calculated based on distance</p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Place Order Button */}
             <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={createOrder.isPending}>
               {createOrder.isPending ? "Placing Order..." : `Place Order - ₹${Math.round(total).toLocaleString()}`}
@@ -221,7 +211,7 @@ export default function Checkout() {
                 </div>
                 <div className="space-y-2 border-t pt-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping ({distanceKm}km)</span>
+                    <span className="text-muted-foreground">Shipping ({address.pincode})</span>
                     <span>₹{Math.round(shippingCost).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg">

@@ -301,3 +301,22 @@ export const gstConfiguration = mysqlTable("gst_configuration", {
 
 export type GstConfiguration = typeof gstConfiguration.$inferSelect;
 export type InsertGstConfiguration = typeof gstConfiguration.$inferInsert;
+
+/**
+ * PIN Code Shipping Zones
+ */
+export const pinCodeZones = mysqlTable("pin_code_zones", {
+  id: int("id").autoincrement().primaryKey(),
+  pinCodeStart: varchar("pinCodeStart", { length: 6 }).notNull(),
+  pinCodeEnd: varchar("pinCodeEnd", { length: 6 }).notNull(),
+  zone: varchar("zone", { length: 50 }).notNull(),
+  shippingCost: decimal("shippingCost", { precision: 12, scale: 2 }).notNull(),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  pinCodeIdx: index("pin_code_start_idx").on(table.pinCodeStart),
+}));
+
+export type PinCodeZone = typeof pinCodeZones.$inferSelect;
+export type InsertPinCodeZone = typeof pinCodeZones.$inferInsert;

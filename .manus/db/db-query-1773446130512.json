@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `pin_code_zones` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`pinCodeStart` varchar(6) NOT NULL,\n\t`pinCodeEnd` varchar(6) NOT NULL,\n\t`zone` varchar(50) NOT NULL,\n\t`shippingCost` decimal(12,2) NOT NULL,\n\t`isActive` boolean DEFAULT true,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `pin_code_zones_id` PRIMARY KEY(`id`)\n);\nCREATE INDEX `pin_code_start_idx` ON `pin_code_zones` (`pinCodeStart`);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute CREATE TABLE `pin_code_zones` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`pinCodeStart` varchar(6) NOT NULL,\n\t`pinCodeEnd` varchar(6) NOT NULL,\n\t`zone` varchar(50) NOT NULL,\n\t`shippingCost` decimal(12,2) NOT NULL,\n\t`isActive` boolean DEFAULT true,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `pin_code_zones_id` PRIMARY KEY(`id`)\n);\nCREATE INDEX `pin_code_start_idx` ON `pin_code_zones` (`pinCodeStart`);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2573
+}
