@@ -153,10 +153,10 @@ export default function Home() {
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: TrendingUp, title: "Tiered Wholesale Pricing", desc: "Buy more, save more. Volume-based discounts up to 25% on bulk orders." },
               { icon: Search, title: "Smart Part Search", desc: "Find parts by number, model, or brand. Cross-reference alternate part numbers." },
+              { icon: TrendingUp, title: "Tiered Wholesale Pricing", desc: "Buy more, save more. Volume-based discounts up to 25% on bulk orders." },
               { icon: Shield, title: "100% Genuine Parts", desc: "All products sourced directly from authorized manufacturers and distributors." },
-              { icon: Truck, title: "Fast Delivery", desc: "Same-day dispatch for in-stock items. Real-time order tracking available." },
+              { icon: Truck, title: "Fast Delivery", desc: "Quick dispatch for in-stock items. Real-time order tracking available." },
               { icon: MessageCircle, title: "WhatsApp Support", desc: "Quick assistance via WhatsApp. Get quotes, track orders, and resolve issues." },
               { icon: Package, title: "Bulk Order Management", desc: "Easy bulk ordering system with quotation requests and order history." },
             ].map((feature) => (

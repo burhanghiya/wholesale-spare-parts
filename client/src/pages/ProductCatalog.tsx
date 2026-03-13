@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,19 +14,26 @@ import Footer from "@/components/Footer";
 export default function ProductCatalog() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
   const { data: categoriesData } = trpc.products.getCategories.useQuery();
   const { data: searchResults } = trpc.products.search.useQuery(
-    { query: searchQuery, categoryId: selectedCategory !== "all" ? parseInt(selectedCategory) : undefined },
-    { enabled: searchQuery.length > 0 }
+    { query: debouncedSearch, categoryId: selectedCategory !== "all" ? parseInt(selectedCategory) : undefined },
+    { enabled: debouncedSearch.length > 0 }
   );
 
   const displayProducts = useMemo(() => {
-    let products = searchQuery.length > 0 ? searchResults : productsData;
+    let products = debouncedSearch.length > 0 && searchResults ? searchResults : productsData;
     if (!products) return [];
     if (selectedCategory && selectedCategory !== "all") {
       products = products.filter((p) => p.categoryId === parseInt(selectedCategory));

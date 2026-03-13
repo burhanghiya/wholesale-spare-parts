@@ -189,3 +189,13 @@
 - [x] FIX: Remove GST (18%) display line from order tracking page - GST now shown as part of subtotal
 - [x] TEST: All 15 vitest tests passing
 - [x] TEST: Dev server running without errors
+
+
+## Phase 15: Simplification & Search Fixes
+- [x] Checkout page simplified - removed GST, shipping, payment options
+- [x] Checkout now shows only address form and "Place Order" button
+- [x] Search functionality fixed with debounce (300ms delay)
+- [x] Search moved to first position on home page features
+- [x] Removed "Same-day dispatch" mention from Fast Delivery section
+- [x] All 15 vitest tests passing
+- [x] Dev server running without critical errors
