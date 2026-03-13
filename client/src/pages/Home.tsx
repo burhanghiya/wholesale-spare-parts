@@ -105,16 +105,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {displayStats.map((stat) => (
-                <div key={stat.label} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                  <stat.icon className="h-8 w-8 text-[oklch(0.65_0.15_85)] mb-3" />
-                  <p className="text-3xl font-bold text-white">{stat.value}</p>
-                  <p className="text-sm text-white/60">{stat.label}</p>
-                </div>
-              ))}
-            </div>
+
           </div>
         </div>
       </section>
@@ -149,7 +140,10 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-16 md:py-20 bg-secondary/50">
         <div className="container">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
+            <div className="mb-8 max-w-md mx-auto">
+              <input type="text" placeholder="Search parts..." className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" />
+            </div>
             <h2 className="text-3xl font-bold mb-3">Why Dealers Choose Us</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">Everything you need for your wholesale electrical parts business</p>
           </div>
@@ -171,6 +165,21 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
                 </CardContent>
               </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Grid Section */}
+      <section className="py-16 md:py-20 bg-background">
+        <div className="container">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {displayStats.map((stat) => (
+              <div key={stat.label} className="bg-secondary/50 rounded-xl p-6 border border-border text-center">
+                <stat.icon className="h-8 w-8 text-[oklch(0.65_0.15_85)] mb-3 mx-auto" />
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+              </div>
             ))}
           </div>
         </div>
