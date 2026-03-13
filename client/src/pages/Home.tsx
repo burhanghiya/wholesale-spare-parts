@@ -22,7 +22,15 @@ export default function Home() {
   const [searchTimeout, setSearchTimeout] = React.useState<NodeJS.Timeout | null>(null);
   const { data: stats, isLoading: statsLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: categories, isLoading: catsLoading } = trpc.products.getCategories.useQuery();
-  const { data: searchData } = trpc.products.search.useQuery({ query: searchQuery.trim() }, { enabled: false });
+  const { data: searchData } = trpc.products.search.useQuery({ query: searchQuery.trim() }, { enabled: searchQuery.trim().length > 0 });
+  
+  // Update search results when searchData changes
+  React.useEffect(() => {
+    if (searchData) {
+      setSearchResults(searchData);
+    }
+  }, [searchData]);
+
 
   // Fallback stats
   const displayStats = [
@@ -112,19 +120,14 @@ export default function Home() {
                     if (searchTimeout) clearTimeout(searchTimeout);
                     
                     if (query.trim().length > 0) {
-                      // Debounce search
-                      const timeout = setTimeout(async () => {
-                        try {
-                          const results = await (trpc.products.search as any).query({ query: query.trim() });
-                          setSearchResults(results || []);
-                        } catch (error) {
-                          console.error('Search error:', error);
-                          setSearchResults([]);
-                        }
+                      // Debounce search - the useQuery hook will handle fetching
+                      const timeout = setTimeout(() => {
+                        // The useQuery hook above will automatically fetch when enabled
                       }, 300);
                       setSearchTimeout(timeout);
                     } else {
                       setSearchResults([]);
+                      setShowResults(false);
                     }
                   }}
                   onKeyPress={(e) => {

@@ -212,3 +212,4 @@
 - [x] Hide search box on ProductCatalog when search query from URL exists
 - [x] Show only search results when user searches from home page
 - [x] All 15 vitest tests passing
+- [x] Fix "3 errors" banner appearing on home page when typing in search box
