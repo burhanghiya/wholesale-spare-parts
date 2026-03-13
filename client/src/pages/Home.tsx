@@ -17,19 +17,8 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchResults, setSearchResults] = React.useState<any[]>([]);
-  const [showResults, setShowResults] = React.useState(false);
-  const [searchTimeout, setSearchTimeout] = React.useState<NodeJS.Timeout | null>(null);
   const { data: stats, isLoading: statsLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: categories, isLoading: catsLoading } = trpc.products.getCategories.useQuery();
-  const { data: searchData } = trpc.products.search.useQuery({ query: searchQuery.trim() }, { enabled: searchQuery.trim().length > 0 });
-  
-  // Update search results when searchData changes
-  React.useEffect(() => {
-    if (searchData) {
-      setSearchResults(searchData);
-    }
-  }, [searchData]);
 
 
   // Fallback stats
@@ -114,60 +103,16 @@ export default function Home() {
                   onChange={(e) => {
                     const query = e.target.value;
                     setSearchQuery(query);
-                    setShowResults(true);
-                    
-                    // Clear previous timeout
-                    if (searchTimeout) clearTimeout(searchTimeout);
-                    
-                    if (query.trim().length > 0) {
-                      // Debounce search - the useQuery hook will handle fetching
-                      const timeout = setTimeout(() => {
-                        // The useQuery hook above will automatically fetch when enabled
-                      }, 300);
-                      setSearchTimeout(timeout);
-                    } else {
-                      setSearchResults([]);
-                      setShowResults(false);
-                    }
                   }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
                       setLocation(`/products?search=${encodeURIComponent(searchQuery)}`);
-                      setShowResults(false);
+                      setSearchQuery("");
                     }
                   }}
-                  onFocus={() => searchQuery.trim().length > 0 && setShowResults(true)}
-                  onBlur={() => setTimeout(() => setShowResults(false), 200)}
                   className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" 
                 />
-                
-                {/* Live Search Results Dropdown */}
-                {showResults && searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-input rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-                    {searchResults.slice(0, 8).map((product: any) => (
-                      <div
-                        key={product.id}
-                        className="px-4 py-3 hover:bg-secondary cursor-pointer border-b border-border last:border-b-0 transition-colors"
-                        onClick={() => {
-                          setLocation(`/products/${product.id}`);
-                          setShowResults(false);
-                          setSearchQuery("");
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          {product.imageUrl && (
-                            <img src={product.imageUrl} alt={product.name} className="h-10 w-10 rounded object-cover" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{product.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">Part #: {product.partNumber}</p>
-                            <p className="text-sm font-semibold text-[oklch(0.65_0.15_85)] mt-1">₹{product.basePrice}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+
               </div>
 
               <div className="flex flex-wrap gap-3">

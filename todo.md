@@ -213,3 +213,4 @@
 - [x] Show only search results when user searches from home page
 - [x] All 15 vitest tests passing
 - [x] Fix "3 errors" banner appearing on home page when typing in search box
+- [x] Remove live search dropdown from home page - navigate directly to Products page instead
