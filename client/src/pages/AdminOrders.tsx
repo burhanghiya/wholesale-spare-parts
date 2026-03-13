@@ -52,11 +52,21 @@ export default function AdminOrders() {
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold font-mono">{order.orderNumber}</h3>
                         <Badge className={statusColors[order.orderStatus] || "bg-gray-100 text-gray-800"}>
                           {order.orderStatus}
                         </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase">Customer</p>
+                          <p className="text-sm">{order.userName || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase">Shipping Address</p>
+                          <p className="text-xs whitespace-pre-wrap text-muted-foreground">{order.shippingAddress || "N/A"}</p>
+                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground">Payment: {order.paymentMethod} | {order.paymentStatus}</p>
                       <p className="text-xs text-muted-foreground mt-1">{new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>

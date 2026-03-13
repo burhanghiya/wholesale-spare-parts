@@ -31,9 +31,9 @@ export default function Checkout() {
     city: "", state: "Gujarat", pincode: "",
   });
 
-  // Payment & GST
+  // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
-  const [includeGst, setIncludeGst] = useState(true);
+  const includeGst = true; // Always include GST
   const [gstNumber, setGstNumber] = useState("");
 
   const createOrder = trpc.orders.create.useMutation({
@@ -58,7 +58,7 @@ export default function Checkout() {
     createOrder.mutate({
       shippingAddress: fullAddress,
       paymentMethod,
-      includeGst,
+      includeGst: true,
       gstNumber: gstNumber || undefined,
       shippingPincode: address.pincode,
     });
@@ -193,15 +193,8 @@ export default function Checkout() {
                 <Card>
                   <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> GST Invoice</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div><p className="font-medium">Include GST (18%)</p><p className="text-xs text-muted-foreground">GST will be added to your order total</p></div>
-                      <button onClick={() => setIncludeGst(!includeGst)} className={`relative w-12 h-6 rounded-full transition-colors ${includeGst ? "bg-primary" : "bg-muted"}`}>
-                        <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${includeGst ? "translate-x-6" : "translate-x-0.5"}`} />
-                      </button>
-                    </div>
-                    {includeGst && (
-                      <div><Label>GST Number (Optional)</Label><Input value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} placeholder="e.g. 24AAAAA0000A1Z5" className="mt-1" /><p className="text-xs text-muted-foreground mt-1">Enter your GSTIN for tax credit</p></div>
-                    )}
+                    <div><p className="font-medium">GST (18%) is included in your order</p><p className="text-xs text-muted-foreground">GST invoice will be provided with your shipment</p></div>
+                    <div><Label>GST Number (Optional)</Label><Input value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} placeholder="e.g. 24AAAAA0000A1Z5" className="mt-1" /><p className="text-xs text-muted-foreground mt-1">Enter your GSTIN for tax credit</p></div>
                   </CardContent>
                 </Card>
 
