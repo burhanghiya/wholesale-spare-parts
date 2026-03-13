@@ -92,7 +92,7 @@ export default function Home() {
                 Wholesale <span className="text-[oklch(0.65_0.15_85)]">Electrical</span> Spare Parts
               </h1>
               <p className="text-lg text-white/70 mb-8 max-w-lg leading-relaxed">
-                India's trusted B2B platform for electrical spare parts. Get competitive wholesale prices, bulk discounts, and doorstep delivery across Gujarat.
+                Your trusted source for quality electrical spare parts. Fast delivery and competitive pricing across Gujarat.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 font-semibold" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
