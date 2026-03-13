@@ -174,3 +174,10 @@
 - [ ] FIX: All admin panel options should be fully editable by admin
 - [ ] FIX: Order should only show confirmed/shipped after admin approves
 - [ ] FIX: Category should be free text input, not dropdown select
+
+## Phase 13: Critical Payment & Checkout Fixes
+- [x] FIX: Razorpay payment gateway integration - add payment handler to checkout flow
+- [x] FIX: Remove GST UI section completely from customer checkout page
+- [x] FIX: Order tracking accessibility - ensure View My Orders works and shows orders
+- [x] TEST: All vitest tests passing (15/15)
+- [x] TEST: Dev server running without errors

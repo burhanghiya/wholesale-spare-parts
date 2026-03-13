@@ -33,8 +33,7 @@ export default function Checkout() {
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
-  const includeGst = true; // Always include GST
-  const [gstNumber, setGstNumber] = useState("");
+
 
   const createOrder = trpc.orders.create.useMutation({
     onSuccess: (data) => {
@@ -46,7 +45,7 @@ export default function Checkout() {
 
   // Totals
   const subtotal = cartItems?.reduce((sum, item) => sum + Number(item.product?.basePrice || 0) * item.quantity, 0) || 0;
-  const gstAmount = includeGst ? Math.round(subtotal * 0.18) : 0;
+  const gstAmount = Math.round(subtotal * 0.18);
   const shippingCost = subtotal >= 5000 ? 0 : 150;
   const totalAmount = subtotal + gstAmount + shippingCost;
 
@@ -59,9 +58,39 @@ export default function Checkout() {
       shippingAddress: fullAddress,
       paymentMethod,
       includeGst: true,
-      gstNumber: gstNumber || undefined,
       shippingPincode: address.pincode,
     });
+  };
+
+  const handleRazorpayPayment = () => {
+    if (!address.fullName || !address.phone || !address.addressLine1 || !address.city || !address.pincode) {
+      toast.error("Please fill all address fields!"); setStep(1); return;
+    }
+    const fullAddress = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => {
+      const options = {
+        key: 'rzp_live_SOMzJthXoqUsMU',
+        amount: Math.round(totalAmount * 100),
+        currency: 'INR',
+        name: 'Patel Electricals',
+        description: `Order for ${address.fullName}`,
+        prefill: { name: address.fullName, email: user?.email, contact: address.phone },
+        handler: () => {
+          createOrder.mutate({
+            shippingAddress: fullAddress,
+            paymentMethod: 'razorpay',
+            includeGst: true,
+            shippingPincode: address.pincode,
+          });
+        },
+        modal: { ondismiss: () => toast.error('Payment cancelled') }
+      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    };
+    document.body.appendChild(script);
   };
 
   if (!loading && !isAuthenticated) {
@@ -190,13 +219,7 @@ export default function Checkout() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> GST Invoice</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div><p className="font-medium">GST (18%) is included in your order</p><p className="text-xs text-muted-foreground">GST invoice will be provided with your shipment</p></div>
-                    <div><Label>GST Number (Optional)</Label><Input value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} placeholder="e.g. 24AAAAA0000A1Z5" className="mt-1" /><p className="text-xs text-muted-foreground mt-1">Enter your GSTIN for tax credit</p></div>
-                  </CardContent>
-                </Card>
+
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
@@ -226,8 +249,7 @@ export default function Checkout() {
                   </CardHeader>
                   <CardContent>
                     <p className="font-medium capitalize">{paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "upi" ? "UPI Payment" : paymentMethod === "bank_transfer" ? "Bank Transfer" : "Online Payment (Razorpay)"}</p>
-                    {includeGst && <Badge variant="secondary" className="mt-1">GST Invoice{gstNumber ? `: ${gstNumber}` : ""}</Badge>}
-                    {!includeGst && <Badge variant="outline" className="mt-1">No GST</Badge>}
+
                   </CardContent>
                 </Card>
 
@@ -246,9 +268,15 @@ export default function Checkout() {
                   </CardContent>
                 </Card>
 
-                <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={createOrder.isPending}>
-                  {createOrder.isPending ? "Placing Order..." : `Confirm & Place Order - ₹${totalAmount.toLocaleString()}`}
-                </Button>
+                {paymentMethod === "razorpay" ? (
+                  <Button className="w-full" size="lg" onClick={handleRazorpayPayment} disabled={createOrder.isPending}>
+                    {createOrder.isPending ? "Processing..." : `Pay with Razorpay - ₹${totalAmount.toLocaleString()}`}
+                  </Button>
+                ) : (
+                  <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={createOrder.isPending}>
+                    {createOrder.isPending ? "Placing Order..." : `Confirm & Place Order - ₹${totalAmount.toLocaleString()}`}
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -259,7 +287,7 @@ export default function Checkout() {
               <CardHeader><CardTitle className="text-base">Order Summary</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({cartItems?.length || 0} items)</span><span>₹{subtotal.toLocaleString()}</span></div>
-                {includeGst && <div className="flex justify-between text-sm"><span className="text-muted-foreground">GST (18%)</span><span>₹{gstAmount.toLocaleString()}</span></div>}
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">GST (18%)</span><span>₹{gstAmount.toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-1"><Truck className="h-3.5 w-3.5" /> Shipping</span>
                   <span className={shippingCost === 0 ? "text-green-600 font-medium" : ""}>{shippingCost === 0 ? "FREE" : `₹${shippingCost}`}</span>
