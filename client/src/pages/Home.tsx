@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
@@ -15,6 +16,7 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%20Patel%20Electri
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = React.useState("");
   const { data: stats, isLoading: statsLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: categories, isLoading: catsLoading } = trpc.products.getCategories.useQuery();
 
@@ -93,7 +95,18 @@ export default function Home() {
               </h1>
 
               <div className="mb-6 max-w-md">
-                <input type="text" placeholder="Search parts..." className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" />
+                <input 
+                  type="text" 
+                  placeholder="Search parts..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      setLocation(`/products?search=${encodeURIComponent(searchQuery)}`);
+                    }
+                  }}
+                  className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" 
+                />
               </div>
 
               <div className="flex flex-wrap gap-3">
