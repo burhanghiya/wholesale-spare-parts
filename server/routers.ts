@@ -42,8 +42,7 @@ export const appRouter = router({
         const product = await db.getProductById(input);
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
         const inventory = await db.getInventoryByProductId(input);
-        const pricing = await db.getTieredPricingForProduct(input);
-        return { product, inventory, pricing };
+        return { product, inventory };
       }),
 
     getByCategory: publicProcedure
@@ -212,7 +211,7 @@ export const appRouter = router({
         for (const item of cartItemsList) {
           const product = await db.getProductById(item.productId);
           if (!product) continue;
-          const itemTotal = await db.calculatePrice(item.productId, item.quantity, Number(product.basePrice));
+          const itemTotal = Number(product.basePrice) * item.quantity;
           totalAmount += itemTotal;
           orderItemsData.push({
             productId: item.productId,

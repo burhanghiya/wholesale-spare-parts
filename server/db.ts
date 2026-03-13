@@ -2,7 +2,7 @@ import { eq, and, like, desc, asc, sql, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, tieredPricing, gstConfiguration, shippingRates
+  quotations, categories, gstConfiguration, shippingRates
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -344,34 +344,7 @@ export async function updateQuotationStatus(quotationId: number, status: string,
 // TIERED PRICING
 // ========================
 
-export async function getTieredPricingForProduct(productId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(tieredPricing).where(eq(tieredPricing.productId, productId)).orderBy(asc(tieredPricing.minQuantity));
-}
 
-export async function calculatePrice(productId: number, quantity: number, basePrice: number) {
-  const pricing = await getTieredPricingForProduct(productId);
-  let discountPercentage = 0;
-  for (const tier of pricing) {
-    if (quantity >= tier.minQuantity && (!tier.maxQuantity || quantity <= tier.maxQuantity)) {
-      if (tier.specialPrice) return Number(tier.specialPrice) * quantity;
-      discountPercentage = Number(tier.discountPercentage);
-      break;
-    }
-  }
-  return basePrice * (1 - discountPercentage / 100) * quantity;
-}
-
-export async function upsertTieredPricing(productId: number, tiers: any[]) {
-  const db = await getDb();
-  if (!db) return false;
-  await db.delete(tieredPricing).where(eq(tieredPricing.productId, productId));
-  for (const tier of tiers) {
-    await db.insert(tieredPricing).values({ productId, ...tier } as any);
-  }
-  return true;
-}
 
 // ========================
 // GST CONFIGURATION

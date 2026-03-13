@@ -64,25 +64,10 @@ export default function ProductDetail() {
     );
   }
 
-  const { product, inventory, pricing } = productData;
+  const { product, inventory } = productData;
   const basePrice = Number(product.basePrice);
   const totalPrice = basePrice * quantity;
-
-  let discountedPrice = totalPrice;
-  let discountPercentage = 0;
-  if (pricing && pricing.length > 0) {
-    for (const tier of pricing) {
-      if (quantity >= tier.minQuantity && (!tier.maxQuantity || quantity <= tier.maxQuantity)) {
-        if (tier.specialPrice) {
-          discountedPrice = Number(tier.specialPrice) * quantity;
-        } else {
-          discountPercentage = Number(tier.discountPercentage);
-          discountedPrice = totalPrice * (1 - discountPercentage / 100);
-        }
-        break;
-      }
-    }
-  }
+  const discountedPrice = totalPrice;
 
   let compatibleModels: string[] = [];
   try {
@@ -166,26 +151,7 @@ export default function ProductDetail() {
               </CardContent>
             </Card>
 
-            {/* Volume Pricing */}
-            {pricing && pricing.length > 0 && (
-              <Card>
-                <CardHeader><CardTitle className="text-base">Volume Pricing (Buy More, Save More)</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-3">
-                    {pricing.map((tier, idx) => (
-                      <div key={idx} className={`rounded-lg p-3 text-center border ${quantity >= tier.minQuantity ? "border-primary bg-primary/5" : "border-border"}`}>
-                        <p className="text-xs text-muted-foreground mb-1">{tier.minQuantity}+ units</p>
-                        {tier.specialPrice ? (
-                          <p className="font-bold text-lg">₹{Number(tier.specialPrice).toFixed(0)}</p>
-                        ) : (
-                          <p className="font-bold text-lg text-green-600">{Number(tier.discountPercentage)}% off</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
 
             {/* Compatibility Checker */}
             {compatibleModels.length > 0 && (
@@ -245,19 +211,9 @@ export default function ProductDetail() {
                 </div>
 
                 <div className="border-t border-border pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal ({quantity} units):</span>
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total ({quantity} units):</span>
                     <span>₹{totalPrice.toFixed(2)}</span>
-                  </div>
-                  {discountPercentage > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Volume Discount ({discountPercentage}%):</span>
-                      <span>-₹{(totalPrice - discountedPrice).toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                    <span>Total:</span>
-                    <span>₹{discountedPrice.toFixed(2)}</span>
                   </div>
                 </div>
 

@@ -117,24 +117,7 @@ export const inventory = mysqlTable("inventory", {
 export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = typeof inventory.$inferInsert;
 
-/**
- * Tiered Pricing
- */
-export const tieredPricing = mysqlTable("tiered_pricing", {
-  id: int("id").autoincrement().primaryKey(),
-  productId: int("productId").notNull(),
-  minQuantity: int("minQuantity").notNull(),
-  maxQuantity: int("maxQuantity"),
-  discountPercentage: decimal("discountPercentage", { precision: 5, scale: 2 }).notNull(),
-  specialPrice: decimal("specialPrice", { precision: 12, scale: 2 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => ({
-  productIdx: index("tiered_pricing_product_idx").on(table.productId),
-}));
 
-export type TieredPricing = typeof tieredPricing.$inferSelect;
-export type InsertTieredPricing = typeof tieredPricing.$inferInsert;
 
 /**
  * Shopping Cart
