@@ -19,7 +19,7 @@ export default function DealerProfile() {
   const [, setLocation] = useLocation();
   const [editMode, setEditMode] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: "", businessName: "", businessPhone: "", businessAddress: "", gstNumber: "",
+    name: "", businessName: "", businessPhone: "", businessAddress: "",
   });
 
   const { data: orders } = trpc.orders.list.useQuery(undefined, { enabled: isAuthenticated });
@@ -134,7 +134,7 @@ export default function DealerProfile() {
                   <div><Label>Full Name</Label><Input value={profileData.name || user?.name || ""} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} className="mt-1" /></div>
                   <div><Label>Business Name</Label><Input value={profileData.businessName} onChange={(e) => setProfileData({ ...profileData, businessName: e.target.value })} className="mt-1" /></div>
                   <div><Label>Phone Number</Label><Input value={profileData.businessPhone} onChange={(e) => setProfileData({ ...profileData, businessPhone: e.target.value })} className="mt-1" /></div>
-                  <div><Label>GST Number</Label><Input value={profileData.gstNumber} onChange={(e) => setProfileData({ ...profileData, gstNumber: e.target.value })} placeholder="e.g., 24XXXXX1234X1Z5" className="mt-1" /></div>
+
                 </div>
                 <div><Label>Business Address</Label><textarea value={profileData.businessAddress} onChange={(e) => setProfileData({ ...profileData, businessAddress: e.target.value })} className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background text-sm min-h-20" /></div>
                 <Button onClick={() => updateMutation.mutate(profileData)} disabled={updateMutation.isPending}>

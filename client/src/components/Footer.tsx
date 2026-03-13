@@ -30,7 +30,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-white/60">
               <li><a href="#" className="hover:text-white transition-colors">Shipping Policy</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Return Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">GST Information</a></li>
+
               <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
             </ul>
           </div>
@@ -54,7 +54,7 @@ export default function Footer() {
         </div>
         <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-white/40">&copy; 2026 Patel Electricals. All rights reserved.</p>
-          <p className="text-xs text-white/40">GST Invoice Available on All Orders</p>
+
         </div>
       </div>
     </footer>

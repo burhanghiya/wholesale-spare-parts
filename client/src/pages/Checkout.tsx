@@ -47,7 +47,6 @@ export default function Checkout() {
     createOrder.mutate({
       shippingAddress: fullAddress,
       paymentMethod: "cod",
-      includeGst: true,
       shippingPincode: address.pincode,
     });
   };

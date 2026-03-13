@@ -201,8 +201,6 @@ export const appRouter = router({
       .input(z.object({
         shippingAddress: z.string(),
         paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay']),
-        includeGst: z.boolean().default(true),
-        gstNumber: z.string().optional(),
         shippingPincode: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -224,20 +222,17 @@ export const appRouter = router({
           });
         }
 
-        const gstAmount = input.includeGst ? totalAmount * 0.18 : 0;
-        // Shipping: free above 5000, else based on distance
-        const shippingCost = totalAmount >= 5000 ? 0 : 150;
         const orderNumber = `ORD-${Date.now()}`;
 
         // Create order with PENDING status - admin must confirm
         const orderId = await db.createOrder({
           orderNumber, userId: ctx.user.id,
-          totalAmount: String(totalAmount), gstAmount: String(gstAmount),
-          shippingCost: String(shippingCost), shippingAddress: input.shippingAddress,
+          totalAmount: String(totalAmount), gstAmount: String(0),
+          shippingCost: String(0), shippingAddress: input.shippingAddress,
           paymentMethod: input.paymentMethod,
-          paymentStatus: input.paymentMethod === 'cod' ? 'pending' : 'pending',
+          paymentStatus: 'pending',
           orderStatus: 'pending', // Always start as pending
-          notes: input.gstNumber ? `GST: ${input.gstNumber}` : null,
+          notes: null,
         });
 
         // Add order items
@@ -246,7 +241,7 @@ export const appRouter = router({
         }
 
         await db.clearCart(ctx.user.id);
-        return { orderNumber, totalAmount: totalAmount + gstAmount + shippingCost, orderId };
+        return { orderNumber, totalAmount: totalAmount, orderId };
       }),
 
     getAllOrders: adminProcedure
@@ -373,19 +368,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // GST Configuration
-    getGstConfig: adminProcedure.query(async () => db.getGstConfiguration()),
-    updateGstConfig: adminProcedure
-      .input(z.object({
-        businessName: z.string(), gstNumber: z.string(),
-        businessAddress: z.string().optional(), businessPhone: z.string().optional(),
-        businessEmail: z.string().optional(), gstRate: z.number().optional(),
-        invoicePrefix: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        await db.updateGstConfiguration({ ...input, gstRate: input.gstRate ? String(input.gstRate) : undefined });
-        return { success: true };
-      }),
+
 
     // Shipping configuration
     getShippingRates: adminProcedure.query(async () => db.getShippingRates()),

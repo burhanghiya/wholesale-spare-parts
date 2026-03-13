@@ -149,7 +149,7 @@ export default function ProductCatalog() {
                     <div className="flex items-end justify-between">
                       <div>
                         <p className="text-xl font-bold">₹{Number(product.basePrice).toFixed(0)}</p>
-                        <p className="text-[10px] text-muted-foreground">per unit (excl. GST)</p>
+
                       </div>
                       <Button size="sm" variant="outline" className="h-8 w-8 p-0">
                         <ShoppingCart className="h-3.5 w-3.5" />

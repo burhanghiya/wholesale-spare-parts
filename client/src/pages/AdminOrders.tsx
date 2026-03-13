@@ -73,7 +73,6 @@ export default function AdminOrders() {
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg">₹{Number(order.totalAmount).toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">+ ₹{Number(order.gstAmount).toFixed(0)} GST</p>
                     </div>
                     <Select
                       value={order.orderStatus}
