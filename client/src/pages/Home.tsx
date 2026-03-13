@@ -88,7 +88,6 @@ export default function Home() {
         <div className="container relative py-20 md:py-28">
           <div className="grid gap-10 md:grid-cols-2 items-center">
             <div>
-              <Badge className="mb-4 bg-[oklch(0.65_0.15_85)] text-[oklch(0.15_0.04_260)] font-semibold px-3 py-1">Trusted Wholesale Partner</Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
                 Wholesale <span className="text-[oklch(0.65_0.15_85)]">Electrical</span> Spare Parts
               </h1>
