@@ -91,9 +91,7 @@ export default function Home() {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
                 Wholesale <span className="text-[oklch(0.65_0.15_85)]">Electrical</span> Spare Parts
               </h1>
-              <p className="text-lg text-white/70 mb-8 max-w-lg leading-relaxed">
-                Your trusted source for quality electrical spare parts. Fast delivery and competitive pricing across Gujarat.
-              </p>
+
               <div className="flex flex-wrap gap-3">
                 <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 font-semibold" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
                   <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp Us
