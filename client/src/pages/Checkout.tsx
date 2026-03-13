@@ -35,8 +35,14 @@ export default function Checkout() {
     onError: (err) => toast.error(err.message),
   });
 
-  // Totals - simple calculation
+  // Shipping distance (default to 50km)
+  const [distanceKm, setDistanceKm] = useState(50);
+  const { data: shippingData } = trpc.admin.calculateShipping.useQuery({ distanceKm }, { enabled: distanceKm > 0 });
+  const shippingCost = shippingData?.shippingCost || 0;
+
+  // Totals
   const subtotal = cartItems?.reduce((sum, item) => sum + Number(item.product?.basePrice || 0) * item.quantity, 0) || 0;
+  const total = subtotal + shippingCost;
 
   const handlePlaceOrder = () => {
     if (!address.fullName || !address.phone || !address.addressLine1 || !address.city || !address.pincode) {
@@ -186,9 +192,21 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
+            {/* Distance Input */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Shipping Distance</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label>Distance from warehouse (km)</Label>
+                  <Input type="number" min="1" value={distanceKm} onChange={(e) => setDistanceKm(Number(e.target.value))} placeholder="Enter distance in km" />
+                  <p className="text-xs text-muted-foreground">Shipping cost will be auto-calculated based on distance</p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Place Order Button */}
             <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={createOrder.isPending}>
-              {createOrder.isPending ? "Placing Order..." : `Place Order - ₹${subtotal.toLocaleString()}`}
+              {createOrder.isPending ? "Placing Order..." : `Place Order - ₹${Math.round(total).toLocaleString()}`}
             </Button>
           </div>
 
@@ -201,10 +219,14 @@ export default function Checkout() {
                   <span className="text-muted-foreground">Items ({cartItems.length})</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="border-t pt-3">
+                <div className="space-y-2 border-t pt-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping ({distanceKm}km)</span>
+                    <span>₹{Math.round(shippingCost).toLocaleString()}</span>
+                  </div>
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>₹{subtotal.toLocaleString()}</span>
+                    <span>₹{Math.round(total).toLocaleString()}</span>
                   </div>
                 </div>
               </CardContent>

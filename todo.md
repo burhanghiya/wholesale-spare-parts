@@ -215,3 +215,15 @@
 - [x] Fix "3 errors" banner appearing on home page when typing in search box
 - [x] Remove live search dropdown from home page - navigate directly to Products page instead
 - [x] Merge search flows - show "Search Results" header when coming from home page search
+
+## Phase 17: Shipping Feature Implementation
+- [x] Add shipping rates table to database schema (already exists)
+- [x] Create shipping calculation logic based on distance (kilometre)
+- [x] Add admin procedure to update shipping rates
+- [x] Add public procedure to calculate shipping cost
+- [ ] Add shipping display to shopping cart
+- [x] Add shipping display to checkout page with distance input
+- [x] Create admin panel UI for shipping rates management
+- [x] Test shipping calculation and display
+- [x] All tests passing (15/15)
+- [x] Admin can edit per-kilometre shipping charges

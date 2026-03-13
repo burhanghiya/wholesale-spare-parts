@@ -17,6 +17,7 @@ function AdminNav({ current }: { current: string }) {
     { label: "Orders", path: "/admin/orders" },
     { label: "Quotations", path: "/admin/quotations" },
     { label: "Dealers", path: "/admin/dealers" },
+    { label: "Shipping", path: "/admin/shipping" },
   ];
   return (
     <div className="bg-[oklch(0.22_0.05_260)] text-white">

@@ -431,6 +431,32 @@ export async function getShippingRates() {
   return await db.select().from(shippingRates);
 }
 
+export async function updateShippingRate(id: number, data: { costPerKm?: number, baseCost?: number, isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) return null;
+  const updateData: any = { updatedAt: new Date() };
+  if (data.costPerKm !== undefined) updateData.costPerKm = data.costPerKm;
+  if (data.baseCost !== undefined) updateData.baseCost = data.baseCost;
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+  
+  await db.update(shippingRates).set(updateData).where(eq(shippingRates.id, id));
+  return await db.select().from(shippingRates).where(eq(shippingRates.id, id)).then(rows => rows[0]);
+}
+
+export async function calculateShippingCost(distanceKm: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const rates = await db.select().from(shippingRates).where(eq(shippingRates.isActive, true));
+  if (rates.length === 0) return 0;
+  
+  const rate = rates[0];
+  const baseCost = Number(rate.baseCost) || 0;
+  const costPerKm = Number(rate.costPerKm) || 0;
+  
+  return baseCost + (distanceKm * costPerKm);
+}
+
 export async function updateCartItemQuantity(cartItemId: number, quantity: number) {
   const db = await getDb();
   if (!db) return false;

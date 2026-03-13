@@ -371,6 +371,29 @@ export const appRouter = router({
 
     // Shipping configuration
     getShippingRates: adminProcedure.query(async () => db.getShippingRates()),
+
+    updateShippingRate: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        costPerKm: z.number().optional(),
+        baseCost: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const updated = await db.updateShippingRate(input.id, {
+          costPerKm: input.costPerKm,
+          baseCost: input.baseCost,
+          isActive: input.isActive,
+        });
+        return updated || { success: false };
+      }),
+
+    calculateShipping: publicProcedure
+      .input(z.object({ distanceKm: z.number() }))
+      .query(async ({ input }) => {
+        const cost = await db.calculateShippingCost(input.distanceKm);
+        return { shippingCost: cost };
+      }),
   }),
 });
 
