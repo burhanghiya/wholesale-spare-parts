@@ -25,9 +25,7 @@ export default function ShoppingCart() {
   cartItemsList.forEach((item) => {
     if (item.product) subtotal += Number(item.product.basePrice) * item.quantity;
   });
-  const gstAmount = subtotal * 0.18;
-  const shippingCost = subtotal >= 5000 ? 0 : 100;
-  const total = subtotal + gstAmount + shippingCost;
+  const total = subtotal;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -110,17 +108,6 @@ export default function ShoppingCart() {
                       <span className="text-muted-foreground">Subtotal ({cartItemsList.length} items)</span>
                       <span className="font-medium">₹{subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">GST (18%)</span>
-                      <span className="font-medium">₹{gstAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-medium">{shippingCost === 0 ? <Badge variant="secondary" className="text-green-600">FREE</Badge> : `₹${shippingCost.toFixed(2)}`}</span>
-                    </div>
-                    {shippingCost > 0 && (
-                      <p className="text-xs text-muted-foreground">Free shipping on orders above ₹5,000</p>
-                    )}
                   </div>
 
                   <div className="border-t border-border pt-4">
@@ -128,7 +115,7 @@ export default function ShoppingCart() {
                       <span>Total</span>
                       <span>₹{total.toFixed(2)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Including GST</p>
+                    <p className="text-xs text-muted-foreground mt-1"></p>
                   </div>
 
                   <Button className="w-full" size="lg" onClick={() => setLocation("/checkout")}>
@@ -137,9 +124,7 @@ export default function ShoppingCart() {
                   </Button>
 
                   <div className="text-xs text-muted-foreground space-y-1 pt-2">
-                    <p>✓ Secure payment via Razorpay</p>
-                    <p>✓ GST invoice on all orders</p>
-                    <p>✓ Free shipping above ₹5,000</p>
+                    <p>✓ Secure checkout</p>
                   </div>
                 </CardContent>
               </Card>
