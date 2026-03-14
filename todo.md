@@ -226,3 +226,13 @@
 - [x] Update admin panel to manage PIN code zones
 - [x] Test PIN code based shipping
 - [x] All tests passing (15/15)
+
+## Phase 18: Distance-Based Shipping with Google Maps
+- [x] Add per-km shipping charge to shippingRates table (already exists)
+- [x] Create distance calculation backend procedure using Google Maps
+- [x] Add tRPC procedure to calculate shipping by distance
+- [x] Update checkout to use actual distance from warehouse (394210)
+- [x] Admin can edit per-km charge in shipping configuration
+- [x] Auto-calculate shipping: distance × per-km charge
+- [x] Test distance calculation
+- [x] All tests passing (15/15)

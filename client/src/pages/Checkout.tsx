@@ -35,10 +35,11 @@ export default function Checkout() {
     onError: (err) => toast.error(err.message),
   });
 
-  // Calculate shipping based on PIN code
-  const { data: shippingData } = trpc.admin.calculateShippingByPinCode.useQuery(
-    { pinCode: address.pincode },
-    { enabled: address.pincode.length === 6 }
+  // Calculate shipping based on distance from warehouse
+  const fullAddress = `${address.addressLine1}${address.addressLine2 ? ', ' + address.addressLine2 : ''}, ${address.city}, ${address.state} - ${address.pincode}`;
+  const { data: shippingData } = trpc.admin.calculateShippingByDistance.useQuery(
+    { address: fullAddress },
+    { enabled: fullAddress.length > 10 && address.pincode.length === 6 }
   );
   const shippingCost = shippingData?.shippingCost || 0;
 
@@ -211,7 +212,7 @@ export default function Checkout() {
                 </div>
                 <div className="space-y-2 border-t pt-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping ({address.pincode})</span>
+                    <span className="text-muted-foreground">Shipping (Distance)</span>
                     <span>₹{Math.round(shippingCost).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg">

@@ -417,6 +417,13 @@ export const appRouter = router({
         const result = await db.upsertPinCodeZone(input);
         return result || { success: false };
       }),
+
+    calculateShippingByDistance: publicProcedure
+      .input(z.object({ address: z.string().min(1) }))
+      .query(async ({ input }) => {
+        const cost = await db.calculateShippingByDistance(input.address);
+        return { shippingCost: cost };
+      }),
   }),
 });
 

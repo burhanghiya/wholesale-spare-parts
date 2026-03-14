@@ -509,3 +509,53 @@ export async function updateCartItemQuantity(cartItemId: number, quantity: numbe
   await db.update(cartItems).set({ quantity, updatedAt: new Date() }).where(eq(cartItems.id, cartItemId));
   return true;
 }
+
+
+// Distance-based shipping calculation using Google Maps
+// Calculates distance from warehouse to customer address and applies per-km charge
+export async function calculateShippingByDistance(customerAddress: string) {
+  const { makeRequest } = await import('./_core/map');
+  const WAREHOUSE_LOCATION = "Udhana, Surat - 394210, India";
+
+  try {
+    // Get current per-km rate from database
+    const db = await getDb();
+    if (!db) return 0;
+    
+    const rates = await db.select().from(shippingRates).where(eq(shippingRates.isActive, true));
+    if (rates.length === 0) return 0;
+    
+    const costPerKm = Number(rates[0].costPerKm) || 5; // Default ₹5 per km
+
+    // Use Distance Matrix API to get distance
+    const result = await makeRequest<any>(
+      "/maps/api/distancematrix/json",
+      {
+        origins: WAREHOUSE_LOCATION,
+        destinations: customerAddress,
+        mode: "driving",
+        units: "metric"
+      }
+    );
+
+    if (result.status !== "OK" || !result.rows || result.rows.length === 0) {
+      console.error("Distance Matrix API error:", result);
+      return 0;
+    }
+
+    const element = result.rows[0]?.elements?.[0];
+    if (!element || element.status !== "OK") {
+      console.error("Distance calculation failed:", element);
+      return 0;
+    }
+
+    // Distance in meters, convert to km
+    const distanceKm = element.distance.value / 1000;
+    const shippingCost = Math.ceil(distanceKm * costPerKm);
+
+    return shippingCost;
+  } catch (error) {
+    console.error("Error calculating shipping distance:", error);
+    return 0;
+  }
+}
