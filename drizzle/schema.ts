@@ -150,6 +150,7 @@ export const orders = mysqlTable("orders", {
   totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }).notNull(),
   gstAmount: decimal("gstAmount", { precision: 12, scale: 2 }).notNull().default("0"),
   shippingCost: decimal("shippingCost", { precision: 12, scale: 2 }).notNull().default("0"),
+  manualShippingCharge: decimal("manualShippingCharge", { precision: 12, scale: 2 }),
   discountAmount: decimal("discountAmount", { precision: 12, scale: 2 }).default("0"),
   
   // Shipping

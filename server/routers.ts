@@ -403,6 +403,16 @@ export const appRouter = router({
         const cost = await db.calculateShippingByDistance(input.address);
         return { shippingCost: cost };
       }),
+
+    setManualShippingCharge: adminProcedure
+      .input(z.object({
+        orderId: z.number(),
+        shippingCharge: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.setManualShippingCharge(input.orderId, input.shippingCharge);
+        return { success };
+      }),
   }),
 });
 

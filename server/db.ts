@@ -302,6 +302,13 @@ export async function getOrderItems(orderId: number) {
   return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
 }
 
+export async function setManualShippingCharge(orderId: number, shippingCharge: number) {
+  const database = await getDb();
+  if (!database) return false;
+  await database.update(orders).set({ manualShippingCharge: shippingCharge as any, updatedAt: new Date() }).where(eq(orders.id, orderId));
+  return true;
+}
+
 // ========================
 // QUOTATION FUNCTIONS
 // ========================

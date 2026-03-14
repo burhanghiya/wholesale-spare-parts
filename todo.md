@@ -232,3 +232,11 @@
 - [x] Update checkout to apply correct rate based on distance range
 - [x] Test distance range shipping
 - [x] All tests passing (15/15)
+
+## Phase 21: Manual Shipping Charge Override
+- [x] Add manual shipping charge field to orders table
+- [x] Create admin procedure to set manual shipping charge for orders
+- [x] Add UI to set manual shipping charge in admin panel
+- [x] Update checkout to use manual charge if set by admin
+- [x] Test manual shipping charge functionality
+- [x] All tests passing (15/15)

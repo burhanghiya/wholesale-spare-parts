@@ -1,9 +1,11 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { AdminNav } from "./AdminDashboard";
 import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
@@ -19,12 +21,20 @@ const statusColors: Record<string, string> = {
 
 export default function AdminOrders() {
   const { user, isAuthenticated } = useAuth();
+  const [manualChargeInput, setManualChargeInput] = useState<Record<number, string>>({});
+  
   const { data: orders, isLoading, refetch } = trpc.orders.getAllOrders.useQuery(
     { limit: 50, offset: 0 },
     { enabled: isAuthenticated && user?.role === "admin" }
   );
+  
   const updateMutation = trpc.orders.updateStatus.useMutation({
     onSuccess: () => { toast.success("Order status updated"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const setManualChargeMutation = trpc.admin.setManualShippingCharge.useMutation({
+    onSuccess: () => { toast.success("Shipping charge updated"); setManualChargeInput({}); refetch(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -73,21 +83,47 @@ export default function AdminOrders() {
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg">₹{Number(order.totalAmount).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Shipping: ₹{Number(order.shippingCost || 0).toFixed(2)}</p>
                     </div>
-                    <Select
-                      value={order.orderStatus}
-                      onValueChange={(val) => updateMutation.mutate({ orderId: order.id, status: val as any })}
-                    >
-                      <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="shipped">Shipped</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col gap-2">
+                      <Select
+                        value={order.orderStatus}
+                        onValueChange={(val) => updateMutation.mutate({ orderId: order.id, status: val as any })}
+                      >
+                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="shipped">Shipped</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Manual shipping"
+                          value={manualChargeInput[order.id] || ""}
+                          onChange={(e) => setManualChargeInput({ ...manualChargeInput, [order.id]: e.target.value })}
+                          className="w-32 h-9"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const charge = parseFloat(manualChargeInput[order.id] || "0");
+                            if (charge >= 0) {
+                              setManualChargeMutation.mutate({ orderId: order.id, shippingCharge: charge });
+                            } else {
+                              toast.error("Enter valid shipping charge");
+                            }
+                          }}
+                          disabled={setManualChargeMutation.isPending}
+                        >
+                          Set
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
