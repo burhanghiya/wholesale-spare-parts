@@ -17,7 +17,6 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminQuotations from "./pages/AdminQuotations";
 import AdminDealers from "./pages/AdminDealers";
 import AdminShipping from "./pages/AdminShipping";
-import AdminPinCodeZones from "./pages/AdminPinCodeZones";
 
 function Router() {
   return (
@@ -40,7 +39,6 @@ function Router() {
       <Route path={"/admin/quotations"} component={AdminQuotations} />
       <Route path={"/admin/dealers"} component={AdminDealers} />
       <Route path={"/admin/shipping"} component={AdminShipping} />
-      <Route path={"/admin/pin-codes"} component={AdminPinCodeZones} />
       
       {/* 404 */}
       <Route path={"/404"} component={NotFound} />

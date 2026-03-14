@@ -2,7 +2,7 @@ import { eq, and, like, desc, asc, sql, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, gstConfiguration, shippingRates, pinCodeZones
+  quotations, categories, gstConfiguration, shippingRates
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -457,51 +457,6 @@ export async function calculateShippingCost(distanceKm: number) {
   return baseCost + (distanceKm * costPerKm);
 }
 
-export async function calculateShippingByPinCode(pinCode: string) {
-  const db = await getDb();
-  if (!db) return 0;
-  
-  const zone = await db.select().from(pinCodeZones)
-    .where(and(
-      eq(pinCodeZones.isActive, true),
-      sql`${pinCodeZones.pinCodeStart} <= ${pinCode}`,
-      sql`${pinCodeZones.pinCodeEnd} >= ${pinCode}`
-    ))
-    .limit(1)
-    .then(rows => rows[0]);
-  
-  if (!zone) return 0;
-  return Number(zone.shippingCost) || 0;
-}
-
-export async function getAllPinCodeZones() {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(pinCodeZones).orderBy(asc(pinCodeZones.pinCodeStart));
-}
-
-export async function upsertPinCodeZone(data: any) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const existing = await db.select().from(pinCodeZones)
-    .where(and(
-      eq(pinCodeZones.pinCodeStart, data.pinCodeStart),
-      eq(pinCodeZones.pinCodeEnd, data.pinCodeEnd)
-    ))
-    .limit(1)
-    .then(rows => rows[0]);
-  
-  if (existing) {
-    await db.update(pinCodeZones)
-      .set({ shippingCost: data.shippingCost, isActive: data.isActive, updatedAt: new Date() })
-      .where(eq(pinCodeZones.id, existing.id));
-    return await db.select().from(pinCodeZones).where(eq(pinCodeZones.id, existing.id)).then(rows => rows[0]);
-  } else {
-    const result = await db.insert(pinCodeZones).values(data);
-    return await db.select().from(pinCodeZones).where(eq(pinCodeZones.id, result[0].insertId)).then(rows => rows[0]);
-  }
-}
 
 export async function updateCartItemQuantity(cartItemId: number, quantity: number) {
   const db = await getDb();

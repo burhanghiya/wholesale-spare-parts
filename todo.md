@@ -216,23 +216,11 @@
 - [x] Remove live search dropdown from home page - navigate directly to Products page instead
 - [x] Merge search flows - show "Search Results" header when coming from home page search
 
-## Phase 17: Shipping Feature Implementation (UPDATED)
-- [x] Add shipping rates table to database schema (already exists)
-- [x] Change from distance-based to PIN code-based shipping
-- [x] Create PIN code to shipping zone mapping table
-- [x] Update shipping calculation to use PIN codes
-- [x] Remove manual distance input from checkout
-- [x] Auto-calculate shipping from customer's PIN code
-- [x] Update admin panel to manage PIN code zones
-- [x] Test PIN code based shipping
-- [x] All tests passing (15/15)
-
-## Phase 18: Distance-Based Shipping with Google Maps
-- [x] Add per-km shipping charge to shippingRates table (already exists)
-- [x] Create distance calculation backend procedure using Google Maps
-- [x] Add tRPC procedure to calculate shipping by distance
-- [x] Update checkout to use actual distance from warehouse (394210)
-- [x] Admin can edit per-km charge in shipping configuration
-- [x] Auto-calculate shipping: distance × per-km charge
-- [x] Test distance calculation
+## Phase 19: Remove PIN Code Zones Feature
+- [x] Delete AdminPinCodeZones.tsx page
+- [x] Remove PIN code zones route from App.tsx
+- [x] Remove PIN code zones link from AdminNav
+- [x] Remove PIN code zones database functions from db.ts
+- [x] Remove PIN code zones tRPC procedures from routers.ts
+- [x] Test all functionality
 - [x] All tests passing (15/15)
