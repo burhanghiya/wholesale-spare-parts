@@ -250,3 +250,10 @@
 - [x] Shipping cost displays in order summary
 - [x] Tested checkout shipping display - working correctly with distance-based calculation
 - [x] All 15 tests passing
+
+## Phase 23: Convert to Per-Kilometer Shipping Calculation
+- [x] Updated AdminShipping UI to show Base Cost + Cost Per Km fields instead of distance ranges
+- [x] Simplified admin panel to single configuration (not multiple distance ranges)
+- [x] Updated checkout shipping calculation to use formula: Base Cost + (Distance × Cost Per Km)
+- [x] Tested per-km calculation - verified with Vesu address (₹160 shipping for ~9km distance)
+- [x] All 15 tests passing

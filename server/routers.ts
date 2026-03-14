@@ -413,6 +413,18 @@ export const appRouter = router({
         const success = await db.setManualShippingCharge(input.orderId, input.shippingCharge);
         return { success };
       }),
+
+    getShippingConfig: adminProcedure.query(async () => db.getShippingConfig()),
+
+    updateShippingConfig: adminProcedure
+      .input(z.object({
+        baseCost: z.number().min(0),
+        costPerKm: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.updateShippingConfig(input.baseCost, input.costPerKm);
+        return { success };
+      }),
   }),
 });
 

@@ -506,26 +506,65 @@ export async function calculateShippingByDistance(customerAddress: string) {
     // Distance in meters, convert to km
     const distanceKm = Math.round(element.distance.value / 1000);
 
-    // Get shipping rate based on distance range
+    // Get per-km shipping configuration
     const db = await getDb();
     if (!db) return 0;
     
-    const applicableRates = await db.select().from(shippingRates)
-      .where(and(
-        eq(shippingRates.isActive, true),
-        lte(shippingRates.minDistance, distanceKm),
-        gte(shippingRates.maxDistance, distanceKm)
-      ))
-      .limit(1);
-    
-    if (applicableRates.length === 0) {
-      console.error(`No shipping rate found for distance: ${distanceKm}km`);
+    const config = await db.select().from(shippingRates).limit(1);
+    if (config.length === 0) {
+      console.error(`No shipping configuration found`);
       return 0;
     }
 
-    return Number(applicableRates[0].baseCost) || 0;
+    const baseCost = Number(config[0].baseCost) || 0;
+    const costPerKm = Number(config[0].costPerKm) || 0;
+    
+    // Calculate: Base Cost + (Distance × Cost Per Km)
+    const shippingCost = baseCost + (distanceKm * costPerKm);
+    return shippingCost;
   } catch (error) {
     console.error("Error calculating shipping distance:", error);
     return 0;
   }
+}
+
+// Per-kilometer shipping configuration
+export async function getShippingConfig() {
+  const db = await getDb();
+  if (!db) return { baseCost: 0, costPerKm: 0 };
+  
+  const config = await db.select().from(shippingRates).limit(1);
+  if (config.length === 0) {
+    return { baseCost: 0, costPerKm: 0 };
+  }
+  
+  return {
+    baseCost: Number(config[0].baseCost) || 0,
+    costPerKm: Number(config[0].costPerKm) || 0,
+  };
+}
+
+export async function updateShippingConfig(baseCost: number, costPerKm: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  // Update first record with new config
+  const existing = await db.select().from(shippingRates).limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(shippingRates)
+      .set({ baseCost: String(baseCost), costPerKm: String(costPerKm), updatedAt: new Date() })
+      .where(eq(shippingRates.id, existing[0].id));
+  } else {
+    // Create first config if doesn't exist
+    await db.insert(shippingRates).values({
+      minDistance: 0,
+      maxDistance: 1000,
+      baseCost: String(baseCost),
+      costPerKm: String(costPerKm),
+      isActive: true,
+    });
+  }
+  
+  return true;
 }
