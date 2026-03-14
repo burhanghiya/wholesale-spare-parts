@@ -420,9 +420,10 @@ export const appRouter = router({
       .input(z.object({
         baseCost: z.number().min(0),
         costPerKm: z.number().min(0),
+        freeShippingThreshold: z.number().min(0),
       }))
       .mutation(async ({ input }) => {
-        const success = await db.updateShippingConfig(input.baseCost, input.costPerKm);
+        const success = await db.updateShippingConfig(input.baseCost, input.costPerKm, input.freeShippingThreshold);
         return { success };
       }),
   }),

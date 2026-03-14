@@ -23,6 +23,7 @@ export default function AdminShipping() {
   const [formData, setFormData] = useState({
     baseCost: 0,
     costPerKm: 0,
+    freeShippingThreshold: 1000,
   });
 
   // Initialize form data when config loads
@@ -31,6 +32,7 @@ export default function AdminShipping() {
       setFormData({
         baseCost: Number(shippingConfig.baseCost) || 0,
         costPerKm: Number(shippingConfig.costPerKm) || 0,
+        freeShippingThreshold: Number(shippingConfig.freeShippingThreshold) || 1000,
       });
     }
   }, [shippingConfig]);
@@ -48,6 +50,7 @@ export default function AdminShipping() {
     updateShippingConfig.mutate({
       baseCost: formData.baseCost,
       costPerKm: formData.costPerKm,
+      freeShippingThreshold: formData.freeShippingThreshold,
     });
   };
 
@@ -95,7 +98,7 @@ export default function AdminShipping() {
             <CardContent className="space-y-6">
               {isEditing ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="baseCost">Base Cost (₹)</Label>
                       <Input
@@ -123,6 +126,20 @@ export default function AdminShipping() {
                         className="mt-2"
                       />
                       <p className="text-xs text-muted-foreground mt-1">Charge per kilometer distance</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="freeShippingThreshold">Free Shipping Above (₹)</Label>
+                      <Input
+                        id="freeShippingThreshold"
+                        type="number"
+                        step="1"
+                        min="0"
+                        value={formData.freeShippingThreshold}
+                        onChange={(e) => setFormData({ ...formData, freeShippingThreshold: Number(e.target.value) })}
+                        placeholder="e.g., 1000"
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Orders above this amount get free shipping</p>
                     </div>
                   </div>
 
@@ -161,7 +178,7 @@ export default function AdminShipping() {
                 </>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-card p-4 rounded-lg border">
                       <p className="text-sm text-muted-foreground mb-1">Base Cost</p>
                       <p className="text-2xl font-bold">₹{Number(formData.baseCost).toFixed(2)}</p>
@@ -171,6 +188,11 @@ export default function AdminShipping() {
                       <p className="text-sm text-muted-foreground mb-1">Cost Per Km</p>
                       <p className="text-2xl font-bold">₹{Number(formData.costPerKm).toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground mt-2">Additional charge per kilometer</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200">
+                      <p className="text-sm text-muted-foreground mb-1">Free Shipping Above</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">₹{Number(formData.freeShippingThreshold).toFixed(0)}</p>
+                      <p className="text-xs text-muted-foreground mt-2">Orders above this get free shipping</p>
                     </div>
                   </div>
 
@@ -207,8 +229,12 @@ export default function AdminShipping() {
                 <p className="ml-4">Shipping cost is calculated automatically during checkout and shown to customer before they place the order.</p>
               </div>
               <div className="space-y-2">
-                <p><strong className="text-foreground">4. Real-Time Updates</strong></p>
-                <p className="ml-4">Changes to Base Cost or Cost Per Km apply immediately to all new orders.</p>
+                <p><strong className="text-foreground">4. Free Shipping Threshold</strong></p>
+                <p className="ml-4">Orders with subtotal ≥ ₹{Number(formData.freeShippingThreshold).toFixed(0)} get free shipping automatically.</p>
+              </div>
+              <div className="space-y-2">
+                <p><strong className="text-foreground">5. Real-Time Updates</strong></p>
+                <p className="ml-4">Changes to any configuration apply immediately to all new orders.</p>
               </div>
             </CardContent>
           </Card>

@@ -257,3 +257,10 @@
 - [x] Updated checkout shipping calculation to use formula: Base Cost + (Distance × Cost Per Km)
 - [x] Tested per-km calculation - verified with Vesu address (₹160 shipping for ~9km distance)
 - [x] All 15 tests passing
+
+## Phase 24: Add Free Shipping Threshold Feature
+- [x] Added freeShippingThreshold field to AdminShipping page (displays in green highlight)
+- [x] Updated backend procedures to handle free shipping threshold
+- [x] Updated checkout calculation to apply free shipping when order subtotal >= threshold
+- [x] Tested free shipping - verified with ₹5000 threshold (₹2,300 order shows ₹135 shipping)
+- [x] All 15 tests passing

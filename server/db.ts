@@ -535,16 +535,17 @@ export async function getShippingConfig() {
   
   const config = await db.select().from(shippingRates).limit(1);
   if (config.length === 0) {
-    return { baseCost: 0, costPerKm: 0 };
+    return { baseCost: 0, costPerKm: 0, freeShippingThreshold: 1000 };
   }
   
   return {
     baseCost: Number(config[0].baseCost) || 0,
     costPerKm: Number(config[0].costPerKm) || 0,
+    freeShippingThreshold: Number(config[0].minDistance) || 1000,
   };
 }
 
-export async function updateShippingConfig(baseCost: number, costPerKm: number) {
+export async function updateShippingConfig(baseCost: number, costPerKm: number, freeShippingThreshold: number) {
   const db = await getDb();
   if (!db) return false;
   
@@ -553,12 +554,12 @@ export async function updateShippingConfig(baseCost: number, costPerKm: number) 
   
   if (existing.length > 0) {
     await db.update(shippingRates)
-      .set({ baseCost: String(baseCost), costPerKm: String(costPerKm), updatedAt: new Date() })
+      .set({ baseCost: String(baseCost), costPerKm: String(costPerKm), minDistance: freeShippingThreshold, updatedAt: new Date() })
       .where(eq(shippingRates.id, existing[0].id));
   } else {
     // Create first config if doesn't exist
     await db.insert(shippingRates).values({
-      minDistance: 0,
+      minDistance: freeShippingThreshold,
       maxDistance: 1000,
       baseCost: String(baseCost),
       costPerKm: String(costPerKm),
