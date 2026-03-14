@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO shipping_rates (min_distance, max_distance, base_cost, cost_per_km, is_active) VALUES\n(0, 10, 50, 0, true),\n(10, 20, 100, 0, true),\n(20, 50, 200, 0, true),\n(50, 100, 400, 0, true);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute INSERT INTO shipping_rates (min_distance, max_distance, base_cost, cost_per_km, is_active) VALUES\n(0, 10, 50, 0, true),\n(10, 20, 100, 0, true),\n(20, 50, 200, 0, true),\n(50, 100, 400, 0, true);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'min_distance' in 'field list'"
+  ]
+}

@@ -240,3 +240,12 @@
 - [x] Update checkout to use manual charge if set by admin
 - [x] Test manual shipping charge functionality
 - [x] All tests passing (15/15)
+
+## Phase 22: Fix Checkout Shipping Display
+- [x] Admin can edit shipping rates in AdminShipping page
+- [x] Added default shipping rates to database (0-10km, 10-20km, 20-50km, 50-100km)
+- [x] Shipping rates now display in AdminShipping page with Edit buttons
+- [ ] Fix checkout page to show automatic shipping charge based on address
+- [ ] Display shipping cost in order summary
+- [ ] Test checkout shipping display
+- [ ] All tests passing
