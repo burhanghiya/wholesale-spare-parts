@@ -183,11 +183,24 @@ export default function AdminShipping() {
               <CardHeader>
                 <CardTitle className="text-base">How Shipping Works</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>1. Customers enter their distance from warehouse during checkout</p>
-                <p>2. System automatically calculates shipping cost using the formula above</p>
-                <p>3. Shipping cost is added to order total</p>
-                <p>4. You can update rates anytime - changes apply to all new orders</p>
+              <CardContent className="space-y-4 text-sm text-muted-foreground">
+                <div className="space-y-2">
+                  <p><strong className="text-foreground">1. Google Maps Distance Calculation</strong></p>
+                  <p className="ml-4">Customer enters their address at checkout. System automatically calculates distance from your warehouse (Udhana, Surat - 394210) using Google Maps.</p>
+                </div>
+                <div className="space-y-2">
+                  <p><strong className="text-foreground">2. Automatic Shipping Cost</strong></p>
+                  <p className="ml-4">Formula: Base Cost + (Distance × Cost Per Km)</p>
+                  <p className="ml-4 text-xs">Example: ₹{Number(shippingRates?.[0]?.baseCost || 0).toFixed(2)} + (10 km × ₹{Number(shippingRates?.[0]?.costPerKm || 5).toFixed(2)}) = ₹{shippingRates?.[0]?.baseCost && shippingRates[0]?.costPerKm ? (Number(shippingRates[0].baseCost) + (10 * Number(shippingRates[0].costPerKm))).toFixed(2) : '100'}</p>
+                </div>
+                <div className="space-y-2">
+                  <p><strong className="text-foreground">3. Edit Charges Anytime</strong></p>
+                  <p className="ml-4">Click "Edit Shipping Rates" button above to update Base Cost and Cost Per Km. Changes apply to all new orders immediately.</p>
+                </div>
+                <div className="space-y-2">
+                  <p><strong className="text-foreground">4. Transparent Pricing</strong></p>
+                  <p className="ml-4">Customers see exact shipping cost before placing order. No hidden charges.</p>
+                </div>
               </CardContent>
             </Card>
           </div>
