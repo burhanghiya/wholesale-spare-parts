@@ -25,9 +25,10 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [form, setForm] = useState({
     partNumber: '', name: '', description: '', categoryName: 'General',
-    basePrice: '', stock: '', moq: '1', imageUrl: '',
+    basePrice: '', stock: '', moq: '1', imageUrl: '', productImages: [] as string[],
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [productImageGallery, setProductImageGallery] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,6 +61,7 @@ export default function AdminProducts() {
   const uploadImage = trpc.upload.image.useMutation({
     onSuccess: (data) => {
       setForm(prev => ({ ...prev, imageUrl: data.url }));
+      setImagePreview(data.url);
       setUploading(false);
       toast.success("Image uploaded!");
     },
@@ -69,9 +71,23 @@ export default function AdminProducts() {
     },
   });
 
+  const uploadGalleryImage = trpc.upload.image.useMutation({
+    onSuccess: (data) => {
+      setProductImageGallery(prev => [...prev, data.url]);
+      setForm(prev => ({ ...prev, productImages: [...prev.productImages, data.url] }));
+      setUploading(false);
+      toast.success("Gallery image added!");
+    },
+    onError: (err) => {
+      setUploading(false);
+      toast.error("Image upload failed: " + err.message);
+    },
+  });
+
   const resetForm = () => {
-    setForm({ partNumber: '', name: '', description: '', categoryName: 'General', basePrice: '', stock: '', moq: '1', imageUrl: '' });
+    setForm({ partNumber: '', name: '', description: '', categoryName: 'General', basePrice: '', stock: '', moq: '1', imageUrl: '', productImages: [] });
     setImagePreview(null);
+    setProductImageGallery([]);
     setShowForm(false);
     setEditingProduct(null);
   };
@@ -118,6 +134,7 @@ export default function AdminProducts() {
           basePrice: price,
           categoryName: form.categoryName || 'General',
           imageUrl: form.imageUrl || undefined,
+          productImages: form.productImages.length > 0 ? form.productImages : undefined,
           stock: form.stock ? parseInt(form.stock) : undefined,
           moq: form.moq ? parseInt(form.moq) : undefined,
         },
@@ -132,12 +149,16 @@ export default function AdminProducts() {
         stock: form.stock ? parseInt(form.stock) : 0,
         moq: form.moq ? parseInt(form.moq) : 1,
         imageUrl: form.imageUrl || undefined,
+        productImages: form.productImages.length > 0 ? form.productImages : undefined,
       });
     }
   };
 
   const startEdit = (product: any) => {
     setEditingProduct(product);
+    const galleryImages = product.productImages && Array.isArray(product.productImages) 
+      ? product.productImages.map((img: any) => typeof img === 'string' ? img : img.url)
+      : [];
     setForm({
       partNumber: product.partNumber,
       name: product.name,
@@ -147,8 +168,10 @@ export default function AdminProducts() {
       stock: String(product.inventory?.quantityInStock || 0),
       moq: String(product.inventory?.minimumOrderQuantity || 1),
       imageUrl: product.imageUrl || '',
+      productImages: galleryImages,
     });
     setImagePreview(product.imageUrl || null);
+    setProductImageGallery(galleryImages);
     setShowForm(true);
   };
 
@@ -275,9 +298,9 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              {/* Image Upload */}
+              {/* Primary Image Upload */}
               <div>
-                <Label>Product Image</Label>
+                <Label>Primary Product Image</Label>
                 <div className="mt-2 flex items-start gap-4">
                   {imagePreview ? (
                     <div className="relative inline-block">
@@ -333,6 +356,66 @@ export default function AdminProducts() {
                 />
               </div>
 
+              {/* Product Gallery Images */}
+              <div>
+                <Label>Product Gallery (Add 2-3 or more images)</Label>
+                <p className="text-xs text-muted-foreground mb-2">Upload additional product images for gallery view</p>
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {productImageGallery.map((img, idx) => (
+                    <div key={idx} className="relative inline-block">
+                      <img
+                        src={img}
+                        alt={`Gallery ${idx + 1}`}
+                        className="h-24 w-24 object-cover rounded-lg border"
+                      />
+                      <button
+                        onClick={() => {
+                          const newGallery = productImageGallery.filter((_, i) => i !== idx);
+                          setProductImageGallery(newGallery);
+                          setForm(prev => ({ ...prev, productImages: newGallery }));
+                        }}
+                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full h-5 w-5 flex items-center justify-center text-xs hover:bg-destructive/90"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <div
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error("Image must be less than 5MB");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const base64Full = ev.target?.result as string;
+                          setUploading(true);
+                          const base64Data = base64Full.split(',')[1];
+                          uploadGalleryImage.mutate({
+                            base64: base64Data,
+                            filename: file.name,
+                            contentType: file.type,
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      };
+                      input.click();
+                    }}
+                    className="h-24 w-24 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    <Plus className="h-5 w-5 text-muted-foreground mb-1" />
+                    <span className="text-xs text-muted-foreground text-center">Add image</span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">{productImageGallery.length} images added</p>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <Button onClick={handleSubmit} disabled={createProduct.isPending || updateProduct.isPending || uploading}>
                   {createProduct.isPending || updateProduct.isPending ? "Saving..." : editingProduct ? "Update Product" : "Add Product"}
@@ -383,6 +466,9 @@ export default function AdminProducts() {
                         <span>Stock: {product.inventory?.quantityInStock ?? 0}</span>
                         <span>MOQ: {product.inventory?.minimumOrderQuantity ?? 1}</span>
                         <Badge variant="secondary" className="text-xs">{product.categoryName}</Badge>
+                        {product.productImages && Array.isArray(product.productImages) && product.productImages.length > 0 && (
+                          <Badge variant="outline" className="text-xs bg-blue-50">📸 {product.productImages.length} gallery images</Badge>
+                        )}
                       </div>
                     </div>
 

@@ -60,10 +60,11 @@ export const appRouter = router({
         compatibleBrands: z.array(z.string()).optional(),
         alternatePartNumbers: z.array(z.string()).optional(),
         imageUrl: z.string().optional(), explodedViewUrl: z.string().optional(),
+        productImages: z.array(z.string()).optional(),
         stock: z.number().optional(), moq: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { stock, moq, categoryName, ...rest } = input;
+        const { stock, moq, categoryName, productImages, ...rest } = input;
         // Find or create category by name
         const categoryId = await db.findOrCreateCategory(categoryName);
         const productData = {
@@ -73,6 +74,7 @@ export const appRouter = router({
           compatibleModels: input.compatibleModels ? JSON.stringify(input.compatibleModels) : null,
           compatibleBrands: input.compatibleBrands ? JSON.stringify(input.compatibleBrands) : null,
           alternatePartNumbers: input.alternatePartNumbers ? JSON.stringify(input.alternatePartNumbers) : null,
+          productImages: productImages ? JSON.stringify(productImages) : null,
         };
         await db.createProduct(productData);
         const productResult = await db.getProductByPartNumber(input.partNumber);
@@ -93,14 +95,15 @@ export const appRouter = router({
           name: z.string().optional(), description: z.string().optional(),
           basePrice: z.number().optional(), isActive: z.boolean().optional(),
           partNumber: z.string().optional(), categoryName: z.string().optional(),
-          imageUrl: z.string().optional(),
+          imageUrl: z.string().optional(), productImages: z.array(z.string()).optional(),
           stock: z.number().optional(), moq: z.number().optional(),
         }),
       }))
       .mutation(async ({ input }) => {
-        const { categoryName, stock, moq, ...restData } = input.data;
+        const { categoryName, stock, moq, productImages, ...restData } = input.data;
         const updateData: any = { ...restData };
         if (updateData.basePrice) updateData.basePrice = String(updateData.basePrice);
+        if (productImages) updateData.productImages = JSON.stringify(productImages);
         if (categoryName) {
           updateData.categoryId = await db.findOrCreateCategory(categoryName);
         }
@@ -211,6 +214,11 @@ export const appRouter = router({
         for (const item of cartItemsList) {
           const product = await db.getProductById(item.productId);
           if (!product) continue;
+          const inventory = await db.getInventoryByProductId(item.productId);
+          const availableStock = inventory?.quantityInStock || 0;
+          if (availableStock < item.quantity) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: `${product.name} has only ${availableStock} units available, but you requested ${item.quantity}` });
+          }
           const itemTotal = Number(product.basePrice) * item.quantity;
           totalAmount += itemTotal;
           orderItemsData.push({

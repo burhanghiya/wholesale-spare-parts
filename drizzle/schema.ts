@@ -80,8 +80,13 @@ export const products = mysqlTable("products", {
   alternatePartNumbers: json("alternatePartNumbers"), // Array of alternate part numbers
   
   // Images and diagrams
-  imageUrl: text("imageUrl"),
+  imageUrl: text("imageUrl"), // Deprecated: use productImages instead
+  productImages: json("productImages"), // Array of image URLs for gallery
   explodedViewUrl: text("explodedViewUrl"),
+  
+  // Stock management
+  stockQty: int("stockQty").default(0).notNull(),
+  minOrderQty: int("minOrderQty").default(1).notNull(),
   
   // Status
   isActive: boolean("isActive").default(true),

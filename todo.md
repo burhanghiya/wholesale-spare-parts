@@ -272,3 +272,19 @@
 - [x] Tested quantity increase/decrease - buttons working perfectly
 - [x] Verified FREE DELIVERY badge shows when order >= ₹5000 threshold
 - [x] All 15 tests passing
+
+## Phase 26: Remove Manual Shipping and Add Multiple Product Images
+- [x] Removed "Manual shipp" field from admin orders page
+- [x] Updated database schema to support multiple product images (productImages JSON field)
+- [x] Added UI for uploading 2-3 or more product images in admin products page
+- [x] Product list shows badge with number of gallery images (gallery images)
+- [x] Tested manual shipping removal and multiple images functionality
+- [x] All tests passing
+
+## Phase 27: Show Order Items Details and Add Stock Validation
+- [x] Show order items with product names and quantities in admin orders page (displays in Order Items section)
+- [x] Add stock validation to checkout - prevent placing orders with insufficient stock
+- [x] Stock check validates each cart item against available inventory
+- [x] Error message shows product name and available vs requested quantity
+- [x] Tested both features - order items display and stock validation working
+- [x] All 15 tests passing

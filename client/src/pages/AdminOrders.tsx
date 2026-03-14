@@ -21,7 +21,7 @@ const statusColors: Record<string, string> = {
 
 export default function AdminOrders() {
   const { user, isAuthenticated } = useAuth();
-  const [manualChargeInput, setManualChargeInput] = useState<Record<number, string>>({});
+
   
   const { data: orders, isLoading, refetch } = trpc.orders.getAllOrders.useQuery(
     { limit: 50, offset: 0 },
@@ -33,10 +33,7 @@ export default function AdminOrders() {
     onError: (e) => toast.error(e.message),
   });
 
-  const setManualChargeMutation = trpc.admin.setManualShippingCharge.useMutation({
-    onSuccess: () => { toast.success("Shipping charge updated"); setManualChargeInput({}); refetch(); },
-    onError: (e) => toast.error(e.message),
-  });
+
 
   if (!isAuthenticated || user?.role !== "admin") return null;
 
@@ -78,6 +75,19 @@ export default function AdminOrders() {
                           <p className="text-xs whitespace-pre-wrap text-muted-foreground">{order.shippingAddress || "N/A"}</p>
                         </div>
                       </div>
+                      {order.items && order.items.length > 0 && (
+                        <div className="mb-2 p-2 bg-muted/50 rounded">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Order Items</p>
+                          <div className="space-y-1">
+                            {order.items.map((item: any, idx: number) => (
+                              <div key={idx} className="text-xs flex justify-between">
+                                <span>{item.productName || item.name || 'Product'} (x{item.quantity})</span>
+                                <span className="text-muted-foreground">₹{Number(item.price || 0).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <p className="text-sm text-muted-foreground">Payment: {order.paymentMethod} | {order.paymentStatus}</p>
                       <p className="text-xs text-muted-foreground mt-1">{new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
                     </div>
@@ -100,29 +110,7 @@ export default function AdminOrders() {
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Manual shipping"
-                          value={manualChargeInput[order.id] || ""}
-                          onChange={(e) => setManualChargeInput({ ...manualChargeInput, [order.id]: e.target.value })}
-                          className="w-32 h-9"
-                        />
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            const charge = parseFloat(manualChargeInput[order.id] || "0");
-                            if (charge >= 0) {
-                              setManualChargeMutation.mutate({ orderId: order.id, shippingCharge: charge });
-                            } else {
-                              toast.error("Enter valid shipping charge");
-                            }
-                          }}
-                          disabled={setManualChargeMutation.isPending}
-                        >
-                          Set
-                        </Button>
-                      </div>
+
                     </div>
                   </div>
                 </CardContent>

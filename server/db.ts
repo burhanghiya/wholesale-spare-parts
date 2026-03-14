@@ -275,7 +275,23 @@ export async function getOrdersByUserId(userId: number) {
 export async function getAllOrders(limit = 50, offset = 0) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
+  const orderList = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
+  
+  // Fetch items for each order with product names
+  const ordersWithItems = await Promise.all(orderList.map(async (order) => {
+    const items = await db.select({
+      id: orderItems.id,
+      quantity: orderItems.quantity,
+      unitPrice: orderItems.unitPrice,
+      totalPrice: orderItems.totalPrice,
+      productName: products.name,
+    }).from(orderItems)
+      .leftJoin(products, eq(orderItems.productId, products.id))
+      .where(eq(orderItems.orderId, order.id));
+    return { ...order, items };
+  }));
+  
+  return ordersWithItems;
 }
 
 export async function updateOrderStatus(orderId: number, status: string, trackingNumber?: string) {
