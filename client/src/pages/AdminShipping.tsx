@@ -17,6 +17,7 @@ export default function AdminShipping() {
     undefined,
     { enabled: isAuthenticated && user?.role === 'admin' }
   );
+  const utils = trpc.useUtils();
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -29,7 +30,7 @@ export default function AdminShipping() {
     onSuccess: () => {
       toast.success("Shipping rate updated successfully!");
       setEditingId(null);
-      trpc.useUtils().admin.getShippingRates.invalidate();
+      utils.admin.getShippingRates.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });

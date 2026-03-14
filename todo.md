@@ -245,7 +245,8 @@
 - [x] Admin can edit shipping rates in AdminShipping page
 - [x] Added default shipping rates to database (0-10km, 10-20km, 20-50km, 50-100km)
 - [x] Shipping rates now display in AdminShipping page with Edit buttons
-- [ ] Fix checkout page to show automatic shipping charge based on address
-- [ ] Display shipping cost in order summary
-- [ ] Test checkout shipping display
-- [ ] All tests passing
+- [x] Fixed invalid hook call error in AdminShipping page (moved trpc.useUtils to component body)
+- [x] Checkout page shows automatic shipping charge based on address
+- [x] Shipping cost displays in order summary
+- [x] Tested checkout shipping display - working correctly with distance-based calculation
+- [x] All 15 tests passing
