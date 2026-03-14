@@ -1,9 +1,12 @@
 import { useLocation } from "wouter";
+import { useState } from "react";
+
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Package, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, Package, ShoppingBag, ArrowRight, Plus, Minus } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -15,6 +18,10 @@ export default function ShoppingCart() {
 
   const removeFromCartMutation = trpc.cart.remove.useMutation({
     onSuccess: () => { refetch(); toast.success("Item removed"); },
+  });
+  const updateQuantityMutation = trpc.cart.updateQuantity.useMutation({
+    onSuccess: () => { refetch(); },
+    onError: (err) => toast.error(err.message),
   });
   const clearCartMutation = trpc.cart.clear.useMutation({
     onSuccess: () => { refetch(); toast.success("Cart cleared"); },
@@ -70,7 +77,27 @@ export default function ShoppingCart() {
                       <h3 className="font-semibold truncate">{item.product?.name}</h3>
                       <p className="text-xs text-muted-foreground font-mono">#{item.product?.partNumber}</p>
                       <div className="flex items-center gap-3 mt-2">
-                        <span className="text-sm text-muted-foreground">Qty: {item.quantity}</span>
+                        <div className="flex items-center gap-1 border border-border rounded-md">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => updateQuantityMutation.mutate({ cartItemId: item.id, quantity: Math.max(1, item.quantity - 1) })}
+                            disabled={updateQuantityMutation.isPending || item.quantity <= 1}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="text-xs font-medium px-2">{item.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => updateQuantityMutation.mutate({ cartItemId: item.id, quantity: item.quantity + 1 })}
+                            disabled={updateQuantityMutation.isPending}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                         <span className="text-sm text-muted-foreground">@ ₹{Number(item.product?.basePrice).toFixed(2)}</span>
                       </div>
                     </div>

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Package, ShoppingBag, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Package, ShoppingBag, Loader2, Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -217,9 +218,16 @@ export default function Checkout() {
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
                 <div className="space-y-2 border-t pt-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping (Distance)</span>
-                    <span>₹{Math.round(shippingCost).toLocaleString()}</span>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    {shippingCost === 0 && subtotal >= freeShippingThreshold ? (
+                      <Badge className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        FREE DELIVERY
+                      </Badge>
+                    ) : (
+                      <span>₹{Math.round(shippingCost).toLocaleString()}</span>
+                    )}
                   </div>
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>

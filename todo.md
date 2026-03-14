@@ -264,3 +264,11 @@
 - [x] Updated checkout calculation to apply free shipping when order subtotal >= threshold
 - [x] Tested free shipping - verified with ₹5000 threshold (₹2,300 order shows ₹135 shipping)
 - [x] All 15 tests passing
+
+## Phase 25: Add Quantity Adjustment Buttons and FREE DELIVERY Badge
+- [x] Added +/- buttons to cart items for easy quantity adjustment
+- [x] Updated ShoppingCart page to show quantity controls with minus/plus buttons
+- [x] Added "FREE DELIVERY" green badge to checkout when shipping is free
+- [x] Tested quantity increase/decrease - buttons working perfectly
+- [x] Verified FREE DELIVERY badge shows when order >= ₹5000 threshold
+- [x] All 15 tests passing
