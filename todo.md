@@ -224,3 +224,11 @@
 - [x] Remove PIN code zones tRPC procedures from routers.ts
 - [x] Test all functionality
 - [x] All tests passing (15/15)
+
+## Phase 20: Distance Range Based Shipping Rates
+- [x] Update shipping calculation to use distance ranges instead of per-km
+- [x] Add distance range management to admin panel
+- [x] Allow admin to define rates for different distance ranges
+- [x] Update checkout to apply correct rate based on distance range
+- [x] Test distance range shipping
+- [x] All tests passing (15/15)

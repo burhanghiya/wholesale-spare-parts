@@ -1,4 +1,4 @@
-import { eq, and, like, desc, asc, sql, or } from "drizzle-orm";
+import { eq, and, like, desc, asc, sql, or, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
@@ -431,16 +431,17 @@ export async function getShippingRates() {
   return await db.select().from(shippingRates);
 }
 
-export async function updateShippingRate(id: number, data: { costPerKm?: number, baseCost?: number, isActive?: boolean }) {
-  const db = await getDb();
-  if (!db) return null;
+export async function updateShippingRate(id: number, data: { minDistance?: number, maxDistance?: number, baseCost?: number, isActive?: boolean }) {
+  const database = await getDb();
+  if (!database) return null;
   const updateData: any = { updatedAt: new Date() };
-  if (data.costPerKm !== undefined) updateData.costPerKm = data.costPerKm;
+  if (data.minDistance !== undefined) updateData.minDistance = data.minDistance;
+  if (data.maxDistance !== undefined) updateData.maxDistance = data.maxDistance;
   if (data.baseCost !== undefined) updateData.baseCost = data.baseCost;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
   
-  await db.update(shippingRates).set(updateData).where(eq(shippingRates.id, id));
-  return await db.select().from(shippingRates).where(eq(shippingRates.id, id)).then(rows => rows[0]);
+  await database.update(shippingRates).set(updateData).where(eq(shippingRates.id, id));
+  return await database.select().from(shippingRates).where(eq(shippingRates.id, id)).then(rows => rows[0]);
 }
 
 export async function calculateShippingCost(distanceKm: number) {
@@ -473,15 +474,6 @@ export async function calculateShippingByDistance(customerAddress: string) {
   const WAREHOUSE_LOCATION = "Udhana, Surat - 394210, India";
 
   try {
-    // Get current per-km rate from database
-    const db = await getDb();
-    if (!db) return 0;
-    
-    const rates = await db.select().from(shippingRates).where(eq(shippingRates.isActive, true));
-    if (rates.length === 0) return 0;
-    
-    const costPerKm = Number(rates[0].costPerKm) || 5; // Default ₹5 per km
-
     // Use Distance Matrix API to get distance
     const result = await makeRequest<any>(
       "/maps/api/distancematrix/json",
@@ -505,10 +497,26 @@ export async function calculateShippingByDistance(customerAddress: string) {
     }
 
     // Distance in meters, convert to km
-    const distanceKm = element.distance.value / 1000;
-    const shippingCost = Math.ceil(distanceKm * costPerKm);
+    const distanceKm = Math.round(element.distance.value / 1000);
 
-    return shippingCost;
+    // Get shipping rate based on distance range
+    const db = await getDb();
+    if (!db) return 0;
+    
+    const applicableRates = await db.select().from(shippingRates)
+      .where(and(
+        eq(shippingRates.isActive, true),
+        lte(shippingRates.minDistance, distanceKm),
+        gte(shippingRates.maxDistance, distanceKm)
+      ))
+      .limit(1);
+    
+    if (applicableRates.length === 0) {
+      console.error(`No shipping rate found for distance: ${distanceKm}km`);
+      return 0;
+    }
+
+    return Number(applicableRates[0].baseCost) || 0;
   } catch (error) {
     console.error("Error calculating shipping distance:", error);
     return 0;

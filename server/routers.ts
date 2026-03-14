@@ -375,13 +375,15 @@ export const appRouter = router({
     updateShippingRate: adminProcedure
       .input(z.object({
         id: z.number(),
-        costPerKm: z.number().optional(),
+        minDistance: z.number().optional(),
+        maxDistance: z.number().optional(),
         baseCost: z.number().optional(),
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
         const updated = await db.updateShippingRate(input.id, {
-          costPerKm: input.costPerKm,
+          minDistance: input.minDistance,
+          maxDistance: input.maxDistance,
           baseCost: input.baseCost,
           isActive: input.isActive,
         });

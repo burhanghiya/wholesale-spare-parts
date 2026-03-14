@@ -20,7 +20,8 @@ export default function AdminShipping() {
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
-    costPerKm: 0,
+    minDistance: 0,
+    maxDistance: 100,
     baseCost: 0,
   });
 
@@ -36,7 +37,8 @@ export default function AdminShipping() {
   const handleEdit = (rate: any) => {
     setEditingId(rate.id);
     setFormData({
-      costPerKm: Number(rate.costPerKm) || 0,
+      minDistance: Number(rate.minDistance) || 0,
+      maxDistance: Number(rate.maxDistance) || 100,
       baseCost: Number(rate.baseCost) || 0,
     });
   };
@@ -45,7 +47,8 @@ export default function AdminShipping() {
     if (editingId === null) return;
     updateShippingRate.mutate({
       id: editingId,
-      costPerKm: formData.costPerKm,
+      minDistance: formData.minDistance,
+      maxDistance: formData.maxDistance,
       baseCost: formData.baseCost,
     });
   };
@@ -86,37 +89,47 @@ export default function AdminShipping() {
                 <CardContent className="space-y-4">
                   {editingId === rate.id ? (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <Label>Base Cost (₹)</Label>
+                          <Label>Min Distance (km)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={formData.minDistance}
+                            onChange={(e) => setFormData({ ...formData, minDistance: Number(e.target.value) })}
+                            placeholder="Minimum distance"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">From km</p>
+                        </div>
+                        <div>
+                          <Label>Max Distance (km)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={formData.maxDistance}
+                            onChange={(e) => setFormData({ ...formData, maxDistance: Number(e.target.value) })}
+                            placeholder="Maximum distance"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">To km</p>
+                        </div>
+                        <div>
+                          <Label>Shipping Cost (₹)</Label>
                           <Input
                             type="number"
                             step="0.01"
                             min="0"
                             value={formData.baseCost}
                             onChange={(e) => setFormData({ ...formData, baseCost: Number(e.target.value) })}
-                            placeholder="Base shipping cost"
+                            placeholder="Shipping charge"
                           />
-                          <p className="text-xs text-muted-foreground mt-1">Fixed cost for all orders</p>
-                        </div>
-                        <div>
-                          <Label>Cost Per Km (₹)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={formData.costPerKm}
-                            onChange={(e) => setFormData({ ...formData, costPerKm: Number(e.target.value) })}
-                            placeholder="Cost per kilometre"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">Charge per kilometre distance</p>
+                          <p className="text-xs text-muted-foreground mt-1">Fixed charge for this range</p>
                         </div>
                       </div>
 
                       <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          <strong>Example:</strong> Base Cost: ₹50, Cost Per Km: ₹5<br />
-                          For 100km distance: ₹50 + (100 × ₹5) = ₹550
+                          <strong>Example:</strong> Distance Range: 0-10 km, Shipping Cost: ₹50<br />
+                          If customer is 5 km away, they pay ₹50
                         </p>
                       </div>
 
@@ -149,21 +162,24 @@ export default function AdminShipping() {
                     </>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 gap-4">
                         <div>
-                          <p className="text-sm text-muted-foreground">Base Cost</p>
+                          <p className="text-sm text-muted-foreground">Distance Range</p>
+                          <p className="text-lg font-semibold">{Number(rate.minDistance || 0)} - {Number(rate.maxDistance || 100)} km</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Shipping Cost</p>
                           <p className="text-lg font-semibold">₹{Number(rate.baseCost || 0).toFixed(2)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Cost Per Km</p>
-                          <p className="text-lg font-semibold">₹{Number(rate.costPerKm || 0).toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">Status</p>
+                          <p className="text-lg font-semibold">{rate.isActive ? '✓ Active' : 'Inactive'}</p>
                         </div>
                       </div>
 
                       <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          <strong>Current Formula:</strong><br />
-                          Total Shipping = ₹{Number(rate.baseCost || 0).toFixed(2)} + (Distance × ₹{Number(rate.costPerKm || 0).toFixed(2)})
+                          <strong>Example:</strong> If customer is {Math.floor((Number(rate.minDistance) + Number(rate.maxDistance)) / 2)} km away, they pay ₹{Number(rate.baseCost || 0).toFixed(2)}
                         </p>
                       </div>
 
