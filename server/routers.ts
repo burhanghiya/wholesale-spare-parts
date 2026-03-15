@@ -282,8 +282,8 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await db.updateOrderStatus(input.orderId, input.status, input.trackingNumber);
         
-        // Automatically deduct inventory when order is confirmed
-        if (input.status === 'confirmed') {
+        // Automatically deduct inventory when order is confirmed or delivered
+        if (input.status === 'confirmed' || input.status === 'delivered') {
           await db.deductInventoryForOrder(input.orderId);
         }
         

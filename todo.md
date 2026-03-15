@@ -345,3 +345,15 @@
 - [x] Test automatic deduction: Place order → confirm → inventory should decrease
 - [x] Test cancellation: Cancel order → inventory should increase back
 - [x] All tests passing
+
+
+## Phase 37: Add Color/Size to Orders & Fix Inventory Deduction for Delivered Orders
+- [x] Add color and size fields to orderItems table schema
+- [x] Create database migration for color/size fields in orderItems
+- [x] Update order creation procedure to store selected color and size
+- [x] Update admin orders display to show product image thumbnail, color, and size for each item
+- [x] Fix inventory deduction to also trigger when order status changes to "delivered"
+- [ ] Add color and size selector to product detail page (ProductDetail.tsx)
+- [ ] Update customer dashboard to display color and size in order items
+- [x] Test: Delivered order inventory deduction working - stock decreased from 49 to 48 units
+- [x] Admin orders panel shows product image, color, size details

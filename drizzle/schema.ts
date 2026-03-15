@@ -208,6 +208,8 @@ export const orderItems = mysqlTable("order_items", {
   quantity: int("quantity").notNull(),
   unitPrice: decimal("unitPrice", { precision: 12, scale: 2 }).notNull(),
   totalPrice: decimal("totalPrice", { precision: 12, scale: 2 }).notNull(),
+  selectedColor: varchar("selectedColor", { length: 100 }),
+  selectedSize: varchar("selectedSize", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   orderIdx: index("order_items_order_idx").on(table.orderId),

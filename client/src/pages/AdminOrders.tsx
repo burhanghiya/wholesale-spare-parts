@@ -84,13 +84,25 @@ export default function AdminOrders() {
                               const qty = Number(item.quantity || 1);
                               const subtotal = unitPrice * qty;
                               return (
-                                <div key={idx} className="text-xs space-y-0.5">
-                                  <div className="flex justify-between">
-                                    <span className="font-medium">{item.productName || item.name} {item.partNumber ? `(#${item.partNumber})` : ''}</span>
-                                  </div>
-                                  <div className="flex justify-between text-muted-foreground">
-                                    <span>x{qty} @ ₹{unitPrice.toLocaleString()}</span>
-                                    <span className="font-semibold text-foreground">₹{subtotal.toLocaleString()}</span>
+                                <div key={idx} className="text-xs space-y-0.5 flex gap-2">
+                                  {item.productImage && (
+                                    <img src={item.productImage} alt={item.productName} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                                  )}
+                                  <div className="flex-1">
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">{item.productName || item.name} {item.partNumber ? `(#${item.partNumber})` : ''}</span>
+                                    </div>
+                                    {(item.selectedColor || item.selectedSize) && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {item.selectedColor && <span>Color: {item.selectedColor}</span>}
+                                        {item.selectedColor && item.selectedSize && <span> | </span>}
+                                        {item.selectedSize && <span>Size: {item.selectedSize}</span>}
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>x{qty} @ ₹{unitPrice.toLocaleString()}</span>
+                                      <span className="font-semibold text-foreground">₹{subtotal.toLocaleString()}</span>
+                                    </div>
                                   </div>
                                 </div>
                               );
