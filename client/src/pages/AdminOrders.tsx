@@ -57,7 +57,7 @@ export default function AdminOrders() {
             {orders.map((order) => (
               <Card key={order.id} className="hover:shadow-sm transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold font-mono">{order.orderNumber}</h3>
@@ -77,20 +77,30 @@ export default function AdminOrders() {
                       </div>
                       {order.items && order.items.length > 0 && (
                         <div className="mb-2 p-2 bg-muted/50 rounded">
-                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Order Items</p>
-                          <div className="space-y-1">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Order Items</p>
+                          <div className="space-y-2">
                             {order.items.map((item: any, idx: number) => {
                               const unitPrice = Number(item.basePrice || item.price || 0);
                               const qty = Number(item.quantity || 1);
                               const subtotal = unitPrice * qty;
                               return (
-                                <div key={idx} className="text-xs space-y-0.5">
-                                  <div className="flex justify-between">
-                                    <span className="font-medium">{item.productName || item.name} {item.partNumber ? `(#${item.partNumber})` : ''}</span>
-                                  </div>
-                                  <div className="flex justify-between text-muted-foreground">
-                                    <span>x{qty} @ ₹{unitPrice.toLocaleString()}</span>
-                                    <span className="font-semibold text-foreground">₹{subtotal.toLocaleString()}</span>
+                                <div key={idx} className="flex gap-2 p-2 bg-background rounded border">
+                                  {item.imageUrl && (
+                                    <img src={item.imageUrl} alt={item.productName} className="w-14 h-14 object-cover rounded" />
+                                  )}
+                                  <div className="flex-1 text-xs">
+                                    <div className="font-medium">{item.productName || item.name} {item.partNumber ? `(#${item.partNumber})` : ''}</div>
+                                    {(item.selectedColor || item.selectedSize) && (
+                                      <div className="text-muted-foreground text-xs mt-0.5">
+                                        {item.selectedColor && <span>Color: {item.selectedColor}</span>}
+                                        {item.selectedColor && item.selectedSize && <span> | </span>}
+                                        {item.selectedSize && <span>Size: {item.selectedSize}</span>}
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between text-muted-foreground mt-1">
+                                      <span>x{qty} @ ₹{unitPrice.toLocaleString()}</span>
+                                      <span className="font-semibold text-foreground">₹{subtotal.toLocaleString()}</span>
+                                    </div>
                                   </div>
                                 </div>
                               );

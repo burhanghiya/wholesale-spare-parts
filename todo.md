@@ -321,3 +321,38 @@
 - [ ] Update order items to display selected color/size
 - [ ] Test color/size selection in cart and orders
 - [ ] All tests passing
+
+## Phase 32: Add Complete Order Item Details Display
+- [x] Added selectedColor and selectedSize fields to orderItems table in database
+- [ ] Update checkout to save selected color/size when creating order items
+- [ ] Update admin orders page to display product photo with each order item
+- [ ] Show color and size in order items (e.g., "Color: Black | Size: M")
+- [ ] Display full item details: photo, name, color, size, quantity, price in admin orders
+- [ ] Create customer order tracking link/page to show order details
+- [ ] Display same order item details (photo, color, size, quantity, price) to customer
+- [ ] Test order items display with all details in both admin and customer views
+- [ ] All tests passing
+
+
+## Phase 32: Add Complete Order Item Details Display
+- [x] Added selectedColor and selectedSize fields to orderItems table in database
+- [x] Update checkout to save selected color/size when creating order items
+- [x] Update admin orders page to display product photo with each order item
+- [x] Show color and size in order items (e.g., "Color: Black | Size: M")
+- [x] Display full item details: photo, name, color, size, quantity, price in admin orders
+- [x] Create customer order tracking link/page to show order details
+- [x] Display same order item details (photo, color, size, quantity, price) to customer
+- [x] Test order items display with all details in both admin and customer views
+- [x] All tests passing
+
+## Phase 33: Customer Order Tracking
+- [x] Created TrackOrder page at /track-order for customers to track orders
+- [x] Added getOrderByNumber backend procedure (public, no auth required)
+- [x] Added getOrderByNumber database function to fetch order by order number
+- [x] Customers can enter order number to view order status
+- [x] Display order status timeline with visual progress indicator
+- [x] Show order items with photo, color, size, quantity, price
+- [x] Display shipping information and payment details
+- [x] Added shareable tracking link feature (copy link button)
+- [x] Support URL query parameter for direct order tracking (?order=ORD-123)
+- [x] All tests passing

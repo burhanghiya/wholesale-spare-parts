@@ -272,6 +272,13 @@ export async function getOrdersByUserId(userId: number) {
   return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
 }
 
+export async function getOrderByNumber(orderNumber: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 export async function getAllOrders(limit = 50, offset = 0) {
   const db = await getDb();
   if (!db) return [];

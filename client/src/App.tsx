@@ -10,6 +10,7 @@ import ProductDetail from "./pages/ProductDetail";
 import ShoppingCart from "./pages/ShoppingCart";
 import Checkout from "./pages/Checkout";
 import OrderTracking from "./pages/OrderTracking";
+import TrackOrder from "./pages/TrackOrder";
 import DealerProfile from "./pages/DealerProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProducts from "./pages/AdminProducts";
@@ -29,6 +30,7 @@ function Router() {
       {/* Dealer/Customer Pages */}
       <Route path={"/cart"} component={ShoppingCart} />
       <Route path={"/checkout"} component={Checkout} />
+      <Route path={"/track-order"} component={TrackOrder} />
       <Route path={"/orders/:id"} component={OrderTracking} />
       <Route path={"/profile"} component={DealerProfile} />
       

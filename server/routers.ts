@@ -273,6 +273,20 @@ export const appRouter = router({
         return result;
       }),
 
+    getOrderByNumber: publicProcedure
+      .input(z.object({ orderNumber: z.string() }))
+      .query(async ({ input }) => {
+        const order = await db.getOrderByNumber(input.orderNumber);
+        if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+        const items = await db.getOrderItems(order.id);
+        // Attach product info to each item
+        const itemsWithProduct = await Promise.all(items.map(async (item) => {
+          const product = await db.getProductById(item.productId);
+          return { ...item, imageUrl: product?.imageUrl, productName: product?.name };
+        }));
+        return { ...order, items: itemsWithProduct };
+      }),
+
     updateStatus: adminProcedure
       .input(z.object({
         orderId: z.number(),

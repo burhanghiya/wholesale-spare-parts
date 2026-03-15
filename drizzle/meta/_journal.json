@@ -50,6 +50,13 @@
       "when": 1773569770817,
       "tag": "0006_fresh_famine",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1773577738847,
+      "tag": "0007_sloppy_reaper",
+      "breakpoints": true
     }
   ]
 }
