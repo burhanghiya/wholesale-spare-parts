@@ -302,6 +302,14 @@ export async function updateOrderStatus(orderId: number, status: string, trackin
   if (!db) return false;
   const updateData: any = { orderStatus: status as any, updatedAt: new Date() };
   if (trackingNumber) updateData.trackingNumber = trackingNumber;
+  
+  // Record timestamp for each status change
+  const now = new Date();
+  if (status === 'confirmed') updateData.confirmedAt = now;
+  else if (status === 'processing') updateData.processingAt = now;
+  else if (status === 'shipped') updateData.shippedAt = now;
+  else if (status === 'delivered') updateData.deliveredAt = now;
+  
   await db.update(orders).set(updateData).where(eq(orders.id, orderId));
   return true;
 }

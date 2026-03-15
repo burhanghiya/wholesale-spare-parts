@@ -357,3 +357,12 @@
 - [ ] Update customer dashboard to display color and size in order items
 - [x] Test: Delivered order inventory deduction working - stock decreased from 49 to 48 units
 - [x] Admin orders panel shows product image, color, size details
+
+
+## Phase 38: Add Order Status Timestamps & Timeline Display
+- [x] Add status timestamp fields to orders table (confirmedAt, processingAt, shippedAt, deliveredAt)
+- [x] Create database migration for status timestamp fields
+- [x] Update order status change logic to record timestamps when status changes
+- [x] Update order tracking page to display date/time for each status in timeline
+- [x] Test: Verify timeline shows complete date/time for all status changes - Order placed: 15 Mar 2026, 07:28 pm
+- [x] All tests passing

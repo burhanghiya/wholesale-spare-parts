@@ -180,6 +180,12 @@ export const orders = mysqlTable("orders", {
   trackingNumber: varchar("trackingNumber", { length: 100 }),
   estimatedDeliveryDate: timestamp("estimatedDeliveryDate"),
   
+  // Status timestamps
+  confirmedAt: timestamp("confirmedAt"),
+  processingAt: timestamp("processingAt"),
+  shippedAt: timestamp("shippedAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  
   // GST Invoice
   invoiceNumber: varchar("invoiceNumber", { length: 50 }),
   invoiceUrl: text("invoiceUrl"),

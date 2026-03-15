@@ -108,6 +108,17 @@ export default function OrderTracking() {
                     {statusSteps.map((step, idx) => {
                       const isCompleted = idx <= currentIdx;
                       const isCurrent = idx === currentIdx;
+                      
+                      // Get timestamp for this status
+                      let timestamp: Date | null = null;
+                      if (step.key === 'confirmed' && order.confirmedAt) timestamp = new Date(order.confirmedAt);
+                      else if (step.key === 'processing' && order.processingAt) timestamp = new Date(order.processingAt);
+                      else if (step.key === 'shipped' && order.shippedAt) timestamp = new Date(order.shippedAt);
+                      else if (step.key === 'delivered' && order.deliveredAt) timestamp = new Date(order.deliveredAt);
+                      else if (step.key === 'pending') timestamp = new Date(order.createdAt);
+                      
+                      const timeStr = timestamp ? timestamp.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
+                      
                       return (
                         <div key={step.key} className="flex gap-4">
                           <div className="flex flex-col items-center">
@@ -122,6 +133,9 @@ export default function OrderTracking() {
                           </div>
                           <div className="pb-6">
                             <p className={`font-medium ${isCompleted ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</p>
+                            {timeStr && isCompleted && (
+                              <p className="text-xs text-green-600 dark:text-green-400 font-medium">{timeStr}</p>
+                            )}
                             <p className="text-xs text-muted-foreground">{isCurrent ? "Current status" : isCompleted ? "Completed" : step.desc}</p>
                           </div>
                         </div>
