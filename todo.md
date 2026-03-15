@@ -366,3 +366,13 @@
 - [x] Update order tracking page to display date/time for each status in timeline
 - [x] Test: Verify timeline shows complete date/time for all status changes - Order placed: 15 Mar 2026, 07:28 pm
 - [x] All tests passing
+
+
+## Phase 39: Fix Admin Orders Display - Show Shipping Cost & Product Details
+- [x] Check database to verify shipping cost is stored in orders table
+- [x] Update admin orders display to show shipping cost for each order
+- [x] Update admin orders display to show product image thumbnail for each item
+- [x] Update admin orders display to show selected color for each item
+- [x] Update admin orders display to show selected size for each item
+- [x] Test: Verify admin can see shipping cost, product image, color, size in orders panel - ₹135 showing correctly!
+- [x] All tests passing

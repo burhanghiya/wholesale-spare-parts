@@ -214,6 +214,7 @@ export const appRouter = router({
         shippingAddress: z.string(),
         paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay']),
         shippingPincode: z.string().optional(),
+        shippingCost: z.number().optional().default(0),
       }))
       .mutation(async ({ ctx, input }) => {
         const cartItemsList = await db.getCartItems(ctx.user.id);
@@ -245,7 +246,7 @@ export const appRouter = router({
         const orderId = await db.createOrder({
           orderNumber, userId: ctx.user.id,
           totalAmount: String(totalAmount), gstAmount: String(0),
-          shippingCost: String(0), shippingAddress: input.shippingAddress,
+          shippingCost: String(input.shippingCost || 0), shippingAddress: input.shippingAddress,
           paymentMethod: input.paymentMethod,
           paymentStatus: 'pending',
           orderStatus: 'pending', // Always start as pending

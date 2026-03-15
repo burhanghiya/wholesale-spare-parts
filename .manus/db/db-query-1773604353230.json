@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, orderNumber, totalAmount, shippingCost FROM orders WHERE orderNumber = 'ORD-1773604313922' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, orderNumber, totalAmount, shippingCost FROM orders WHERE orderNumber = 'ORD-1773604313922' LIMIT 1;",
+  "rows": [
+    {
+      "id": "360004",
+      "orderNumber": "ORD-1773604313922",
+      "totalAmount": "1350.00",
+      "shippingCost": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\ttotalAmount\tshippingCost\n360004\tORD-1773604313922\t1350.00\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 1583
+}
