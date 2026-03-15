@@ -356,3 +356,14 @@
 - [x] Added shareable tracking link feature (copy link button)
 - [x] Support URL query parameter for direct order tracking (?order=ORD-123)
 - [x] All tests passing
+
+
+## Phase 34: Hybrid Shipping Calculation (Pincode Zones + Distance)
+- [x] Add pincode_zones table to database schema with fields: id, pincode_start, pincode_end, shipping_cost, created_at, updated_at
+- [x] Create database migration for pincode_zones table
+- [x] Add database functions: getPinCodeZones, upsertPinCodeZone, deletePinCodeZone
+- [x] Add tRPC procedures: getPinCodeZones, upsertPinCodeZone, deletePinCodeZone
+- [x] Create AdminPinCodeZones page in admin panel for managing pincode zones
+- [x] Update checkout shipping calculation: Check pincode zone first, if match use that rate, else use Google Maps distance
+- [x] Test hybrid approach: Same pincode (394210) should use pincode zone rate (₹45), different pincode should use distance calculation
+- [x] All tests passing

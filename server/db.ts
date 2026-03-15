@@ -2,7 +2,7 @@ import { eq, and, like, desc, asc, sql, or, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, gstConfiguration, shippingRates
+  quotations, categories, gstConfiguration, shippingRates, pinCodeZones
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -594,4 +594,69 @@ export async function updateShippingConfig(baseCost: number, costPerKm: number, 
   }
   
   return true;
+}
+
+
+// ========================
+// PIN CODE ZONES (Hybrid Shipping)
+// ========================
+
+export async function getPinCodeZones() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(pinCodeZones).where(eq(pinCodeZones.isActive, true)).orderBy(asc(pinCodeZones.pinCodeStart));
+}
+
+export async function upsertPinCodeZone(data: { pinCodeStart: string; pinCodeEnd: string; zone: string; shippingCost: number; id?: number }) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  if (data.id) {
+    // Update existing
+    await db.update(pinCodeZones).set({
+      pinCodeStart: data.pinCodeStart,
+      pinCodeEnd: data.pinCodeEnd,
+      zone: data.zone,
+      shippingCost: String(data.shippingCost),
+      updatedAt: new Date(),
+    }).where(eq(pinCodeZones.id, data.id));
+  } else {
+    // Create new
+    await db.insert(pinCodeZones).values({
+      pinCodeStart: data.pinCodeStart,
+      pinCodeEnd: data.pinCodeEnd,
+      zone: data.zone,
+      shippingCost: String(data.shippingCost),
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+  return true;
+}
+
+export async function deletePinCodeZone(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(pinCodeZones).where(eq(pinCodeZones.id, id));
+  return true;
+}
+
+// Get shipping cost for a pincode (if exists in zones)
+export async function getShippingCostByPinCode(pincode: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const zones = await db.select().from(pinCodeZones)
+    .where(and(
+      eq(pinCodeZones.isActive, true),
+      lte(pinCodeZones.pinCodeStart, pincode),
+      gte(pinCodeZones.pinCodeEnd, pincode)
+    ));
+  
+  if (zones.length > 0) {
+    return Number(zones[0].shippingCost);
+  }
+  
+  return null;
 }

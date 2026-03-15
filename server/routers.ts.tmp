@@ -1,0 +1,23 @@
+
+    // Pincode zones (hybrid shipping)
+    getPinCodeZones: adminProcedure.query(async () => db.getPinCodeZones()),
+
+    upsertPinCodeZone: adminProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        pinCodeStart: z.string().min(1),
+        pinCodeEnd: z.string().min(1),
+        zone: z.string().min(1),
+        shippingCost: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.upsertPinCodeZone(input);
+        return { success };
+      }),
+
+    deletePinCodeZone: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input }) => {
+        const success = await db.deletePinCodeZone(input);
+        return { success };
+      }),

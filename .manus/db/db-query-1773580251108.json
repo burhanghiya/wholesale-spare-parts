@@ -1,0 +1,30 @@
+{
+  "query": "DELETE FROM pin_code_zones WHERE zone = 'Surat'; INSERT INTO pin_code_zones (pinCodeStart, pinCodeEnd, zone, shippingCost, isActive, createdAt, updatedAt) VALUES ('394220', '395999', 'Surat', '30', 1, NOW(), NOW()); SELECT * FROM pin_code_zones;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute DELETE FROM pin_code_zones WHERE zone = 'Surat'; INSERT INTO pin_code_zones (pinCodeStart, pinCodeEnd, zone, shippingCost, isActive, createdAt, updatedAt) VALUES ('394220', '395999', 'Surat', '30', 1, NOW(), NOW()); SELECT * FROM pin_code_zones;",
+  "rows": [
+    {
+      "id": "30001",
+      "pinCodeStart": "394210",
+      "pinCodeEnd": "394219",
+      "zone": "Udhana",
+      "shippingCost": "45.00",
+      "isActive": "1",
+      "createdAt": "2026-03-15 13:08:38",
+      "updatedAt": "2026-03-15 13:08:38"
+    },
+    {
+      "id": "30002",
+      "pinCodeStart": "394220",
+      "pinCodeEnd": "395999",
+      "zone": "Surat",
+      "shippingCost": "30.00",
+      "isActive": "1",
+      "createdAt": "2026-03-15 13:10:50",
+      "updatedAt": "2026-03-15 13:10:50"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpinCodeStart\tpinCodeEnd\tzone\tshippingCost\tisActive\tcreatedAt\tupdatedAt\n30001\t394210\t394219\tUdhana\t45.00\t1\t2026-03-15 13:08:38\t2026-03-15 13:08:38\n30002\t394220\t395999\tSurat\t30.00\t1\t2026-03-15 13:10:50\t2026-03-15 13:10:50\n",
+  "stderr": "",
+  "execution_time_ms": 2184
+}
