@@ -288,3 +288,11 @@
 - [x] Error message shows product name and available vs requested quantity
 - [x] Tested both features - order items display and stock validation working
 - [x] All 15 tests passing
+
+## Phase 28: Add Stock Validation to Cart Page
+- [x] Fetch product stock for each cart item using getInventory procedure
+- [x] Disable + button when quantity >= available stock
+- [x] Show "Only X units available" warning message in red
+- [x] Prevent quantity from exceeding stock limit
+- [x] Tested stock limits in cart - validation working correctly
+- [x] All 15 tests passing

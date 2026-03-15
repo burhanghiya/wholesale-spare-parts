@@ -15,6 +15,7 @@ import { toast } from "sonner";
 export default function ShoppingCart() {
   const [, setLocation] = useLocation();
   const { data: cartItems, isLoading, refetch } = trpc.cart.list.useQuery();
+  const { data: inventoryData } = trpc.products.getInventory.useQuery();
 
   const removeFromCartMutation = trpc.cart.remove.useMutation({
     onSuccess: () => { refetch(); toast.success("Item removed"); },
@@ -93,12 +94,19 @@ export default function ShoppingCart() {
                             size="sm"
                             className="h-6 w-6 p-0"
                             onClick={() => updateQuantityMutation.mutate({ cartItemId: item.id, quantity: item.quantity + 1 })}
-                            disabled={updateQuantityMutation.isPending}
+                            disabled={updateQuantityMutation.isPending || (inventoryData?.find(inv => inv.productId === item.productId)?.quantityInStock || 0) <= item.quantity}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
                         <span className="text-sm text-muted-foreground">@ ₹{Number(item.product?.basePrice).toFixed(2)}</span>
+                        {(() => {
+                          const stock = inventoryData?.find(inv => inv.productId === item.productId)?.quantityInStock || 0;
+                          if (stock < item.quantity) {
+                            return <span className="text-xs text-destructive font-medium">Only {stock} available</span>;
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">

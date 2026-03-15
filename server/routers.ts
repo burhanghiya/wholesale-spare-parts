@@ -51,6 +51,8 @@ export const appRouter = router({
 
     getCategories: publicProcedure.query(async () => db.getAllCategories()),
 
+    getInventory: publicProcedure.query(async () => db.getAllInventory()),
+
     create: adminProcedure
       .input(z.object({
         partNumber: z.string(), name: z.string(), description: z.string().optional(),
