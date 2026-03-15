@@ -40,26 +40,13 @@ export default function Checkout() {
   const { data: shippingConfig } = trpc.admin.getShippingConfig.useQuery();
   const freeShippingThreshold = shippingConfig?.freeShippingThreshold || 1000;
 
-  // Hybrid shipping: Check pincode zones first, then fallback to distance
-  const { data: pinCodeZones } = trpc.admin.getPinCodeZones.useQuery();
-  
-  // Check if pincode matches any zone
-  const pinCodeZone = pinCodeZones?.find((zone: any) => {
-    const pinStart = parseInt(zone.pinCodeStart);
-    const pinEnd = parseInt(zone.pinCodeEnd);
-    const customerPin = parseInt(address.pincode);
-    return customerPin >= pinStart && customerPin <= pinEnd;
-  });
-  
-  // If pincode zone found, use its cost; otherwise calculate by distance
+  // Calculate shipping based on distance from warehouse
   const fullAddress = `${address.addressLine1}${address.addressLine2 ? ', ' + address.addressLine2 : ''}, ${address.city}, ${address.state} - ${address.pincode}`;
   const { data: shippingData } = trpc.admin.calculateShippingByDistance.useQuery(
     { address: fullAddress },
-    { enabled: !pinCodeZone && fullAddress.length > 10 && address.pincode.length === 6 }
+    { enabled: fullAddress.length > 10 && address.pincode.length === 6 }
   );
-  
-  // Use pincode zone cost if available, otherwise use distance calculation
-  const calculatedShipping = pinCodeZone ? Number(pinCodeZone.shippingCost) : (shippingData?.shippingCost || 0);
+  const calculatedShipping = shippingData?.shippingCost || 0;
 
   // Totals
   const subtotal = cartItems?.reduce((sum, item) => sum + Number(item.product?.basePrice || 0) * item.quantity, 0) || 0;

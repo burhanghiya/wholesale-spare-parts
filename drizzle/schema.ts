@@ -174,6 +174,7 @@ export const orders = mysqlTable("orders", {
   
   // Order status
   orderStatus: mysqlEnum("orderStatus", ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]).default("pending").notNull(),
+  inventoryDeducted: boolean("inventoryDeducted").default(false).notNull(),
   
   // Tracking
   trackingNumber: varchar("trackingNumber", { length: 100 }),
@@ -207,8 +208,6 @@ export const orderItems = mysqlTable("order_items", {
   quantity: int("quantity").notNull(),
   unitPrice: decimal("unitPrice", { precision: 12, scale: 2 }).notNull(),
   totalPrice: decimal("totalPrice", { precision: 12, scale: 2 }).notNull(),
-  selectedColor: varchar("selectedColor", { length: 100 }),
-  selectedSize: varchar("selectedSize", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   orderIdx: index("order_items_order_idx").on(table.orderId),
@@ -322,6 +321,7 @@ export const pinCodeZones = mysqlTable("pin_code_zones", {
   pinCodeStart: varchar("pinCodeStart", { length: 6 }).notNull(),
   pinCodeEnd: varchar("pinCodeEnd", { length: 6 }).notNull(),
   zone: varchar("zone", { length: 50 }).notNull(),
+  areaName: varchar("areaName", { length: 100 }).notNull(),
   shippingCost: decimal("shippingCost", { precision: 12, scale: 2 }).notNull(),
   isActive: boolean("isActive").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

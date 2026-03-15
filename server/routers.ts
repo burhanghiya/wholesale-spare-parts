@@ -273,20 +273,6 @@ export const appRouter = router({
         return result;
       }),
 
-    getOrderByNumber: publicProcedure
-      .input(z.object({ orderNumber: z.string() }))
-      .query(async ({ input }) => {
-        const order = await db.getOrderByNumber(input.orderNumber);
-        if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
-        const items = await db.getOrderItems(order.id);
-        // Attach product info to each item
-        const itemsWithProduct = await Promise.all(items.map(async (item) => {
-          const product = await db.getProductById(item.productId);
-          return { ...item, imageUrl: product?.imageUrl, productName: product?.name };
-        }));
-        return { ...order, items: itemsWithProduct };
-      }),
-
     updateStatus: adminProcedure
       .input(z.object({
         orderId: z.number(),
@@ -295,6 +281,17 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await db.updateOrderStatus(input.orderId, input.status, input.trackingNumber);
+        
+        // Automatically deduct inventory when order is confirmed
+        if (input.status === 'confirmed') {
+          await db.deductInventoryForOrder(input.orderId);
+        }
+        
+        // Restore inventory when order is cancelled
+        if (input.status === 'cancelled') {
+          await db.restoreInventoryForOrder(input.orderId);
+        }
+        
         return { success: true };
       }),
   }),
@@ -456,29 +453,6 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const success = await db.updateShippingConfig(input.baseCost, input.costPerKm, input.freeShippingThreshold);
-        return { success };
-      }),
-
-    // Pincode zones (hybrid shipping)
-    getPinCodeZones: adminProcedure.query(async () => db.getPinCodeZones()),
-
-    upsertPinCodeZone: adminProcedure
-      .input(z.object({
-        id: z.number().optional(),
-        pinCodeStart: z.string().min(1),
-        pinCodeEnd: z.string().min(1),
-        zone: z.string().min(1),
-        shippingCost: z.number().min(0),
-      }))
-      .mutation(async ({ input }) => {
-        const success = await db.upsertPinCodeZone(input);
-        return { success };
-      }),
-
-    deletePinCodeZone: adminProcedure
-      .input(z.number())
-      .mutation(async ({ input }) => {
-        const success = await db.deletePinCodeZone(input);
         return { success };
       }),
   }),

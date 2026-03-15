@@ -2,7 +2,7 @@ import { eq, and, like, desc, asc, sql, or, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, gstConfiguration, shippingRates, pinCodeZones
+  quotations, categories, gstConfiguration, shippingRates
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -270,13 +270,6 @@ export async function getOrdersByUserId(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
-}
-
-export async function getOrderByNumber(orderNumber: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
 }
 
 export async function getAllOrders(limit = 50, offset = 0) {
@@ -598,65 +591,83 @@ export async function updateShippingConfig(baseCost: number, costPerKm: number, 
 
 
 // ========================
-// PIN CODE ZONES (Hybrid Shipping)
+// INVENTORY DEDUCTION
 // ========================
 
-export async function getPinCodeZones() {
+export async function deductInventoryForOrder(orderId: number): Promise<boolean> {
   const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(pinCodeZones).where(eq(pinCodeZones.isActive, true)).orderBy(asc(pinCodeZones.pinCodeStart));
-}
+  if (!db) { console.warn("[Database] Cannot deduct inventory: database not available"); return false; }
 
-export async function upsertPinCodeZone(data: { pinCodeStart: string; pinCodeEnd: string; zone: string; shippingCost: number; id?: number }) {
-  const db = await getDb();
-  if (!db) return false;
-  
-  if (data.id) {
-    // Update existing
-    await db.update(pinCodeZones).set({
-      pinCodeStart: data.pinCodeStart,
-      pinCodeEnd: data.pinCodeEnd,
-      zone: data.zone,
-      shippingCost: String(data.shippingCost),
-      updatedAt: new Date(),
-    }).where(eq(pinCodeZones.id, data.id));
-  } else {
-    // Create new
-    await db.insert(pinCodeZones).values({
-      pinCodeStart: data.pinCodeStart,
-      pinCodeEnd: data.pinCodeEnd,
-      zone: data.zone,
-      shippingCost: String(data.shippingCost),
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  try {
+    // Get order items
+    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+    
+    if (items.length === 0) {
+      console.warn("[Inventory] No items found for order", orderId);
+      return false;
+    }
+
+    // Deduct inventory for each item
+    for (const item of items) {
+      const currentInventory = await db.select().from(inventory).where(eq(inventory.productId, item.productId));
+      
+      if (currentInventory.length > 0) {
+        const inv = currentInventory[0];
+        const newQuantity = Math.max(0, inv.quantityInStock - item.quantity);
+        
+        await db.update(inventory)
+          .set({ quantityInStock: newQuantity, updatedAt: new Date() })
+          .where(eq(inventory.id, inv.id));
+      }
+    }
+
+    // Mark order as inventory deducted
+    await db.update(orders)
+      .set({ inventoryDeducted: true, updatedAt: new Date() })
+      .where(eq(orders.id, orderId));
+
+    return true;
+  } catch (error) {
+    console.error("[Inventory] Error deducting inventory:", error);
+    return false;
   }
-  return true;
 }
 
-export async function deletePinCodeZone(id: number) {
+export async function restoreInventoryForOrder(orderId: number): Promise<boolean> {
   const db = await getDb();
-  if (!db) return false;
-  await db.delete(pinCodeZones).where(eq(pinCodeZones.id, id));
-  return true;
-}
+  if (!db) { console.warn("[Database] Cannot restore inventory: database not available"); return false; }
 
-// Get shipping cost for a pincode (if exists in zones)
-export async function getShippingCostByPinCode(pincode: string) {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const zones = await db.select().from(pinCodeZones)
-    .where(and(
-      eq(pinCodeZones.isActive, true),
-      lte(pinCodeZones.pinCodeStart, pincode),
-      gte(pinCodeZones.pinCodeEnd, pincode)
-    ));
-  
-  if (zones.length > 0) {
-    return Number(zones[0].shippingCost);
+  try {
+    // Get order items
+    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+    
+    if (items.length === 0) {
+      console.warn("[Inventory] No items found for order", orderId);
+      return false;
+    }
+
+    // Restore inventory for each item
+    for (const item of items) {
+      const currentInventory = await db.select().from(inventory).where(eq(inventory.productId, item.productId));
+      
+      if (currentInventory.length > 0) {
+        const inv = currentInventory[0];
+        const newQuantity = inv.quantityInStock + item.quantity;
+        
+        await db.update(inventory)
+          .set({ quantityInStock: newQuantity, updatedAt: new Date() })
+          .where(eq(inventory.id, inv.id));
+      }
+    }
+
+    // Mark order as inventory not deducted
+    await db.update(orders)
+      .set({ inventoryDeducted: false, updatedAt: new Date() })
+      .where(eq(orders.id, orderId));
+
+    return true;
+  } catch (error) {
+    console.error("[Inventory] Error restoring inventory:", error);
+    return false;
   }
-  
-  return null;
 }

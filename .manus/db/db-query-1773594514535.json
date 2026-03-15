@@ -1,0 +1,9 @@
+{
+  "query": "SELECT i.id, i.productId, i.quantityInStock, p.name FROM inventory i JOIN products p ON i.productId = p.id WHERE p.name LIKE '%Ceiling fan%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT i.id, i.productId, i.quantityInStock, p.name FROM inventory i JOIN products p ON i.productId = p.id WHERE p.name LIKE '%Ceiling fan%';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1525
+}

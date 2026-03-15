@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `pin_code_zones` ADD `areaName` varchar(100) NOT NULL DEFAULT 'Default Area';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute ALTER TABLE `pin_code_zones` ADD `areaName` varchar(100) NOT NULL DEFAULT 'Default Area';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2109
+}

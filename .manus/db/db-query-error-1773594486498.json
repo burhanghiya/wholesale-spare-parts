@@ -1,0 +1,8 @@
+{
+  "query": "SELECT i.id, i.productId, i.quantityAvailable FROM inventory i WHERE i.productId = (SELECT productId FROM order_items WHERE orderId = (SELECT id FROM orders WHERE orderNumber = 'ORD-1773579257433') LIMIT 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT i.id, i.productId, i.quantityAvailable FROM inventory i WHERE i.productId = (SELECT productId FROM order_items WHERE orderId = (SELECT id FROM orders WHERE orderNumber = 'ORD-1773579257433') LIMIT 1);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'i.quantityavailable' in 'field list'"
+  ]
+}

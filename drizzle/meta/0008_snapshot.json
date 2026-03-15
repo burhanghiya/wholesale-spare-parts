@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "0cf30e11-190b-400e-aed4-46eed203d0a6",
-  "prevId": "095ef314-3ebc-4729-93b6-4cb82b69559b",
+  "id": "64d90e19-6e78-4ccd-b753-74236bafdb73",
+  "prevId": "0cf30e11-190b-400e-aed4-46eed203d0a6",
   "tables": {
     "cart_items": {
       "name": "cart_items",
@@ -539,6 +539,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'pending'"
+        },
+        "inventoryDeducted": {
+          "name": "inventoryDeducted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         },
         "trackingNumber": {
           "name": "trackingNumber",

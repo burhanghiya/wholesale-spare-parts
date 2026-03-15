@@ -322,48 +322,26 @@
 - [ ] Test color/size selection in cart and orders
 - [ ] All tests passing
 
-## Phase 32: Add Complete Order Item Details Display
-- [x] Added selectedColor and selectedSize fields to orderItems table in database
-- [ ] Update checkout to save selected color/size when creating order items
-- [ ] Update admin orders page to display product photo with each order item
-- [ ] Show color and size in order items (e.g., "Color: Black | Size: M")
-- [ ] Display full item details: photo, name, color, size, quantity, price in admin orders
-- [ ] Create customer order tracking link/page to show order details
-- [ ] Display same order item details (photo, color, size, quantity, price) to customer
-- [ ] Test order items display with all details in both admin and customer views
+
+## Phase 35: Hybrid+ Shipping (Pincode + Area + Distance)
+- [ ] Update pincode_zones table schema to add areaName field
+- [ ] Create database migration for areaName column
+- [ ] Update database functions to handle area names
+- [ ] Update tRPC procedures to include area names
+- [ ] Update AdminPinCodeZones UI to add area name input field
+- [ ] Add area selection dropdown in checkout page
+- [ ] Update shipping calculation: Match pincode + area first, then fallback to distance
+- [ ] Test with multiple areas in same pincode (e.g., 394210 Udhana=₹45, 394210 Vesu=₹60)
 - [ ] All tests passing
 
 
-## Phase 32: Add Complete Order Item Details Display
-- [x] Added selectedColor and selectedSize fields to orderItems table in database
-- [x] Update checkout to save selected color/size when creating order items
-- [x] Update admin orders page to display product photo with each order item
-- [x] Show color and size in order items (e.g., "Color: Black | Size: M")
-- [x] Display full item details: photo, name, color, size, quantity, price in admin orders
-- [x] Create customer order tracking link/page to show order details
-- [x] Display same order item details (photo, color, size, quantity, price) to customer
-- [x] Test order items display with all details in both admin and customer views
-- [x] All tests passing
-
-## Phase 33: Customer Order Tracking
-- [x] Created TrackOrder page at /track-order for customers to track orders
-- [x] Added getOrderByNumber backend procedure (public, no auth required)
-- [x] Added getOrderByNumber database function to fetch order by order number
-- [x] Customers can enter order number to view order status
-- [x] Display order status timeline with visual progress indicator
-- [x] Show order items with photo, color, size, quantity, price
-- [x] Display shipping information and payment details
-- [x] Added shareable tracking link feature (copy link button)
-- [x] Support URL query parameter for direct order tracking (?order=ORD-123)
-- [x] All tests passing
-
-
-## Phase 34: Hybrid Shipping Calculation (Pincode Zones + Distance)
-- [x] Add pincode_zones table to database schema with fields: id, pincode_start, pincode_end, shipping_cost, created_at, updated_at
-- [x] Create database migration for pincode_zones table
-- [x] Add database functions: getPinCodeZones, upsertPinCodeZone, deletePinCodeZone
-- [x] Add tRPC procedures: getPinCodeZones, upsertPinCodeZone, deletePinCodeZone
-- [x] Create AdminPinCodeZones page in admin panel for managing pincode zones
-- [x] Update checkout shipping calculation: Check pincode zone first, if match use that rate, else use Google Maps distance
-- [x] Test hybrid approach: Same pincode (394210) should use pincode zone rate (₹45), different pincode should use distance calculation
+## Phase 36: Automatic Inventory Stock Deduction
+- [x] Fix inventory for delivered order ORD-1773579257433 (Ceiling fan -1 unit)
+- [x] Add inventoryDeducted boolean field to orders table to track if stock was deducted
+- [x] Update order confirmation procedure to automatically deduct inventory from stock
+- [x] Update order delivery procedure to verify inventory was already deducted
+- [x] Add order cancellation to restore inventory back to stock
+- [x] Update admin order status change to trigger inventory deduction/restoration
+- [x] Test automatic deduction: Place order → confirm → inventory should decrease
+- [x] Test cancellation: Cancel order → inventory should increase back
 - [x] All tests passing

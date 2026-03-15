@@ -1,0 +1,8 @@
+{
+  "query": "SELECT o.id, o.orderNumber, o.status, oi.productId, oi.quantity, p.name FROM orders o LEFT JOIN order_items oi ON o.id = oi.orderId LEFT JOIN products p ON oi.productId = p.id WHERE o.id = 2;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT o.id, o.orderNumber, o.status, oi.productId, oi.quantity, p.name FROM orders o LEFT JOIN order_items oi ON o.id = oi.orderId LEFT JOIN products p ON oi.productId = p.id WHERE o.id = 2;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'o.status' in 'field list'"
+  ]
+}
