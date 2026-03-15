@@ -79,12 +79,22 @@ export default function AdminOrders() {
                         <div className="mb-2 p-2 bg-muted/50 rounded">
                           <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Order Items</p>
                           <div className="space-y-1">
-                            {order.items.map((item: any, idx: number) => (
-                              <div key={idx} className="text-xs flex justify-between">
-                                <span>{item.productName || item.name || 'Product'} (x{item.quantity})</span>
-                                <span className="text-muted-foreground">₹{Number(item.price || 0).toLocaleString()}</span>
-                              </div>
-                            ))}
+                            {order.items.map((item: any, idx: number) => {
+                              const unitPrice = Number(item.basePrice || item.price || 0);
+                              const qty = Number(item.quantity || 1);
+                              const subtotal = unitPrice * qty;
+                              return (
+                                <div key={idx} className="text-xs space-y-0.5">
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">{item.productName || item.name} {item.partNumber ? `(#${item.partNumber})` : ''}</span>
+                                  </div>
+                                  <div className="flex justify-between text-muted-foreground">
+                                    <span>x{qty} @ ₹{unitPrice.toLocaleString()}</span>
+                                    <span className="font-semibold text-foreground">₹{subtotal.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}

@@ -84,6 +84,10 @@ export const products = mysqlTable("products", {
   productImages: json("productImages"), // Array of image URLs for gallery
   explodedViewUrl: text("explodedViewUrl"),
   
+  // Variations
+  colorOptions: json("colorOptions"), // Array of available colors: ["Red", "Blue", "Green"]
+  sizeOptions: json("sizeOptions"), // Array of available sizes: ["S", "M", "L", "XL"]
+  
   // Stock management
   stockQty: int("stockQty").default(0).notNull(),
   minOrderQty: int("minOrderQty").default(1).notNull(),

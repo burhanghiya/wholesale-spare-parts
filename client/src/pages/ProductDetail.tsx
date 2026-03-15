@@ -68,6 +68,8 @@ export default function ProductDetail() {
   const basePrice = Number(product.basePrice);
   const totalPrice = basePrice * quantity;
   const discountedPrice = totalPrice;
+  const maxQuantity = inventory?.quantityInStock || 0;
+  const isQuantityExceeded = quantity > maxQuantity;
 
   let compatibleModels: string[] = [];
   try {
@@ -203,11 +205,24 @@ export default function ProductDetail() {
                   <label className="text-sm font-medium mb-2 block">Quantity</label>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</Button>
-                    <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} className="w-24 text-center" />
-                    <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 1)}>+</Button>
-                    <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 10)}>+10</Button>
-                    <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 50)}>+50</Button>
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      max={maxQuantity}
+                      value={quantity} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        setQuantity(Math.min(Math.max(1, val), maxQuantity));
+                      }} 
+                      className={`w-24 text-center ${isQuantityExceeded ? 'border-red-500 border-2' : ''}`}
+                    />
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.min(quantity + 1, maxQuantity))} disabled={quantity >= maxQuantity}>+</Button>
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.min(quantity + 10, maxQuantity))} disabled={quantity >= maxQuantity}>+10</Button>
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.min(quantity + 50, maxQuantity))} disabled={quantity >= maxQuantity}>+50</Button>
                   </div>
+                  {isQuantityExceeded && (
+                    <p className="text-sm text-red-600 font-medium">Only {maxQuantity} units available</p>
+                  )}
                 </div>
 
                 <div className="border-t border-border pt-4 space-y-2">
@@ -221,11 +236,11 @@ export default function ProductDetail() {
                   <Button
                     size="lg"
                     className="flex-1"
-                    disabled={!inventory?.quantityInStock || addToCartMutation.isPending}
+                    disabled={!inventory?.quantityInStock || addToCartMutation.isPending || isQuantityExceeded}
                     onClick={() => addToCartMutation.mutate({ productId, quantity })}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
-                    {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
+                    {addToCartMutation.isPending ? "Adding..." : isQuantityExceeded ? "Quantity Exceeds Stock" : "Add to Cart"}
                   </Button>
                   <Button
                     size="lg"

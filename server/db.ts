@@ -285,6 +285,9 @@ export async function getAllOrders(limit = 50, offset = 0) {
       unitPrice: orderItems.unitPrice,
       totalPrice: orderItems.totalPrice,
       productName: products.name,
+      partNumber: products.partNumber,
+      basePrice: products.basePrice,
+      price: orderItems.unitPrice,
     }).from(orderItems)
       .leftJoin(products, eq(orderItems.productId, products.id))
       .where(eq(orderItems.orderId, order.id));

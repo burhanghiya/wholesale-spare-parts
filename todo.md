@@ -296,3 +296,28 @@
 - [x] Prevent quantity from exceeding stock limit
 - [x] Tested stock limits in cart - validation working correctly
 - [x] All 15 tests passing
+
+## Phase 29: Enforce Strict Quantity Limits on Product Detail Page
+- [ ] Input field max value = available stock (cannot type more than stock)
+- [ ] Add to Cart button disabled when quantity > available stock
+- [ ] Quantity input field shows red border when exceeds stock
+- [ ] Test quantity enforcement on product detail page
+- [ ] All tests passing
+
+## Phase 30: Fix Order Items Display with Complete Details
+- [x] Show product name, part number, quantity, unit price, and item subtotal for each order item
+- [x] Fix ₹0 showing for item price - display actual item subtotal
+- [x] Format: "Product Name (#PartNumber) × Qty @ ₹Price = ₹Subtotal"
+- [x] Test order items display with complete details
+- [ ] Fix basePrice not showing - need to fetch from products table in getAllOrders
+- [ ] All tests passing
+
+## Phase 31: Add Color and Size Variations to Products
+- [ ] Add color options field to products table (JSON array: ["Red", "Blue", "Green"])
+- [ ] Add size options field to products table (JSON array: ["S", "M", "L", "XL"])
+- [ ] Update admin products page to add color/size options
+- [ ] Update product detail page to show color/size selector
+- [ ] Update cart to store selected color/size with each item
+- [ ] Update order items to display selected color/size
+- [ ] Test color/size selection in cart and orders
+- [ ] All tests passing

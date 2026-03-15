@@ -26,6 +26,7 @@ export default function AdminProducts() {
   const [form, setForm] = useState({
     partNumber: '', name: '', description: '', categoryName: 'General',
     basePrice: '', stock: '', moq: '1', imageUrl: '', productImages: [] as string[],
+    colorOptions: '', sizeOptions: '',
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [productImageGallery, setProductImageGallery] = useState<string[]>([]);
@@ -85,7 +86,7 @@ export default function AdminProducts() {
   });
 
   const resetForm = () => {
-    setForm({ partNumber: '', name: '', description: '', categoryName: 'General', basePrice: '', stock: '', moq: '1', imageUrl: '', productImages: [] });
+    setForm({ partNumber: '', name: '', description: '', categoryName: 'General', basePrice: '', stock: '', moq: '1', imageUrl: '', productImages: [], colorOptions: '', sizeOptions: '' });
     setImagePreview(null);
     setProductImageGallery([]);
     setShowForm(false);
@@ -124,6 +125,7 @@ export default function AdminProducts() {
       toast.error("Valid price daalo!");
       return;
     }
+    const parseOptions = (str: string) => str.trim() ? str.split(',').map(s => s.trim()).filter(Boolean) : undefined;
 
     if (editingProduct) {
       updateProduct.mutate({
@@ -137,6 +139,8 @@ export default function AdminProducts() {
           productImages: form.productImages.length > 0 ? form.productImages : undefined,
           stock: form.stock ? parseInt(form.stock) : undefined,
           moq: form.moq ? parseInt(form.moq) : undefined,
+          colorOptions: parseOptions(form.colorOptions),
+          sizeOptions: parseOptions(form.sizeOptions),
         },
       });
     } else {
@@ -150,6 +154,8 @@ export default function AdminProducts() {
         moq: form.moq ? parseInt(form.moq) : 1,
         imageUrl: form.imageUrl || undefined,
         productImages: form.productImages.length > 0 ? form.productImages : undefined,
+        colorOptions: parseOptions(form.colorOptions),
+        sizeOptions: parseOptions(form.sizeOptions),
       });
     }
   };
@@ -169,6 +175,8 @@ export default function AdminProducts() {
       moq: String(product.inventory?.minimumOrderQuantity || 1),
       imageUrl: product.imageUrl || '',
       productImages: galleryImages,
+      colorOptions: product.colorOptions && Array.isArray(product.colorOptions) ? product.colorOptions.join(', ') : '',
+      sizeOptions: product.sizeOptions && Array.isArray(product.sizeOptions) ? product.sizeOptions.join(', ') : '',
     });
     setImagePreview(product.imageUrl || null);
     setProductImageGallery(galleryImages);
@@ -295,6 +303,29 @@ export default function AdminProducts() {
                     onChange={(e) => setForm(prev => ({ ...prev, moq: e.target.value }))}
                     className="mt-1"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Color Options</Label>
+                  <Input
+                    placeholder="e.g. Red, Blue, Green (comma-separated)"
+                    value={form.colorOptions}
+                    onChange={(e) => setForm(prev => ({ ...prev, colorOptions: e.target.value }))}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty if no color options</p>
+                </div>
+                <div>
+                  <Label>Size Options</Label>
+                  <Input
+                    placeholder="e.g. S, M, L, XL (comma-separated)"
+                    value={form.sizeOptions}
+                    onChange={(e) => setForm(prev => ({ ...prev, sizeOptions: e.target.value }))}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Leave empty if no size options</p>
                 </div>
               </div>
 

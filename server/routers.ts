@@ -63,10 +63,12 @@ export const appRouter = router({
         alternatePartNumbers: z.array(z.string()).optional(),
         imageUrl: z.string().optional(), explodedViewUrl: z.string().optional(),
         productImages: z.array(z.string()).optional(),
+        colorOptions: z.array(z.string()).optional(),
+        sizeOptions: z.array(z.string()).optional(),
         stock: z.number().optional(), moq: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { stock, moq, categoryName, productImages, ...rest } = input;
+        const { stock, moq, categoryName, productImages, colorOptions, sizeOptions, ...rest } = input;
         // Find or create category by name
         const categoryId = await db.findOrCreateCategory(categoryName);
         const productData = {
@@ -77,6 +79,8 @@ export const appRouter = router({
           compatibleBrands: input.compatibleBrands ? JSON.stringify(input.compatibleBrands) : null,
           alternatePartNumbers: input.alternatePartNumbers ? JSON.stringify(input.alternatePartNumbers) : null,
           productImages: productImages ? JSON.stringify(productImages) : null,
+          colorOptions: colorOptions ? JSON.stringify(colorOptions) : null,
+          sizeOptions: sizeOptions ? JSON.stringify(sizeOptions) : null,
         };
         await db.createProduct(productData);
         const productResult = await db.getProductByPartNumber(input.partNumber);
@@ -98,14 +102,18 @@ export const appRouter = router({
           basePrice: z.number().optional(), isActive: z.boolean().optional(),
           partNumber: z.string().optional(), categoryName: z.string().optional(),
           imageUrl: z.string().optional(), productImages: z.array(z.string()).optional(),
+          colorOptions: z.array(z.string()).optional(),
+          sizeOptions: z.array(z.string()).optional(),
           stock: z.number().optional(), moq: z.number().optional(),
         }),
       }))
       .mutation(async ({ input }) => {
-        const { categoryName, stock, moq, productImages, ...restData } = input.data;
+        const { categoryName, stock, moq, productImages, colorOptions, sizeOptions, ...restData } = input.data;
         const updateData: any = { ...restData };
         if (updateData.basePrice) updateData.basePrice = String(updateData.basePrice);
         if (productImages) updateData.productImages = JSON.stringify(productImages);
+        if (colorOptions) updateData.colorOptions = JSON.stringify(colorOptions);
+        if (sizeOptions) updateData.sizeOptions = JSON.stringify(sizeOptions);
         if (categoryName) {
           updateData.categoryId = await db.findOrCreateCategory(categoryName);
         }
