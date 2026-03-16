@@ -17,6 +17,15 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminQuotations from "./pages/AdminQuotations";
 import AdminDealers from "./pages/AdminDealers";
 import AdminShipping from "./pages/AdminShipping";
+import AdminInventory from "./pages/AdminInventory";
+import AdminPricing from "./pages/AdminPricing";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminCoupons from "./pages/AdminCoupons";
+import AdminCategories from "./pages/AdminCategories";
+import AdminNotifications from "./pages/AdminNotifications";
+import AdminExport from "./pages/AdminExport";
+import AdminAuditLogs from "./pages/AdminAuditLogs";
+import AdminSettings from "./pages/AdminSettings";
 
 function Router() {
   return (
@@ -39,6 +48,15 @@ function Router() {
       <Route path={"/admin/quotations"} component={AdminQuotations} />
       <Route path={"/admin/dealers"} component={AdminDealers} />
       <Route path={"/admin/shipping"} component={AdminShipping} />
+      <Route path={"/admin/inventory"} component={AdminInventory} />
+      <Route path={"/admin/pricing"} component={AdminPricing} />
+      <Route path={"/admin/analytics"} component={AdminAnalytics} />
+      <Route path={"/admin/coupons"} component={AdminCoupons} />
+      <Route path={"/admin/categories"} component={AdminCategories} />
+      <Route path={"/admin/notifications"} component={AdminNotifications} />
+      <Route path={"/admin/export"} component={AdminExport} />
+      <Route path={"/admin/audit-logs"} component={AdminAuditLogs} />
+      <Route path={"/admin/settings"} component={AdminSettings} />
       
       {/* 404 */}
       <Route path={"/404"} component={NotFound} />
