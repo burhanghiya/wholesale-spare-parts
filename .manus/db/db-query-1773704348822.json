@@ -1,0 +1,24 @@
+{
+  "query": "SELECT * FROM orders LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT * FROM orders LIMIT 5;",
+  "rows": [],
+  "messages": [
+    "1\tORD-1773271966472\t1\t950.00\t171.00\t100.00\t0.00\t395007",
+    "\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-11 23:32:46\t2026-03-11 23:40:12\tNULL\t0\tNULL\tNULL\tNULL\tNULL",
+    "30001\tORD-1773297462039\t1\t1350.00\t243.00\t150.00\t0.00\tBurhan Ghiya, 8780657095",
+    "Udhan, Mandhi ",
+    "Suarat6, Gujarat  - 395007\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-12 06:37:42\t2026-03-12 06:47:38\tNULL\t0\tNULL\tNULL\tNULL\tNULL",
+    "60001\tORD-1773314982446\t1\t1350.00\t0.00\t150.00\t0.00\tJi, 8780657095",
+    "Udhana f 202, Madhi ni khamni ",
+    "Surat , Gujarat - 394210\tNULL\tupi\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-12 11:29:42\t2026-03-12 23:59:41\tNULL\t0\tNULL\tNULL\tNULL\tNULL",
+    "90001\tORD-1773359830014\t1\t1350.00\t0.00\t150.00\t0.00\tBurhan , 9537613686",
+    "Udhana , Mandhi ni khamni ",
+    "Surat , Gujarat - 394210\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-12 23:57:10\t2026-03-12 23:59:06\tNULL\t0\tNULL\tNULL\tNULL\tNULL",
+    "90002\tORD-1773360758355\t1\t950.00\t171.00\t150.00\t0.00\tBurhan Ghiya, 8780657095",
+    "Udham , Bffui",
+    "Surat , Gujarat - 394210\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-13 00:12:38\t2026-03-13 12:55:34\tNULL\t0\tNULL\tNULL\tNULL\tNULL"
+  ],
+  "stdout": "id\torderNumber\tuserId\ttotalAmount\tgstAmount\tshippingCost\tdiscountAmount\tshippingAddress\tshippingMethod\tpaymentMethod\tpaymentStatus\trazorpayOrderId\trazorpayPaymentId\torderStatus\ttrackingNumber\testimatedDeliveryDate\tinvoiceNumber\tinvoiceUrl\tnotes\tcreatedAt\tupdatedAt\tmanualShippingCharge\tinventoryDeducted\tconfirmedAt\tprocessingAt\tshippedAt\tdeliveredAt\n1\tORD-1773271966472\t1\t950.00\t171.00\t100.00\t0.00\t395007\n\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-11 23:32:46\t2026-03-11 23:40:12\tNULL\t0\tNULL\tNULL\tNULL\tNULL\n30001\tORD-1773297462039\t1\t1350.00\t243.00\t150.00\t0.00\tBurhan Ghiya, 8780657095\nUdhan, Mandhi \nSuarat6, Gujarat  - 395007\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-12 06:37:42\t2026-03-12 06:47:38\tNULL\t0\tNULL\tNULL\tNULL\tNULL\n60001\tORD-1773314982446\t1\t1350.00\t0.00\t150.00\t0.00\tJi, 8780657095\nUdhana f 202, Madhi ni khamni \nSurat , Gujarat - 394210\tNULL\tupi\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-12 11:29:42\t2026-03-12 23:59:41\tNULL\t0\tNULL\tNULL\tNULL\tNULL\n90001\tORD-1773359830014\t1\t1350.00\t0.00\t150.00\t0.00\tBurhan , 9537613686\nUdhana , Mandhi ni khamni \nSurat , Gujarat - 394210\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-12 23:57:10\t2026-03-12 23:59:06\tNULL\t0\tNULL\tNULL\tNULL\tNULL\n90002\tORD-1773360758355\t1\t950.00\t171.00\t150.00\t0.00\tBurhan Ghiya, 8780657095\nUdham , Bffui\nSurat , Gujarat - 394210\tNULL\trazorpay\tpending\tNULL\tNULL\tcancelled\tNULL\tNULL\tNULL\tNULL\tNULL\t2026-03-13 00:12:38\t2026-03-13 12:55:34\tNULL\t0\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1568
+}

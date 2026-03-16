@@ -3,16 +3,20 @@ import { TrendingUp, Users, ShoppingCart, DollarSign } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function AdminAnalytics() {
-  const { data: orders } = trpc.orders.getAll.useQuery();
-  const { data: products } = trpc.products.getAll.useQuery();
+  const { data: ordersData } = trpc.orders.getAll.useQuery();
+  const { data: productsData } = trpc.products.getAll.useQuery();
+
+  // Handle Superjson serialization - data might come as { json: [...] }
+  const orders = Array.isArray(ordersData) ? ordersData : (ordersData as any)?.json || [];
+  const products = Array.isArray(productsData) ? productsData : (productsData as any)?.json || [];
 
   const totalRevenue = orders?.reduce((sum: number, order: any) => sum + Number(order.totalAmount), 0) || 0;
   const totalOrders = orders?.length || 0;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const deliveredOrders = orders?.filter((o: any) => o.status === "delivered").length || 0;
+  const deliveredOrders = orders?.filter((o: any) => o.orderStatus === "delivered").length || 0;
 
   const topProducts = products
-    ?.sort((a, b) => Number(b.basePrice) - Number(a.basePrice))
+    ?.sort((a: any, b: any) => Number(b.basePrice) - Number(a.basePrice))
     .slice(0, 5) || [];
 
   return (
@@ -86,7 +90,7 @@ export default function AdminAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {topProducts.map((product, idx) => (
+            {topProducts.map((product: any, idx: number) => (
               <div key={product.id} className="flex items-center justify-between p-3 bg-muted rounded">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm">
@@ -116,7 +120,7 @@ export default function AdminAnalytics() {
           <div className="space-y-3">
             {["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(
               (status) => {
-                const count = orders?.filter((o: any) => o.status === status).length || 0;
+                const count = orders?.filter((o: any) => o.orderStatus === status).length || 0;
                 const percentage = totalOrders > 0 ? (count / totalOrders) * 100 : 0;
 
                 return (

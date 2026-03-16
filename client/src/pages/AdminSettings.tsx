@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings, Save } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
@@ -15,9 +16,23 @@ export default function AdminSettings() {
     shippingProvider: "Custom",
     taxRate: "18",
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
-  const handleSave = () => {
-    alert("Settings saved successfully!");
+  const updateSettingsMutation = trpc.system.updateSettings.useMutation();
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await updateSettingsMutation.mutateAsync(settings);
+      setSaveMessage("✅ Settings saved successfully!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      setSaveMessage("❌ Error saving settings");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -124,10 +139,17 @@ export default function AdminSettings() {
       </Card>
 
       {/* Save Button */}
-      <Button onClick={handleSave} size="lg" className="w-full md:w-auto">
-        <Save className="h-4 w-4 mr-2" />
-        Save Settings
-      </Button>
+      <div className="space-y-2">
+        <Button onClick={handleSave} size="lg" className="w-full md:w-auto" disabled={isSaving}>
+          <Save className="h-4 w-4 mr-2" />
+          {isSaving ? "Saving..." : "Save Settings"}
+        </Button>
+        {saveMessage && (
+          <p className={`text-sm font-medium ${saveMessage.includes("✅") ? "text-green-600" : "text-red-600"}`}>
+            {saveMessage}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
