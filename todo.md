@@ -376,3 +376,13 @@
 - [x] Update admin orders display to show selected size for each item
 - [x] Test: Verify admin can see shipping cost, product image, color, size in orders panel - ₹135 showing correctly!
 - [x] All tests passing
+
+
+## Phase 40: Product Catalog Redesign - Modern Grid Layout
+- [ ] Update ProductCatalog page with responsive grid layout (3-4 columns)
+- [ ] Create ProductCard component showing: image, name, price, color, size
+- [ ] Add heart icon for wishlist/favorites on each product card
+- [ ] Make product cards clickable to navigate to product detail page
+- [ ] Add hover effects and smooth transitions
+- [ ] Test new layout on mobile and desktop
+- [ ] Get user feedback and finalize or revert
