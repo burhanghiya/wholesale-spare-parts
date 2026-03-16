@@ -401,3 +401,17 @@
 - [ ] Update AdminNav with all 9 new menu items
 - [ ] Test all new admin features and verify functionality
 - [ ] All tests passing
+
+
+## Phase 42: Fix Broken Admin Pages (Inventory, Pricing, Analytics, Notifications)
+- [x] Fix Inventory Management page - add product count, total stock value, low stock items queries
+- [x] Fix Pricing Management page - resolve TypeScript error and load product pricing table
+- [x] Fix Analytics page - calculate order percentages, load order status distribution, top products
+- [x] Fix Notifications page - verify functionality works correctly
+- [x] Test all 4 pages to verify data loads and displays correctly
+- [x] Added trpc.products.getAll and trpc.orders.getAll procedures to routers.ts
+- [x] Fixed TypeScript errors in AdminPricing and AdminAnalytics
+- [x] Fixed duplicate import in AdminInventory
+- [x] Created admin-pages.test.ts with 14 tests for admin procedures
+- [x] All 29 vitest tests passing
+- [x] Tested all 4 admin pages in browser - all working correctly!

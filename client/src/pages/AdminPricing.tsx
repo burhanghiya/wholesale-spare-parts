@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 
 export default function AdminPricing() {
   const [bulkDiscount, setBulkDiscount] = useState(0);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const { data: products } = trpc.products.getAll.useQuery();
 
   const handleBulkPriceUpdate = () => {
@@ -91,9 +91,9 @@ export default function AdminPricing() {
                           className="rounded"
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedProducts([...selectedProducts, product.id]);
+                              setSelectedProducts([...selectedProducts, Number(product.id)]);
                             } else {
-                              setSelectedProducts(selectedProducts.filter((id) => id !== product.id));
+                              setSelectedProducts(selectedProducts.filter((id) => id !== Number(product.id)));
                             }
                           }}
                         />

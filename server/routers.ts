@@ -147,6 +147,18 @@ export const appRouter = router({
         }));
         return result;
       }),
+
+    getAll: adminProcedure
+      .input(z.object({ limit: z.number().default(1000), offset: z.number().default(0) }).optional())
+      .query(async ({ input }) => {
+        const prods = await db.getAllProductsAdmin(input?.limit || 1000, input?.offset || 0);
+        const result = await Promise.all(prods.map(async (p) => {
+          const inv = await db.getInventoryByProductId(p.id);
+          const cat = await db.getCategoryById(p.categoryId);
+          return { ...p, inventory: inv, categoryName: cat?.name || "General", stock: inv?.quantityInStock || 0 };
+        }));
+        return result;
+      })
   }),
 
   // Image upload endpoint
@@ -266,6 +278,18 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
       .query(async ({ input }) => {
         const ordersList = await db.getAllOrders(input.limit, input.offset);
+        // Attach user info
+        const result = await Promise.all(ordersList.map(async (order) => {
+          const user = await db.getUserById(order.userId);
+          return { ...order, userName: user?.name || user?.email || 'Unknown' };
+        }));
+        return result;
+      }),
+
+    getAll: adminProcedure
+      .input(z.object({ limit: z.number().default(1000), offset: z.number().default(0) }).optional())
+      .query(async ({ input }) => {
+        const ordersList = await db.getAllOrders(input?.limit || 1000, input?.offset || 0);
         // Attach user info
         const result = await Promise.all(ordersList.map(async (order) => {
           const user = await db.getUserById(order.userId);

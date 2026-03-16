@@ -6,10 +6,10 @@ export default function AdminAnalytics() {
   const { data: orders } = trpc.orders.getAll.useQuery();
   const { data: products } = trpc.products.getAll.useQuery();
 
-  const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.totalAmount), 0) || 0;
+  const totalRevenue = orders?.reduce((sum: number, order: any) => sum + Number(order.totalAmount), 0) || 0;
   const totalOrders = orders?.length || 0;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const deliveredOrders = orders?.filter((o) => o.status === "delivered").length || 0;
+  const deliveredOrders = orders?.filter((o: any) => o.status === "delivered").length || 0;
 
   const topProducts = products
     ?.sort((a, b) => Number(b.basePrice) - Number(a.basePrice))
@@ -116,7 +116,7 @@ export default function AdminAnalytics() {
           <div className="space-y-3">
             {["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(
               (status) => {
-                const count = orders?.filter((o) => o.status === status).length || 0;
+                const count = orders?.filter((o: any) => o.status === status).length || 0;
                 const percentage = totalOrders > 0 ? (count / totalOrders) * 100 : 0;
 
                 return (
