@@ -488,3 +488,17 @@
 - [x] Auto-redirect message shows correctly: checkmark You will be redirected to Home in 8 seconds
 - [x] Complete UPI payment flow working end-to-end
 - [x] All 36 vitest tests passing
+
+
+## Phase 48: Fix UPI Payment Page Issues
+- [x] BUG: Shipping charge not showing on UPI payment page - FIXED
+- [x] BUG: Auto-redirect message showing in payment instructions - FIXED
+- [x] FIX: Pass totalAmount (including shipping) to UPI payment page - DONE
+- [x] FIX: Remove auto-redirect message from payment instructions - DONE
+- [x] Fixed server to return totalAmount including shipping cost
+- [x] Removed auto-redirect message from payment instructions
+- [x] TEST: Verify UPI payment page shows correct total amount with shipping - VERIFIED (₹105)
+- [x] TEST: Verify payment instructions don't show auto-redirect message - VERIFIED
+- [x] TEST: Verify order in admin panel shows correct shipping and total - VERIFIED
+- [x] All 36 vitest tests passing
+- [x] Complete UPI payment flow working perfectly with correct amounts

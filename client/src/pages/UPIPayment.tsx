@@ -107,7 +107,6 @@ export default function UPIPayment() {
                   <li>Enter UPI ID: <span className="font-mono font-bold">{upiId}</span></li>
                   <li>Enter amount: <span className="font-bold">₹{Number(amount).toLocaleString()}</span></li>
                   <li>Complete payment</li>
-                  <li>You will be redirected automatically</li>
                 </ol>
               </div>
 
@@ -129,12 +128,6 @@ export default function UPIPayment() {
                 </Button>
               </div>
               
-              {/* Auto-redirect message */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <p className="text-sm text-green-800 font-semibold">
-                  ✓ You will be redirected to Home in 8 seconds...
-                </p>
-              </div>
 
               {/* Support */}
               <div className="text-center pt-4 border-t border-amber-200">

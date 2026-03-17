@@ -272,7 +272,8 @@ export const appRouter = router({
 
         // Don't clear cart yet - wait for payment confirmation
         // Cart will be cleared when payment is confirmed
-        return { orderNumber, totalAmount: totalAmount, orderId };
+        const totalWithShipping = totalAmount + (input.shippingCost || 0);
+        return { orderNumber, totalAmount: totalWithShipping, orderId };
       }),
 
     confirmPayment: protectedProcedure
