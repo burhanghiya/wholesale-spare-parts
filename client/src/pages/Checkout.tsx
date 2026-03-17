@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Package, ShoppingBag, Loader2, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Package, ShoppingBag, Loader2, Check, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -61,10 +61,15 @@ export default function Checkout() {
       toast.error("Please fill all address fields!");
       return;
     }
+    if (paymentMethod === "upi") {
+      const fullAddress = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
+      setLocation(`/upi-payment?amount=${Math.round(total)}&address=${encodeURIComponent(fullAddress)}`);
+      return;
+    }
     const fullAddress = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
     createOrder.mutate({
       shippingAddress: fullAddress,
-      paymentMethod: "cod",
+      paymentMethod: paymentMethod,
       shippingPincode: address.pincode,
       shippingCost: calculatedShipping,
     });
@@ -182,6 +187,29 @@ export default function Checkout() {
                     <Label>Pincode *</Label>
                     <Input placeholder="6-digit pincode" value={address.pincode} onChange={(e) => setAddress({ ...address, pincode: e.target.value })} />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Method */}
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Payment Method</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("cod")}>
+                    <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="w-4 h-4" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">Cash on Delivery (COD)</p>
+                      <p className="text-xs text-muted-foreground">Pay when you receive the order</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("upi")}>
+                    <input type="radio" name="payment" value="upi" checked={paymentMethod === "upi"} onChange={() => setPaymentMethod("upi")} className="w-4 h-4" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">UPI Payment</p>
+                      <p className="text-xs text-muted-foreground">Google Pay, Paytm, PhonePe</p>
+                    </div>
+                  </label>
                 </div>
               </CardContent>
             </Card>
