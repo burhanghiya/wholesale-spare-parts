@@ -17,8 +17,7 @@ declare global {
 
 export default function RazorpayPayment() {
   const { user, isAuthenticated, loading } = useAuth();
-  const [, setLocation] = useLocation();
-  const [searchParams] = useLocation();
+  const [location, setLocation] = useLocation();
   
   const [orderId, setOrderId] = useState<number | null>(null);
   const [orderNumber, setOrderNumber] = useState("");
@@ -28,7 +27,7 @@ export default function RazorpayPayment() {
 
   // Parse URL parameters
   useEffect(() => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(location.split('?')[1]);
     const id = params.get("orderId");
     const num = params.get("orderNumber");
     const amt = params.get("amount");
@@ -38,7 +37,7 @@ export default function RazorpayPayment() {
       setOrderNumber(num);
       setAmount(parseFloat(amt));
     }
-  }, [searchParams]);
+  }, [location]);
 
   // Load Razorpay script
   useEffect(() => {
