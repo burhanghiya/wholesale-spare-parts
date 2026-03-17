@@ -26,7 +26,7 @@ export default function Checkout() {
   // Address
   const [address, setAddress] = useState({
     fullName: "", phone: "", addressLine1: "", addressLine2: "",
-    city: "", state: "Gujarat", pincode: "",
+    city: "Surat", state: "Gujarat", pincode: "",
   });
 
   const createOrder = trpc.orders.create.useMutation({
@@ -52,7 +52,13 @@ export default function Checkout() {
   const total = subtotal + shippingCost;
 
   const handlePlaceOrder = async () => {
-    if (!address.fullName || !address.phone || !address.addressLine1 || !address.city || !address.pincode) {
+    // Validate Surat-only delivery
+    if (address.city !== "Surat") {
+      toast.error("We only deliver in Surat. Please select Surat as your city.");
+      return;
+    }
+    
+    if (!address.fullName || !address.phone || !address.addressLine1 || !address.pincode) {
       toast.error("Please fill all address fields!");
       return;
     }
@@ -185,11 +191,12 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>City *</Label>
-                    <Input placeholder="City" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
+                    <Input placeholder="City" value={address.city} disabled className="bg-muted cursor-not-allowed" />
+                    <p className="text-xs text-muted-foreground mt-1">We only deliver in Surat</p>
                   </div>
                   <div>
                     <Label>State *</Label>
-                    <Input placeholder="State" value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
+                    <Input placeholder="State" value={address.state} disabled className="bg-muted cursor-not-allowed" />
                   </div>
                   <div>
                     <Label>Pincode *</Label>

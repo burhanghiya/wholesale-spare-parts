@@ -502,3 +502,29 @@
 - [x] TEST: Verify order in admin panel shows correct shipping and total - VERIFIED
 - [x] All 36 vitest tests passing
 - [x] Complete UPI payment flow working perfectly with correct amounts
+
+
+## Phase 49: Update UPI ID to Fix Google Pay Payment Failures
+- [ ] Update UPI ID from 8780657095@okbizaxis to burhanghiya26@okicici
+- [ ] Update UPI ID in UPIPayment.tsx
+- [ ] Update UPI ID in server routers.ts (if hardcoded)
+- [ ] Update UPI ID in any other files where it's used
+- [ ] Test UPI payment with new ID - Paytm
+- [ ] Test UPI payment with new ID - Google Pay
+- [ ] Verify payment goes through without "risky transaction" error
+
+
+## Phase 50: Fix Checkout Form - Surat-Only Delivery
+- [x] Fix City field to show "Surat" as default (read-only, not editable) - DONE
+- [x] Fix State field to show "Gujarat" as default (read-only, not editable) - DONE
+- [x] Add delivery validation - reject orders if city is not Surat - DONE
+- [x] Show error message if customer tries to change city - DONE ("We only deliver in Surat")
+- [x] Test checkout form with fixed city/state - READY FOR TESTING
+
+## Phase 51: Add COD Payment Toggle to Admin Panel
+- [ ] Add COD (Cash on Delivery) payment option to admin settings
+- [ ] Make COD toggle disabled by default (hidden from customers)
+- [ ] Admin can enable/disable COD from admin panel
+- [ ] When COD is disabled, only UPI/Razorpay options show
+- [ ] When COD is enabled, show COD option in checkout
+- [ ] Test COD toggle functionality

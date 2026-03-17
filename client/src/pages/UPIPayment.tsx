@@ -12,7 +12,7 @@ export default function UPIPayment() {
   const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
 
-  const upiId = "8780657095@okbizaxis";
+  const upiId = "burhanghiya26@okicici";
   const amount = new URLSearchParams(window.location.search).get("amount") || "0";
   const orderId = parseInt(new URLSearchParams(window.location.search).get("orderId") || "0");
   

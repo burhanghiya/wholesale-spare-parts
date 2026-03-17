@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Settings, Save } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -15,6 +16,7 @@ export default function AdminSettings() {
     paymentGateway: "Stripe",
     shippingProvider: "Custom",
     taxRate: "18",
+    codEnabled: false,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -35,6 +37,7 @@ export default function AdminSettings() {
         paymentGateway: dbSettings.paymentGateway || "Stripe",
         shippingProvider: dbSettings.shippingProvider || "Custom",
         taxRate: dbSettings.taxRate || "18",
+        codEnabled: dbSettings.codEnabled || false,
       });
     }
   }, [dbSettings]);
