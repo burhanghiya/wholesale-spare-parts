@@ -34,6 +34,17 @@ export default function Checkout() {
     onError: (err) => toast.error(err.message),
   });
 
+  // Get COD setting from admin
+  const { data: settings } = trpc.system.getSettings.useQuery();
+  const codEnabled = settings?.codEnabled ?? false;
+
+  // Set default payment method based on COD availability
+  useEffect(() => {
+    if (!codEnabled && paymentMethod === "cod") {
+      setPaymentMethod("razorpay");
+    }
+  }, [codEnabled]);
+
   // Get shipping configuration
   const { data: shippingConfig } = trpc.admin.getShippingConfig.useQuery();
   const freeShippingThreshold = shippingConfig?.freeShippingThreshold || 1000;
@@ -76,14 +87,15 @@ export default function Checkout() {
         shippingCost: calculatedShipping,
       });
       
-      if (paymentMethod === "upi") {
-        // Redirect to UPI payment page with order details
-        setLocation(`/upi-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
-      } else if (paymentMethod === "razorpay") {
-        // Redirect to Razorpay payment page with order details
-        setLocation(`/razorpay-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
+      if (result.paymentRequired) {
+        // Payment required - redirect to payment page
+        if (paymentMethod === "razorpay") {
+          setLocation(`/razorpay-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
+        } else if (paymentMethod === "upi") {
+          setLocation(`/upi-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
+        }
       } else {
-        // For COD, show success confirmation
+        // No payment required (COD) - show success confirmation
         setOrderPlaced(true);
         setOrderNumber(result.orderNumber);
         toast.success("Order placed successfully!");
@@ -215,13 +227,15 @@ export default function Checkout() {
               <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Payment Method</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("cod")}>
-                    <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="w-4 h-4" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">Cash on Delivery (COD)</p>
-                      <p className="text-xs text-muted-foreground">Pay when you receive the order</p>
-                    </div>
-                  </label>
+                  {codEnabled && (
+                    <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("cod")}>
+                      <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="w-4 h-4" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Cash on Delivery (COD)</p>
+                        <p className="text-xs text-muted-foreground">Pay when you receive the order</p>
+                      </div>
+                    </label>
+                  )}
                   <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("upi")}>
                     <input type="radio" name="payment" value="upi" checked={paymentMethod === "upi"} onChange={() => setPaymentMethod("upi")} className="w-4 h-4" />
                     <div className="flex-1">

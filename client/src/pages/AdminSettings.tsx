@@ -153,6 +153,16 @@ export default function AdminSettings() {
               className="mt-1"
             />
           </div>
+          <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+            <div>
+              <label className="text-sm font-medium">Enable Cash on Delivery (COD)</label>
+              <p className="text-xs text-muted-foreground mt-1">Allow customers to pay after receiving order</p>
+            </div>
+            <Switch
+              checked={settings.codEnabled}
+              onCheckedChange={(checked) => setSettings({ ...settings, codEnabled: checked })}
+            />
+          </div>
         </CardContent>
       </Card>
 

@@ -85,6 +85,13 @@
       "when": 1773733986949,
       "tag": "0011_ancient_sabra",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1773784938161,
+      "tag": "0012_lively_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

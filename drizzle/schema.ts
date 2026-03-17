@@ -355,6 +355,7 @@ export const settings = mysqlTable("settings", {
   paymentGateway: varchar("paymentGateway", { length: 100 }).default("Stripe"),
   shippingProvider: varchar("shippingProvider", { length: 100 }).default("Custom"),
   taxRate: varchar("taxRate", { length: 10 }).default("18"),
+  codEnabled: boolean("codEnabled").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

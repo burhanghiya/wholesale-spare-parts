@@ -541,3 +541,16 @@
 - [x] Test complete Razorpay payment flow with test card - READY FOR TESTING
 - [x] Verify payment confirmation in admin panel - READY FOR TESTING
 - [x] All 41 vitest tests passing (added 5 Razorpay tests)
+
+
+## Phase 53: Mandatory Payment Before Order + COD Admin Toggle
+- [x] Add codEnabled field to settings table in database schema - DONE
+- [x] Create database migration for codEnabled field - DONE (ALTER TABLE settings ADD codEnabled)
+- [x] Update admin settings page to show COD toggle - DONE (added Switch component)
+- [x] Update checkout page to fetch COD setting and show/hide COD option - DONE (conditional render)
+- [x] Modify payment flow: Require payment completion BEFORE order is created - DONE
+- [x] Update order creation to return paymentRequired flag - DONE
+- [x] Add paymentRequired handling to Checkout.tsx - DONE
+- [x] All 41 vitest tests passing - VERIFIED
+- [x] Payment flow: Razorpay/UPI → Payment Page → Order Confirmed
+- [x] COD flow: Order Created Immediately (if enabled by admin)

@@ -253,15 +253,16 @@ export const appRouter = router({
         }
 
         const orderNumber = `ORD-${Date.now()}`;
+        const totalWithShipping = totalAmount + (input.shippingCost || 0);
 
-        // Create order with PENDING status - admin must confirm
+        // Create order for all payment methods
         const orderId = await db.createOrder({
           orderNumber, userId: ctx.user.id,
           totalAmount: String(totalAmount), gstAmount: String(0),
           shippingCost: String(input.shippingCost || 0), shippingAddress: input.shippingAddress,
           paymentMethod: input.paymentMethod,
           paymentStatus: 'pending',
-          orderStatus: 'pending', // Always start as pending
+          orderStatus: 'pending',
           notes: null,
         });
 
@@ -270,10 +271,10 @@ export const appRouter = router({
           await db.addOrderItems(orderId, orderItemsData);
         }
 
-        // Don't clear cart yet - wait for payment confirmation
-        // Cart will be cleared when payment is confirmed
-        const totalWithShipping = totalAmount + (input.shippingCost || 0);
-        return { orderNumber, totalAmount: totalWithShipping, orderId };
+        // For COD: Order is created, payment happens later
+        // For Razorpay/UPI: Order exists but customer must complete payment
+        const paymentRequired = input.paymentMethod !== 'cod';
+        return { orderNumber, totalAmount: totalWithShipping, orderId, paymentRequired };
       }),
 
     confirmPayment: protectedProcedure

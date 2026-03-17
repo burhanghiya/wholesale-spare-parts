@@ -709,6 +709,7 @@ export async function updateSettings(data: {
   paymentGateway?: string;
   shippingProvider?: string;
   taxRate?: string;
+  codEnabled?: boolean;
 }) {
   const db = await getDb();
   if (!db) return false;
@@ -722,6 +723,7 @@ export async function updateSettings(data: {
   if (data.paymentGateway !== undefined) updateData.paymentGateway = data.paymentGateway;
   if (data.shippingProvider !== undefined) updateData.shippingProvider = data.shippingProvider;
   if (data.taxRate !== undefined) updateData.taxRate = data.taxRate;
+  if (data.codEnabled !== undefined) updateData.codEnabled = data.codEnabled;
   
   const existing = await db.select().from(settings).limit(1);
   
