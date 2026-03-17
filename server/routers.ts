@@ -270,8 +270,28 @@ export const appRouter = router({
           await db.addOrderItems(orderId, orderItemsData);
         }
 
-        await db.clearCart(ctx.user.id);
+        // Don't clear cart yet - wait for payment confirmation
+        // Cart will be cleared when payment is confirmed
         return { orderNumber, totalAmount: totalAmount, orderId };
+      }),
+
+    confirmPayment: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Get order to verify it belongs to current user
+        const order = await db.getOrderById(input.orderId);
+        if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+        if (order.userId !== ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
+        
+        // Update payment status to completed
+        await db.updateOrderPaymentStatus(input.orderId, 'completed');
+        
+        // Clear cart for this user
+        await db.clearCart(ctx.user.id);
+        
+        return { success: true, message: 'Payment completed' };
       }),
 
     getAllOrders: adminProcedure

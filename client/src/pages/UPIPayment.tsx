@@ -6,14 +6,23 @@ import { Smartphone, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { trpc } from "@/lib/trpc";
 
 export default function UPIPayment() {
   const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const upiId = "8780657095@okbizaxis";
   const amount = new URLSearchParams(window.location.search).get("amount") || "0";
-  const orderId = new URLSearchParams(window.location.search).get("orderId");
+  const orderId = parseInt(new URLSearchParams(window.location.search).get("orderId") || "0");
+  
+  const utils = trpc.useUtils();
+  const confirmPaymentMutation = trpc.orders.confirmPayment.useMutation({
+    onSuccess: async () => {
+      await utils.cart.list.invalidate();
+    },
+  });
 
   const handleCopyUPI = () => {
     navigator.clipboard.writeText(upiId);
@@ -25,6 +34,25 @@ export default function UPIPayment() {
   const handleOpenUPI = () => {
     const upiLink = `upi://pay?pa=${upiId}&pn=PatelElectricals&am=${amount}&tn=Order%20Payment`;
     window.location.href = upiLink;
+  };
+
+  const handlePaymentConfirmed = async () => {
+    if (!orderId) {
+      toast.error("Order ID not found!");
+      return;
+    }
+    
+    setIsConfirming(true);
+    try {
+      await confirmPaymentMutation.mutateAsync({ orderId });
+      toast.success("Payment confirmed! Order placed successfully.");
+      // Redirect to orders page
+      setTimeout(() => setLocation("/my-orders"), 1500);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to confirm payment");
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   return (
@@ -108,7 +136,13 @@ export default function UPIPayment() {
                   Open UPI App
                 </Button>
 
-
+                <Button
+                  onClick={handlePaymentConfirmed}
+                  disabled={isConfirming}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2"
+                >
+                  {isConfirming ? "Confirming..." : "✓ Payment Done"}
+                </Button>
 
                 <Button
                   variant="outline"

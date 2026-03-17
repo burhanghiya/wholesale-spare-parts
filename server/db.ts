@@ -314,6 +314,13 @@ export async function updateOrderStatus(orderId: number, status: string, trackin
   return true;
 }
 
+export async function updateOrderPaymentStatus(orderId: number, paymentStatus: string) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(orders).set({ paymentStatus: paymentStatus as any, updatedAt: new Date() }).where(eq(orders.id, orderId));
+  return true;
+}
+
 export async function addOrderItems(orderId: number, items: any[]) {
   const db = await getDb();
   if (!db) return false;
