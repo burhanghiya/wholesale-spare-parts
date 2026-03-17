@@ -2,7 +2,7 @@ import { eq, and, like, desc, asc, sql, or, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, gstConfiguration, shippingRates
+  quotations, categories, gstConfiguration, shippingRates, settings
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -678,4 +678,51 @@ export async function restoreInventoryForOrder(orderId: number): Promise<boolean
     console.error("[Inventory] Error restoring inventory:", error);
     return false;
   }
+}
+
+
+// ========================
+// SETTINGS FUNCTIONS
+// ========================
+
+export async function getSettings() {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(settings).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateSettings(data: {
+  siteName?: string;
+  siteDescription?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  paymentGateway?: string;
+  shippingProvider?: string;
+  taxRate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const updateData: any = { updatedAt: new Date() };
+  if (data.siteName !== undefined) updateData.siteName = data.siteName;
+  if (data.siteDescription !== undefined) updateData.siteDescription = data.siteDescription;
+  if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail;
+  if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
+  if (data.address !== undefined) updateData.address = data.address;
+  if (data.paymentGateway !== undefined) updateData.paymentGateway = data.paymentGateway;
+  if (data.shippingProvider !== undefined) updateData.shippingProvider = data.shippingProvider;
+  if (data.taxRate !== undefined) updateData.taxRate = data.taxRate;
+  
+  const existing = await db.select().from(settings).limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(settings).set(updateData).where(eq(settings.id, existing[0].id));
+  } else {
+    await db.insert(settings).values({ ...updateData, siteName: data.siteName || 'Patel Electricals' });
+  }
+  
+  return true;
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
+import * as db from "../db";
 
 export const systemRouter = router({
   health: publicProcedure
@@ -27,6 +28,21 @@ export const systemRouter = router({
       } as const;
     }),
 
+  getSettings: publicProcedure
+    .query(async () => {
+      const settings = await db.getSettings();
+      return settings || {
+        siteName: "Patel Electricals",
+        siteDescription: "Wholesale Electrical Spare Parts",
+        contactEmail: "contact@patelelectricals.com",
+        contactPhone: "8780657095",
+        address: "Udhana, Surat - 394210",
+        paymentGateway: "Stripe",
+        shippingProvider: "Custom",
+        taxRate: "18",
+      };
+    }),
+
   updateSettings: adminProcedure
     .input(
       z.object({
@@ -41,11 +57,10 @@ export const systemRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // In a real app, you would save these to database
-      // For now, we'll just return success
+      const success = await db.updateSettings(input);
       return {
-        success: true,
-        message: "Settings updated successfully",
+        success,
+        message: success ? "Settings updated successfully" : "Failed to update settings",
       } as const;
     }),
 

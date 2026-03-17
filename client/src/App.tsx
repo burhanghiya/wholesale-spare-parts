@@ -26,6 +26,7 @@ import AdminNotifications from "./pages/AdminNotifications";
 import AdminExport from "./pages/AdminExport";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
 import AdminSettings from "./pages/AdminSettings";
+import UPIPayment from "./pages/UPIPayment";
 
 function Router() {
   return (
@@ -38,6 +39,7 @@ function Router() {
       {/* Dealer/Customer Pages */}
       <Route path={"/cart"} component={ShoppingCart} />
       <Route path={"/checkout"} component={Checkout} />
+      <Route path={"/upi-payment"} component={UPIPayment} />
       <Route path={"/orders/:id"} component={OrderTracking} />
       <Route path={"/profile"} component={DealerProfile} />
       

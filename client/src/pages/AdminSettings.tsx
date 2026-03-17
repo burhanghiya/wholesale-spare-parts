@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +19,33 @@ export default function AdminSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
+  // Load settings from database on mount
+  const { data: dbSettings, isLoading, refetch } = trpc.system.getSettings.useQuery();
   const updateSettingsMutation = trpc.system.updateSettings.useMutation();
+  const utils = trpc.useUtils();
+
+  useEffect(() => {
+    if (dbSettings) {
+      setSettings({
+        siteName: dbSettings.siteName || "Patel Electricals",
+        siteDescription: dbSettings.siteDescription || "Wholesale Electrical Spare Parts",
+        contactEmail: dbSettings.contactEmail || "contact@patelelectricals.com",
+        contactPhone: dbSettings.contactPhone || "8780657095",
+        address: dbSettings.address || "Udhana, Surat - 394210",
+        paymentGateway: dbSettings.paymentGateway || "Stripe",
+        shippingProvider: dbSettings.shippingProvider || "Custom",
+        taxRate: dbSettings.taxRate || "18",
+      });
+    }
+  }, [dbSettings]);
 
   const handleSave = async () => {
     try {
       setIsSaving(true);
       await updateSettingsMutation.mutateAsync(settings);
+      // Invalidate and refetch settings
+      await utils.system.getSettings.invalidate();
+      await refetch();
       setSaveMessage("✅ Settings saved successfully!");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (error) {
@@ -34,6 +55,17 @@ export default function AdminSettings() {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

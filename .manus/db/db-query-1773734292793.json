@@ -1,0 +1,23 @@
+{
+  "query": "SELECT * FROM settings LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT * FROM settings LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "siteName": "Patel Electricals",
+      "siteDescription": "Wholesale Electrical Spare Parts",
+      "contactEmail": "contact@patelelectricals.com",
+      "contactPhone": "8780657095",
+      "address": "Udhana, Surat - 394210",
+      "paymentGateway": "Stripe",
+      "shippingProvider": "Custom",
+      "taxRate": "18",
+      "createdAt": "2026-03-17 07:53:20",
+      "updatedAt": "2026-03-17 07:53:20"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsiteName\tsiteDescription\tcontactEmail\tcontactPhone\taddress\tpaymentGateway\tshippingProvider\ttaxRate\tcreatedAt\tupdatedAt\n1\tPatel Electricals\tWholesale Electrical Spare Parts\tcontact@patelelectricals.com\t8780657095\tUdhana, Surat - 394210\tStripe\tCustom\t18\t2026-03-17 07:53:20\t2026-03-17 07:53:20\n",
+  "stderr": "",
+  "execution_time_ms": 1779
+}

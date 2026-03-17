@@ -20,6 +20,8 @@ export default function Checkout() {
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [showUPIPayment, setShowUPIPayment] = useState(false);
 
   // Address
   const [address, setAddress] = useState({

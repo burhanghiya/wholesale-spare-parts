@@ -78,6 +78,13 @@
       "when": 1773603126596,
       "tag": "0010_useful_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1773733986949,
+      "tag": "0011_ancient_sabra",
+      "breakpoints": true
     }
   ]
 }
