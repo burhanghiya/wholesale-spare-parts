@@ -473,3 +473,18 @@
 - [x] Added cart query invalidation in UPIPayment.tsx onSuccess callback
 - [x] Complete UPI payment flow now working: order pending to payment to order completed to cart cleared
 - [x] All 36 vitest tests passing
+
+
+## Phase 47: Remove Payment Done Button - Auto Redirect to Home
+- [x] Remove Payment Done button from UPI payment page - DONE
+- [x] Remove confirmPayment procedure call from UPIPayment.tsx - DONE
+- [x] Implement automatic redirect to Home page after 8 seconds - DONE
+- [x] Customer completes payment on phone while seeing instructions - VERIFIED
+- [x] Auto-redirect happens without manual button click - VERIFIED
+- [x] Admin manually confirms payment in admin panel (or via webhook in future) - READY
+- [x] Test complete flow: checkout → UPI page → auto-redirect to Home - VERIFIED
+- [x] Fixed duplicate useState import in Checkout.tsx
+- [x] Fixed UPI payment page redirect URL (was /my-orders, now /)
+- [x] Auto-redirect message shows correctly: checkmark You will be redirected to Home in 8 seconds
+- [x] Complete UPI payment flow working end-to-end
+- [x] All 36 vitest tests passing

@@ -11,18 +11,19 @@ import { trpc } from "@/lib/trpc";
 export default function UPIPayment() {
   const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
 
   const upiId = "8780657095@okbizaxis";
   const amount = new URLSearchParams(window.location.search).get("amount") || "0";
   const orderId = parseInt(new URLSearchParams(window.location.search).get("orderId") || "0");
   
-  const utils = trpc.useUtils();
-  const confirmPaymentMutation = trpc.orders.confirmPayment.useMutation({
-    onSuccess: async () => {
-      await utils.cart.list.invalidate();
-    },
-  });
+  // Auto-redirect to Home after 8 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLocation("/");
+    }, 8000);
+    
+    return () => clearTimeout(timer);
+  }, [setLocation]);
 
   const handleCopyUPI = () => {
     navigator.clipboard.writeText(upiId);
@@ -36,24 +37,7 @@ export default function UPIPayment() {
     window.location.href = upiLink;
   };
 
-  const handlePaymentConfirmed = async () => {
-    if (!orderId) {
-      toast.error("Order ID not found!");
-      return;
-    }
-    
-    setIsConfirming(true);
-    try {
-      await confirmPaymentMutation.mutateAsync({ orderId });
-      toast.success("Payment confirmed! Order placed successfully.");
-      // Redirect to orders page
-      setTimeout(() => setLocation("/my-orders"), 1500);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to confirm payment");
-    } finally {
-      setIsConfirming(false);
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -123,7 +107,7 @@ export default function UPIPayment() {
                   <li>Enter UPI ID: <span className="font-mono font-bold">{upiId}</span></li>
                   <li>Enter amount: <span className="font-bold">₹{Number(amount).toLocaleString()}</span></li>
                   <li>Complete payment</li>
-                  <li>Return here and click "Payment Done"</li>
+                  <li>You will be redirected automatically</li>
                 </ol>
               </div>
 
@@ -137,20 +121,19 @@ export default function UPIPayment() {
                 </Button>
 
                 <Button
-                  onClick={handlePaymentConfirmed}
-                  disabled={isConfirming}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2"
-                >
-                  {isConfirming ? "Confirming..." : "✓ Payment Done"}
-                </Button>
-
-                <Button
                   variant="outline"
                   onClick={() => setLocation("/cart")}
                   className="w-full"
                 >
                   Back to Cart
                 </Button>
+              </div>
+              
+              {/* Auto-redirect message */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <p className="text-sm text-green-800 font-semibold">
+                  ✓ You will be redirected to Home in 8 seconds...
+                </p>
               </div>
 
               {/* Support */}
