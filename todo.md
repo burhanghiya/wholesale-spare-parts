@@ -554,3 +554,7 @@
 - [x] All 41 vitest tests passing - VERIFIED
 - [x] Payment flow: Razorpay/UPI → Payment Page → Order Confirmed
 - [x] COD flow: Order Created Immediately (if enabled by admin)
+
+
+## Phase 54: Bug Fixes
+- [x] Fix amount display in RazorpayPayment page - DONE (changed parseInt to parseFloat, added Math.round)

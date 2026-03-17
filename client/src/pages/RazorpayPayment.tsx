@@ -36,7 +36,7 @@ export default function RazorpayPayment() {
     if (id && num && amt) {
       setOrderId(parseInt(id));
       setOrderNumber(num);
-      setAmount(parseInt(amt));
+      setAmount(parseFloat(amt));
     }
   }, [searchParams]);
 
@@ -179,7 +179,7 @@ export default function RazorpayPayment() {
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-3">
                   <span>Amount to Pay</span>
-                  <span className="text-green-600">₹{amount.toLocaleString()}</span>
+                  <span className="text-green-600">₹{Math.round(amount).toLocaleString()}</span>
                 </div>
               </div>
 
