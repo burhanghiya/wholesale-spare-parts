@@ -30,11 +30,6 @@ export default function Checkout() {
   });
 
   const createOrder = trpc.orders.create.useMutation({
-    onSuccess: (data) => {
-      setOrderPlaced(true);
-      setOrderNumber(data.orderNumber);
-      toast.success("Order placed successfully!");
-    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -56,23 +51,36 @@ export default function Checkout() {
   const shippingCost = subtotal >= freeShippingThreshold ? 0 : calculatedShipping;
   const total = subtotal + shippingCost;
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!address.fullName || !address.phone || !address.addressLine1 || !address.city || !address.pincode) {
       toast.error("Please fill all address fields!");
       return;
     }
-    if (paymentMethod === "upi") {
-      const fullAddress = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
-      setLocation(`/upi-payment?amount=${Math.round(total)}&address=${encodeURIComponent(fullAddress)}`);
-      return;
+    
+    const shippingAddressFormatted = paymentMethod === "upi" 
+      ? fullAddress
+      : `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
+    
+    try {
+      const result = await createOrder.mutateAsync({
+        shippingAddress: shippingAddressFormatted,
+        paymentMethod: paymentMethod,
+        shippingPincode: address.pincode,
+        shippingCost: calculatedShipping,
+      });
+      
+      if (paymentMethod === "upi") {
+        // Redirect to UPI payment page with order details
+        setLocation(`/upi-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
+      } else {
+        // For COD, show success confirmation
+        setOrderPlaced(true);
+        setOrderNumber(result.orderNumber);
+        toast.success("Order placed successfully!");
+      }
+    } catch (error) {
+      // Error is already handled by mutation's onError
     }
-    const fullAddress = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
-    createOrder.mutate({
-      shippingAddress: fullAddress,
-      paymentMethod: paymentMethod,
-      shippingPincode: address.pincode,
-      shippingCost: calculatedShipping,
-    });
   };
 
   if (loading) {

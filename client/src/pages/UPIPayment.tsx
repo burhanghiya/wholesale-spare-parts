@@ -108,18 +108,7 @@ export default function UPIPayment() {
                   Open UPI App
                 </Button>
 
-                <Button
-                  onClick={() => {
-                    if (orderId) {
-                      setLocation(`/order-confirmation/${orderId}`);
-                    } else {
-                      setLocation("/");
-                    }
-                  }}
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2"
-                >
-                  ✓ Payment Done
-                </Button>
+
 
                 <Button
                   variant="outline"

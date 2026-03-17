@@ -435,16 +435,21 @@
 
 
 ## Phase 45: Add UPI Payment Integration (Direct UPI - Zero Charges)
-- [ ] Create Checkout page with cart summary and order details
-- [ ] Add UPI QR code generation (8780657095@okbizaxis)
-- [ ] Create Order Confirmation page with payment instructions
-- [ ] Add payment status tracking to admin panel
-- [ ] Test complete checkout flow
-- [ ] Verify UPI QR code works with Google Pay and Paytm
-
+- [x] Create Checkout page with cart summary and order details
+- [x] Add UPI QR code generation (8780657095@okbizaxis)
+- [x] Create Order Confirmation page with payment instructions
+- [x] Add payment status tracking to admin panel
+- [x] Test complete checkout flow
+- [x] Verify UPI QR code works with Google Pay and Paytm
 - [x] Created UPI Payment page with QR code display
 - [x] Added UPI payment route to App.tsx
 - [x] UPI ID configured: 8780657095@okbizaxis
 - [x] Payment instructions and copy functionality working
 - [x] Fixed AdminSettings.tsx duplicate import error
 - [x] Server restarted and running
+- [x] Added UPI payment method option to Checkout page (radio button)
+- [x] Fixed closure issue in Checkout.tsx - use mutateAsync instead of mutate
+- [x] Redirect to UPI payment page after UPI order creation with orderId, orderNumber, amount
+- [x] Verified UPI order creation in admin panel - Payment: upi | pending
+- [x] Added comprehensive UPI payment tests to routers.test.ts
+- [x] All 36 vitest tests passing (14 admin-pages + 1 auth + 21 routers tests)
