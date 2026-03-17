@@ -27,6 +27,7 @@ import AdminExport from "./pages/AdminExport";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
 import AdminSettings from "./pages/AdminSettings";
 import UPIPayment from "./pages/UPIPayment";
+import RazorpayPayment from "./pages/RazorpayPayment";
 
 function Router() {
   return (
@@ -40,6 +41,7 @@ function Router() {
       <Route path={"/cart"} component={ShoppingCart} />
       <Route path={"/checkout"} component={Checkout} />
       <Route path={"/upi-payment"} component={UPIPayment} />
+      <Route path={"/razorpay-payment"} component={RazorpayPayment} />
       <Route path={"/orders/:id"} component={OrderTracking} />
       <Route path={"/profile"} component={DealerProfile} />
       

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ export default function Checkout() {
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [showUPIPayment, setShowUPIPayment] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   // Address
   const [address, setAddress] = useState({
@@ -78,6 +79,9 @@ export default function Checkout() {
       if (paymentMethod === "upi") {
         // Redirect to UPI payment page with order details
         setLocation(`/upi-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
+      } else if (paymentMethod === "razorpay") {
+        // Redirect to Razorpay payment page with order details
+        setLocation(`/razorpay-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
       } else {
         // For COD, show success confirmation
         setOrderPlaced(true);
@@ -223,6 +227,13 @@ export default function Checkout() {
                     <div className="flex-1">
                       <p className="font-medium text-sm">UPI Payment</p>
                       <p className="text-xs text-muted-foreground">Google Pay, Paytm, PhonePe</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("razorpay")}>
+                    <input type="radio" name="payment" value="razorpay" checked={paymentMethod === "razorpay"} onChange={() => setPaymentMethod("razorpay")} className="w-4 h-4" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">Razorpay Payment</p>
+                      <p className="text-xs text-muted-foreground">Credit/Debit Card, UPI, Wallets</p>
                     </div>
                   </label>
                 </div>

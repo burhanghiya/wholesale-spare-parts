@@ -340,6 +340,90 @@ export const appRouter = router({
         
         return { success: true };
       }),
+
+    createRazorpayOrder: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        amount: z.number(), // in paise (₹1 = 100 paise)
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const Razorpay = require('razorpay');
+        const { ENV } = require('./_core/env');
+        
+        if (!ENV.razorpayKeyId || !ENV.razorpayKeySecret) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Razorpay credentials not configured' });
+        }
+
+        const razorpay = new Razorpay({
+          key_id: ENV.razorpayKeyId,
+          key_secret: ENV.razorpayKeySecret,
+        });
+
+        try {
+          const razorpayOrder = await razorpay.orders.create({
+            amount: input.amount,
+            currency: 'INR',
+            receipt: `order_${input.orderId}`,
+            notes: {
+              orderId: input.orderId,
+              userId: ctx.user.id,
+            },
+          });
+
+          return {
+            razorpayOrderId: razorpayOrder.id,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+          };
+        } catch (error: any) {
+          console.error('Razorpay order creation error:', error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create Razorpay order' });
+        }
+      }),
+
+    verifyRazorpayPayment: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        razorpayOrderId: z.string(),
+        razorpayPaymentId: z.string(),
+        razorpaySignature: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const crypto = require('crypto');
+        const { ENV } = require('./_core/env');
+
+        try {
+          // Verify signature
+          const body = input.razorpayOrderId + '|' + input.razorpayPaymentId;
+          const expectedSignature = crypto
+            .createHmac('sha256', ENV.razorpayKeySecret)
+            .update(body)
+            .digest('hex');
+
+          if (expectedSignature !== input.razorpaySignature) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid payment signature' });
+          }
+
+          // Get order to verify it belongs to current user
+          const order = await db.getOrderById(input.orderId);
+          if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+          if (order.userId !== ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
+
+          // Update payment status to completed
+          await db.updateOrderPaymentStatus(input.orderId, 'completed');
+
+          // Clear cart for this user
+          await db.clearCart(ctx.user.id);
+
+          return { success: true, message: 'Payment verified and completed' };
+        } catch (error: any) {
+          console.error('Razorpay verification error:', error);
+          if (error.code === 'BAD_REQUEST' || error.code === 'NOT_FOUND' || error.code === 'FORBIDDEN') {
+            throw error;
+          }
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Payment verification failed' });
+        }
+      }),
   }),
 
   quotations: router({
