@@ -27,7 +27,7 @@ export default function Checkout() {
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("cod"); // Always COD
   const [isProcessing, setIsProcessing] = useState(false);
   const [showMockPaymentDialog, setShowMockPaymentDialog] = useState(false);
   const [mockPaymentPending, setMockPaymentPending] = useState<{ orderId: number; razorpayOrderId: string; amount: number } | null>(null);
@@ -56,12 +56,7 @@ export default function Checkout() {
   const { data: settings } = trpc.system.getSettings.useQuery();
   const codEnabled = settings?.codEnabled ?? false;
 
-  // Set default payment method based on COD availability
-  useEffect(() => {
-    if (!codEnabled && paymentMethod === "cod") {
-      setPaymentMethod("razorpay");
-    }
-  }, [codEnabled]);
+  // COD is the only payment method available
 
   // Get shipping configuration
   const { data: shippingConfig } = trpc.admin.getShippingConfig.useQuery();
@@ -362,23 +357,11 @@ export default function Checkout() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Payment Method</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition">
-                  <input type="radio" name="payment" value="razorpay" checked={paymentMethod === "razorpay"} onChange={(e) => setPaymentMethod(e.target.value)} />
-                  <div>
-                    <div className="font-semibold">Razorpay Payment</div>
-                    <div className="text-sm text-muted-foreground">Credit/Debit Card, UPI, Wallets, Net Banking</div>
-                  </div>
-                </label>
-                {codEnabled && (
-                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition">
-                    <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={(e) => setPaymentMethod(e.target.value)} />
-                    <div>
-                      <div className="font-semibold">Cash on Delivery</div>
-                      <div className="text-sm text-muted-foreground">Pay when you receive your order</div>
-                    </div>
-                  </label>
-                )}
+              <CardContent>
+                <div className="p-3 border rounded-lg bg-muted/30">
+                  <div className="font-semibold">💵 Cash on Delivery</div>
+                  <div className="text-sm text-muted-foreground mt-1">Pay when you receive your order</div>
+                </div>
               </CardContent>
             </Card>
 
