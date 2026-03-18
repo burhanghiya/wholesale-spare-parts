@@ -66,7 +66,7 @@ export default function Checkout() {
     { address: fullAddress },
     { enabled: fullAddress.length > 10 && address.pincode.length === 6 }
   );
-  const calculatedShipping = shippingData?.shippingCost || 0;
+  const calculatedShipping = shippingData?.shippingCost || 45; // Default ₹45 shipping
 
   // Totals
   const subtotal = cartItems?.reduce((sum, item) => sum + Number(item.product?.basePrice || 0) * item.quantity, 0) || 0;
