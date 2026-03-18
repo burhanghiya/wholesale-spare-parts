@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, partNumber, name FROM products LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, partNumber, name FROM products LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "partNumber": "F001",
+      "name": "Hiwa celing fan"
+    },
+    {
+      "id": "30001",
+      "partNumber": "F002",
+      "name": "Celing fan "
+    },
+    {
+      "id": "60001",
+      "partNumber": "F",
+      "name": "Fan"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpartNumber\tname\n1\tF001\tHiwa celing fan\n30001\tF002\tCeling fan \n60001\tF\tFan\n",
+  "stderr": "",
+  "execution_time_ms": 1851
+}
