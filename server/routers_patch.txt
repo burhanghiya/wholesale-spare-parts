@@ -1,0 +1,15 @@
+ADD TO PRODUCTS ROUTER AFTER getInventory:
+
+    getCategories: publicProcedure
+      .query(async () => {
+        return await db.getAllCategories();
+      }),
+
+ADD TO ORDERS ROUTER AFTER list:
+
+    getAllOrders: protectedProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.getAllOrders(input.limit, input.offset);
+      }),

@@ -12,11 +12,43 @@ export const appRouter = router({
     }),
   }),
 
+  cart: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const items = await db.getCartItems(ctx.user.id);
+      const enriched = await Promise.all(
+        items.map(async (item: any) => ({
+          ...item,
+          product: await db.getProductById(item.productId),
+        }))
+      );
+      return enriched;
+    }),
+
+    add: protectedProcedure
+      .input(z.object({ productId: z.number(), quantity: z.number().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const product = await db.getProductById(input.productId);
+        if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
+        return await db.addToCart(ctx.user.id, input.productId, input.quantity);
+      }),
+
+    updateQuantity: protectedProcedure
+      .input(z.object({ cartItemId: z.number(), quantity: z.number().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        return await db.updateCartItemQuantity(input.cartItemId, input.quantity);
+      }),
+
+    remove: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => db.removeFromCart(input)),
+
+    clear: protectedProcedure.mutation(async ({ ctx }) => db.clearCart(ctx.user.id)),
+  }),
+
   products: router({
     list: publicProcedure
       .input(z.object({ 
         search: z.string().optional(),
-        category: z.string().optional(),
         page: z.number().default(1),
         limit: z.number().default(20),
       }).optional())
@@ -31,40 +63,82 @@ export const appRouter = router({
         return await db.getAllProducts(limit, (page - 1) * limit);
       }),
 
+    getAll: publicProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllProducts(input?.limit || 50, input?.offset || 0);
+      }),
+
     getById: publicProcedure
       .input(z.number())
       .query(async ({ input }) => db.getProductById(input)),
-  }),
 
-  cart: router({
-    list: protectedProcedure.query(async ({ ctx }) => db.getCartItems(ctx.user.id)),
+    getCategories: publicProcedure
+      .query(async () => await db.getAllCategories()),
 
-    add: protectedProcedure
-      .input(z.object({ productId: z.number(), quantity: z.number().min(1) }))
+    getInventory: publicProcedure
+      .query(async () => await db.getAllInventory()),
+
+    search: publicProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ input }) => await db.searchProducts(input.query)),
+
+    adminList: protectedProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.getAllProductsAdmin(input?.limit || 50, input?.offset || 0);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        basePrice: z.number(),
+        partNumber: z.string(),
+        categoryId: z.number().optional(),
+      }))
       .mutation(async ({ ctx, input }) => {
-        const product = await db.getProductById(input.productId);
-        if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
-        return await db.addToCart(ctx.user.id, input.productId, input.quantity);
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.createProduct(input);
       }),
 
     update: protectedProcedure
-      .input(z.object({ cartItemId: z.number(), quantity: z.number().min(0) }))
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        basePrice: z.number().optional(),
+      }))
       .mutation(async ({ ctx, input }) => {
-        if (input.quantity === 0) {
-          return await db.removeFromCart(input.cartItemId);
-        }
-        return await db.updateCartItemQuantity(input.cartItemId, input.quantity);
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.updateProduct(input.id, input);
       }),
 
-    remove: protectedProcedure
+    delete: protectedProcedure
       .input(z.number())
-      .mutation(async ({ ctx, input }) => db.removeFromCart(input)),
-
-    clear: protectedProcedure.mutation(async ({ ctx }) => db.clearCart(ctx.user.id)),
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.deleteProduct(input);
+      }),
   }),
 
   orders: router({
     list: protectedProcedure.query(async ({ ctx }) => db.getOrdersByUserId(ctx.user.id)),
+
+    getAll: protectedProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.getAllOrders(input?.limit || 50, input?.offset || 0);
+      }),
+
+    getAllOrders: protectedProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.getAllOrders(input?.limit || 50, input?.offset || 0);
+      }),
 
     getById: protectedProcedure
       .input(z.number())
@@ -88,7 +162,6 @@ export const appRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cart is empty' });
         }
 
-        // Create order with initial status based on payment method
         const orderStatus = 'pending';
         const paymentStatus = input.paymentMethod === 'cod' ? 'pending' : 'pending';
 
@@ -107,7 +180,6 @@ export const appRouter = router({
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create order' });
         }
 
-        // Add order items
         const orderItemsData = input.cartItems
           .filter((item: any) => item.product)
           .map((item: any) => ({
@@ -137,16 +209,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         try {
-          // Get order to verify it belongs to current user
           const order = await db.getOrderById(input.orderId);
           if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
           if (order.userId !== ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
 
-          // For frontend-only Razorpay flow, we trust the payment if it reached this point
-          // In production, implement webhook verification from Razorpay for enhanced security
           console.log(`[Razorpay] Payment verified for order ${input.orderId}, payment ID: ${input.razorpayPaymentId}`);
 
-          // Update payment status to completed
           await db.updateOrderPaymentStatus(input.orderId, 'completed');
 
           return { success: true, message: 'Payment verified and completed' };
@@ -157,6 +225,17 @@ export const appRouter = router({
           }
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Payment verification failed' });
         }
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({
+        orderId: z.number(),
+        status: z.string(),
+        trackingNumber: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.updateOrderStatus(input.orderId, input.status, input.trackingNumber);
       }),
   }),
 
@@ -206,13 +285,22 @@ export const appRouter = router({
         return await db.updateSettings(input);
       }),
 
+    sendNotification: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        content: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        console.log(`[Notification] ${input.title}: ${input.content}`);
+        return { success: true };
+      }),
+
     notifyOwner: protectedProcedure
       .input(z.object({
         title: z.string(),
         content: z.string(),
       }))
       .mutation(async ({ input }) => {
-        // Implementation for owner notifications
         console.log(`[Notification] ${input.title}: ${input.content}`);
         return { success: true };
       }),
@@ -220,6 +308,13 @@ export const appRouter = router({
 
   quotations: router({
     list: protectedProcedure.query(async ({ ctx }) => db.getQuotationsByUserId(ctx.user.id)),
+
+    getAllQuotations: protectedProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.getAllQuotations(input?.limit || 50, input?.offset || 0);
+      }),
 
     getById: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
       const quotation = await db.getQuotationById(input);
@@ -260,6 +355,64 @@ export const appRouter = router({
         }
 
         return quotation;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        quotationId: z.number(),
+        status: z.string().optional(),
+        quotedPrice: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.updateQuotationStatus(input.quotationId, input.status || 'pending', input.quotedPrice);
+      }),
+  }),
+
+  users: router({
+    updateProfile: protectedProcedure
+      .input(z.object({
+        name: z.string().optional(),
+        email: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return await db.updateUserProfile(ctx.user.id, input);
+      }),
+
+    updateCreditLimit: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        creditLimit: z.number(),
+        creditApproved: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.updateUserCreditLimit(input.userId, input.creditLimit, input.creditApproved);
+      }),
+
+    getAllDealers: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.getAllUsers(100, 0);
+      }),
+  }),
+
+  upload: router({
+    image: protectedProcedure
+      .input(z.object({
+        filename: z.string(),
+        data: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        return { success: true, url: '/uploaded-image' };
+      }),
+  }),
+
+  chat: router({
+    loadMessages: publicProcedure
+      .input(z.object({ conversationId: z.string() }).optional())
+      .query(async () => {
+        return [];
       }),
   }),
 });

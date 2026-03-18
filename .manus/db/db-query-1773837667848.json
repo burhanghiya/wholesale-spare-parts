@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COUNT(*) as product_count FROM products; SELECT COUNT(*) as order_count FROM orders; SELECT COUNT(*) as user_count FROM users;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT COUNT(*) as product_count FROM products; SELECT COUNT(*) as order_count FROM orders; SELECT COUNT(*) as user_count FROM users;",
+  "rows": [
+    {
+      "product_count": "3"
+    },
+    {
+      "product_count": "order_count"
+    },
+    {
+      "product_count": "76"
+    },
+    {
+      "product_count": "user_count"
+    },
+    {
+      "product_count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "product_count\n3\norder_count\n76\nuser_count\n1\n",
+  "stderr": "",
+  "execution_time_ms": 2135
+}
