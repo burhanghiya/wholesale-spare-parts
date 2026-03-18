@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, MapPin, Package, ShoppingBag, Loader2, Check, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
@@ -28,6 +29,8 @@ export default function Checkout() {
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showMockPaymentDialog, setShowMockPaymentDialog] = useState(false);
+  const [mockPaymentPending, setMockPaymentPending] = useState<{ orderId: number; razorpayOrderId: string; amount: number } | null>(null);
 
   // Address
   const [address, setAddress] = useState({
@@ -80,6 +83,41 @@ export default function Checkout() {
   const shippingCost = isAddressFilled && subtotal >= freeShippingThreshold ? 0 : calculatedShipping;
   const total = subtotal + shippingCost;
 
+  const handleMockPaymentConfirm = async () => {
+    if (!mockPaymentPending) return;
+    
+    try {
+      await verifyPayment.mutateAsync({
+        orderId: mockPaymentPending.orderId,
+        razorpayOrderId: mockPaymentPending.razorpayOrderId,
+        razorpayPaymentId: `mock_payment_${Date.now()}`,
+        razorpaySignature: "mock_signature",
+      });
+
+      // Clear cart
+      await clearCart.mutateAsync();
+
+      setShowMockPaymentDialog(false);
+      setMockPaymentPending(null);
+      toast.success("Payment successful! Order confirmed.");
+      
+      // Redirect to My Orders
+      setTimeout(() => {
+        setLocation("/profile");
+      }, 1500);
+    } catch (error: any) {
+      toast.error(error.message || "Payment verification failed");
+      setShowMockPaymentDialog(false);
+      setMockPaymentPending(null);
+    }
+  };
+
+  const handleMockPaymentCancel = () => {
+    setShowMockPaymentDialog(false);
+    setMockPaymentPending(null);
+    toast.error("Payment cancelled");
+  };
+
   const handlePlaceOrder = async () => {
     // Validate Surat-only delivery
     if (address.city !== "Surat") {
@@ -119,10 +157,6 @@ export default function Checkout() {
         }, 2000);
       } else if (paymentMethod === "razorpay") {
         // Razorpay - Create order first, then open popup
-        if (!window.Razorpay) {
-          throw new Error("Razorpay SDK not loaded. Please refresh and try again.");
-        }
-
         // Step 1: Create order in database
         const orderResult = await createOrder.mutateAsync({
           shippingAddress: shippingAddressFormatted,
@@ -139,56 +173,70 @@ export default function Checkout() {
           orderId: orderResult.orderId || 0,
         });
 
-        // Step 3: Open Razorpay popup with order_id
-        const options = {
-          key: "rzp_live_SSPEidW3JH1fgj", // Live key
-          amount: Math.round(total * 100), // Convert to paise
-          currency: "INR",
-          name: "Patel Electricals",
-          description: "Order Payment",
-          order_id: razorpayOrderResult.razorpayOrderId, // IMPORTANT: Razorpay order ID
-          prefill: {
-            name: user?.name || "",
-            email: user?.email || "",
-            contact: address.phone || "",
-          },
-          handler: async (response: any) => {
-            try {
-              // Verify payment signature
-              await verifyPayment.mutateAsync({
-                orderId: orderResult.orderId || 0,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-              });
-
-              // Clear cart
-              await clearCart.mutateAsync();
-
-              toast.success("Payment successful! Order confirmed.");
-              
-              // Redirect to My Orders
-              setTimeout(() => {
-                setLocation("/profile");
-              }, 1500);
-            } catch (error: any) {
-              toast.error(error.message || "Payment verification failed");
-              setIsProcessing(false);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              toast.error("Payment cancelled");
-              setIsProcessing(false);
+        // Step 3: Check if we should use mock payment (development) or real Razorpay
+        const isDevelopment = import.meta.env.DEV || !window.Razorpay;
+        
+        if (isDevelopment) {
+          // Development mode: Show mock payment dialog
+          setMockPaymentPending({
+            orderId: orderResult.orderId || 0,
+            razorpayOrderId: razorpayOrderResult.razorpayOrderId,
+            amount: total,
+          });
+          setShowMockPaymentDialog(true);
+          setIsProcessing(false);
+        } else {
+          // Production mode: Use real Razorpay
+          const options = {
+            key: "rzp_live_SSPEidW3JH1fgj", // Live key
+            amount: Math.round(total * 100), // Convert to paise
+            currency: "INR",
+            name: "Patel Electricals",
+            description: "Order Payment",
+            order_id: razorpayOrderResult.razorpayOrderId, // IMPORTANT: Razorpay order ID
+            prefill: {
+              name: user?.name || "",
+              email: user?.email || "",
+              contact: address.phone || "",
             },
-          },
-          theme: {
-            color: "#3b82f6",
-          },
-        };
+            handler: async (response: any) => {
+              try {
+                // Verify payment signature
+                await verifyPayment.mutateAsync({
+                  orderId: orderResult.orderId || 0,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                });
 
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+                // Clear cart
+                await clearCart.mutateAsync();
+
+                toast.success("Payment successful! Order confirmed.");
+                
+                // Redirect to My Orders
+                setTimeout(() => {
+                  setLocation("/profile");
+                }, 1500);
+              } catch (error: any) {
+                toast.error(error.message || "Payment verification failed");
+                setIsProcessing(false);
+              }
+            },
+            modal: {
+              ondismiss: () => {
+                toast.error("Payment cancelled");
+                setIsProcessing(false);
+              },
+            },
+            theme: {
+              color: "#3b82f6",
+            },
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");
@@ -198,7 +246,7 @@ export default function Checkout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center"><Navbar />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -210,7 +258,7 @@ export default function Checkout() {
         <div className="container py-20 text-center">
           <ShoppingBag className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Login Required</h2>
-          <p className="text-muted-foreground mb-6">Please login to checkout</p>
+          <p className="text-muted-foreground mb-6">Please login to proceed with checkout</p>
           <a href={getLoginUrl()}><Button>Login Now</Button></a>
         </div>
         <Footer />
@@ -311,50 +359,54 @@ export default function Checkout() {
 
             {/* Payment Method */}
             <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Payment Method</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Payment Method</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  {codEnabled && (
-                    <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("cod")}>
-                      <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="w-4 h-4" />
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">Cash on Delivery (COD)</p>
-                        <p className="text-xs text-muted-foreground">Pay when you receive the order</p>
-                      </div>
-                    </label>
-                  )}
-                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("razorpay")}>
-                    <input type="radio" name="payment" value="razorpay" checked={paymentMethod === "razorpay"} onChange={() => setPaymentMethod("razorpay")} className="w-4 h-4" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">Razorpay Payment</p>
-                      <p className="text-xs text-muted-foreground">Credit/Debit Card, UPI, Wallets, Net Banking</p>
+                <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition">
+                  <input type="radio" name="payment" value="razorpay" checked={paymentMethod === "razorpay"} onChange={(e) => setPaymentMethod(e.target.value)} />
+                  <div>
+                    <div className="font-semibold">Razorpay Payment</div>
+                    <div className="text-sm text-muted-foreground">Credit/Debit Card, UPI, Wallets, Net Banking</div>
+                  </div>
+                </label>
+                {codEnabled && (
+                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition">
+                    <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <div>
+                      <div className="font-semibold">Cash on Delivery</div>
+                      <div className="text-sm text-muted-foreground">Pay when you receive your order</div>
                     </div>
                   </label>
-                </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Order Items */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Order Items ({cartItems.length})</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> Order Items ({cartItems.length})</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-3">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    <div className="h-12 w-12 bg-muted rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {item.product?.imageUrl ? <img src={item.product.imageUrl} alt="" className="h-full w-full object-cover" /> : <Package className="h-5 w-5 text-muted-foreground" />}
+                {cartItems.map((item: any) => (
+                  <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                    <div>
+                      <div className="font-medium">{item.product?.name}</div>
+                      <div className="text-sm text-muted-foreground">Qty: {item.quantity} x ₹{Number(item.product?.basePrice || 0).toLocaleString()}</div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{item.product?.name}</p>
-                      <p className="text-xs text-muted-foreground">Qty: {item.quantity} x ₹{Number(item.product?.basePrice || 0).toLocaleString()}</p>
-                    </div>
-                    <p className="font-semibold text-sm">₹{(Number(item.product?.basePrice || 0) * item.quantity).toLocaleString()}</p>
+                    <div className="font-semibold">₹{(Number(item.product?.basePrice || 0) * item.quantity).toLocaleString()}</div>
                   </div>
                 ))}
               </CardContent>
             </Card>
 
             {/* Place Order Button */}
-            <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={isProcessing}>
+            <Button 
+              onClick={handlePlaceOrder} 
+              disabled={isProcessing}
+              className="w-full h-12 text-lg"
+              size="lg"
+            >
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -404,6 +456,36 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+
+      {/* Mock Payment Dialog */}
+      <Dialog open={showMockPaymentDialog} onOpenChange={setShowMockPaymentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mock Payment</DialogTitle>
+            <DialogDescription>
+              This is a development mode payment dialog. Click "Confirm" to simulate a successful payment.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <div className="text-sm text-muted-foreground mb-1">Order Amount</div>
+              <div className="text-2xl font-bold">₹{mockPaymentPending?.amount.toLocaleString()}</div>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm text-blue-900 dark:text-blue-200">
+              <strong>Development Mode:</strong> This dialog simulates a successful payment. In production, the real Razorpay payment gateway will be used.
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleMockPaymentCancel}>
+              Cancel Payment
+            </Button>
+            <Button onClick={handleMockPaymentConfirm}>
+              Confirm Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
