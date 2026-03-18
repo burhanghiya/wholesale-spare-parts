@@ -325,7 +325,23 @@ export async function addOrderItems(orderId: number, items: any[]) {
   const db = await getDb();
   if (!db) return false;
   for (const item of items) {
-    await db.insert(orderItems).values({ orderId, ...item });
+    // Calculate totalPrice from unitPrice and quantity
+    const unitPrice = parseFloat(String(item.price || item.unitPrice || 0));
+    const quantity = parseInt(String(item.quantity || 1));
+    const totalPrice = unitPrice * quantity;
+    
+    const insertData: any = {
+      orderId: orderId,
+      productId: parseInt(String(item.productId)),
+      quantity: quantity,
+      unitPrice: unitPrice.toString(),
+      totalPrice: totalPrice.toString(),
+    };
+    
+    if (item.selectedColor) insertData.selectedColor = item.selectedColor;
+    if (item.selectedSize) insertData.selectedSize = item.selectedSize;
+    
+    await db.insert(orderItems).values(insertData as any);
   }
   return true;
 }
