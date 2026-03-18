@@ -20,7 +20,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [selectedModel, setSelectedModel] = useState("");
 
-  const { data: productData, isLoading } = trpc.products.getById.useQuery(productId, { enabled: productId > 0 });
+  const { data: productData, isLoading } = trpc.products.getById.useQuery({ id: productId }, { enabled: productId > 0 });
 
   const utils = trpc.useUtils();
   const addToCartMutation = trpc.cart.add.useMutation({
@@ -49,7 +49,7 @@ export default function ProductDetail() {
     );
   }
 
-  if (!productData?.product) {
+  if (!productData) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

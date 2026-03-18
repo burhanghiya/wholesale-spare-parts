@@ -71,8 +71,13 @@ export const appRouter = router({
       }),
 
     getById: publicProcedure
-      .input(z.number())
-      .query(async ({ input }) => db.getProductById(input)),
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const product = await db.getProductById(input.id);
+        if (!product) return null;
+        const inventory = await db.getInventoryByProductId(input.id);
+        return { product, inventory };
+      }),
 
     getCategories: publicProcedure
       .query(async () => await db.getAllCategories()),
