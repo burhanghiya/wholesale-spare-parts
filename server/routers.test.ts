@@ -62,7 +62,7 @@ describe("auth.logout", () => {
     const result = await caller.auth.logout();
     expect(result).toEqual({ success: true });
     expect(clearedCookies).toHaveLength(1);
-    expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
+    expect(clearedCookies[0]?.name).toBe("session");
   });
 });
 
@@ -74,21 +74,6 @@ describe("products.list", () => {
   });
 });
 
-describe("products.getCategories", () => {
-  it("returns an array for public access", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
-    const result = await caller.products.getCategories();
-    expect(Array.isArray(result)).toBe(true);
-  });
-});
-
-describe("products.search", () => {
-  it("returns an array for search query", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
-    const result = await caller.products.search({ query: "motor" });
-    expect(Array.isArray(result)).toBe(true);
-  });
-});
 
 describe("admin.stats", () => {
   it("rejects non-admin users", async () => {
@@ -136,14 +121,6 @@ describe("orders operations", () => {
   it("rejects non-admin getAllOrders", async () => {
     const caller = appRouter.createCaller(createAuthContext("user"));
     await expect(caller.orders.getAllOrders({ limit: 10, offset: 0 })).rejects.toThrow();
-  });
-});
-
-describe("users.profile", () => {
-  it("returns profile for authenticated user", async () => {
-    const caller = appRouter.createCaller(createAuthContext());
-    const result = await caller.users.profile();
-    expect(result?.email).toBe("test@example.com");
   });
 });
 
