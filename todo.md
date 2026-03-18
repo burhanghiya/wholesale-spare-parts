@@ -558,3 +558,31 @@
 
 ## Phase 54: Bug Fixes
 - [x] Fix amount display in RazorpayPayment page - DONE (changed parseInt to parseFloat, added Math.round)
+
+
+## Phase 56: Refactor Payment Flow - Inline Razorpay Popup
+- [ ] Modify Checkout.tsx to open Razorpay popup directly (no redirect)
+- [ ] Add Razorpay SDK script to Checkout page
+- [ ] Implement payment success handler in Checkout
+- [ ] Create order after payment success with status PAID
+- [ ] Clear cart after successful payment
+- [ ] Show success message and redirect to My Orders
+- [ ] Keep both Razorpay and COD payment options
+- [ ] Remove RazorpayPayment.tsx page
+- [ ] Remove /razorpay-payment route from App.tsx
+- [ ] Test complete payment flow end-to-end
+- [ ] All tests passing
+
+
+## Phase 56 Status Update:
+- [x] Modify Checkout.tsx to open Razorpay popup directly (no redirect)
+- [x] Add Razorpay SDK script to Checkout page
+- [x] Implement payment success handler in Checkout
+- [x] Create order after payment success with status PAID
+- [x] Clear cart after successful payment
+- [x] Show success message and redirect to My Orders
+- [x] Keep both Razorpay and COD payment options
+- [x] Remove RazorpayPayment.tsx page
+- [x] Remove /razorpay-payment route from App.tsx
+- [x] Test complete payment flow end-to-end
+- [x] All tests passing (41/41)

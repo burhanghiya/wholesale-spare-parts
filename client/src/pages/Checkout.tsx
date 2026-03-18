@@ -13,6 +13,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function Checkout() {
   const { user, isAuthenticated, loading } = useAuth();
   const [, setLocation] = useLocation();
@@ -21,8 +27,7 @@ export default function Checkout() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [showUPIPayment, setShowUPIPayment] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Address
   const [address, setAddress] = useState({
@@ -33,6 +38,16 @@ export default function Checkout() {
   const createOrder = trpc.orders.create.useMutation({
     onError: (err) => toast.error(err.message),
   });
+
+  const verifyPayment = trpc.orders.verifyRazorpayPayment.useMutation({
+    onError: (err) => toast.error(err.message),
+  });
+
+  const createRazorpayOrder = trpc.orders.createRazorpayOrder.useMutation({
+    onError: (err) => toast.error(err.message),
+  });
+
+  const clearCart = trpc.cart.clear.useMutation();
 
   // Get COD setting from admin
   const { data: settings } = trpc.system.getSettings.useQuery();
@@ -63,6 +78,18 @@ export default function Checkout() {
   const shippingCost = subtotal >= freeShippingThreshold ? 0 : calculatedShipping;
   const total = subtotal + shippingCost;
 
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const handlePlaceOrder = async () => {
     // Validate Surat-only delivery
     if (address.city !== "Surat") {
@@ -74,14 +101,13 @@ export default function Checkout() {
       toast.error("Please fill all address fields!");
       return;
     }
-    
-    const shippingAddressFormatted = paymentMethod === "upi" 
-      ? fullAddress
-      : `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
-    
+
+    setIsProcessing(true);
+
     try {
-      console.log('[DEBUG] cartItems before send:', cartItems);
-      console.log('[DEBUG] total before send:', total);
+      const shippingAddressFormatted = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
+
+      // Create order first
       const result = await createOrder.mutateAsync({
         shippingAddress: shippingAddressFormatted,
         paymentMethod: paymentMethod,
@@ -90,25 +116,79 @@ export default function Checkout() {
         cartItems: cartItems || [],
         totalAmount: total,
       });
-      
-      console.log('[DEBUG] Order result:', result);
-      console.log('[DEBUG] totalAmount:', result.totalAmount, 'type:', typeof result.totalAmount);
-      
-      if (result.paymentRequired) {
-        // Payment required - redirect to payment page
-        if (paymentMethod === "razorpay") {
-          setLocation(`/razorpay-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
-        } else if (paymentMethod === "upi") {
-          setLocation(`/upi-payment?orderId=${result.orderId}&orderNumber=${result.orderNumber}&amount=${result.totalAmount}`);
-        }
-      } else {
-        // No payment required (COD) - show success confirmation
+
+      if (paymentMethod === "cod") {
+        // COD - Order is already created, just show success
+        await clearCart.mutateAsync();
         setOrderPlaced(true);
         setOrderNumber(result.orderNumber);
         toast.success("Order placed successfully!");
+        setTimeout(() => {
+          setLocation("/profile");
+        }, 2000);
+      } else if (paymentMethod === "razorpay") {
+        // Razorpay - Create Razorpay order and open popup
+        const razorpayOrder = await createRazorpayOrder.mutateAsync({
+          orderId: result.orderId || 0,
+          amount: Math.round(total * 100), // Convert to paise
+        });
+
+        if (!window.Razorpay) {
+          throw new Error("Razorpay SDK not loaded");
+        }
+
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          order_id: razorpayOrder.razorpayOrderId,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          name: "Patel Electricals",
+          description: `Order #${result.orderNumber}`,
+          handler: async (response: any) => {
+            try {
+              // Verify payment
+              await verifyPayment.mutateAsync({
+                orderId: result.orderId || 0,
+                razorpayOrderId: razorpayOrder.razorpayOrderId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              // Clear cart
+              await clearCart.mutateAsync();
+
+              toast.success("Payment successful! Order confirmed.");
+              
+              // Redirect to My Orders
+              setTimeout(() => {
+                setLocation("/profile");
+              }, 1500);
+            } catch (error: any) {
+              toast.error(error.message || "Payment verification failed");
+              setIsProcessing(false);
+            }
+          },
+          prefill: {
+            name: user?.name || "",
+            email: user?.email || "",
+          },
+          theme: {
+            color: "#3b82f6",
+          },
+          modal: {
+            ondismiss: () => {
+              toast.error("Payment cancelled");
+              setIsProcessing(false);
+            },
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
       }
-    } catch (error) {
-      // Error is already handled by mutation's onError
+    } catch (error: any) {
+      toast.error(error.message || "Failed to place order");
+      setIsProcessing(false);
     }
   };
 
@@ -159,7 +239,7 @@ export default function Checkout() {
           </div>
           <h2 className="text-2xl font-bold mb-2">Order Placed Successfully!</h2>
           <p className="text-muted-foreground mb-2">Order Number: <span className="font-mono font-bold text-foreground">{orderNumber}</span></p>
-          <p className="text-muted-foreground mb-6">Your order has been created. Admin will review and confirm it soon.</p>
+          <p className="text-muted-foreground mb-6">Your order has been created. You will be redirected to your orders shortly.</p>
           <div className="flex gap-3 justify-center">
             <Button onClick={() => setLocation("/profile")}>View My Orders</Button>
             <Button variant="outline" onClick={() => setLocation("/products")}>Continue Shopping</Button>
@@ -200,22 +280,18 @@ export default function Checkout() {
                     <Input placeholder="10-digit phone" value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} />
                   </div>
                 </div>
-
                 <div>
                   <Label>Address Line 1 *</Label>
                   <Input placeholder="Street address" value={address.addressLine1} onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })} />
                 </div>
-
                 <div>
                   <Label>Address Line 2 (Optional)</Label>
                   <Input placeholder="Apartment, suite, etc." value={address.addressLine2} onChange={(e) => setAddress({ ...address, addressLine2: e.target.value })} />
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>City *</Label>
                     <Input placeholder="City" value={address.city} disabled className="bg-muted cursor-not-allowed" />
-                    <p className="text-xs text-muted-foreground mt-1">We only deliver in Surat</p>
                   </div>
                   <div>
                     <Label>State *</Label>
@@ -243,18 +319,11 @@ export default function Checkout() {
                       </div>
                     </label>
                   )}
-                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("upi")}>
-                    <input type="radio" name="payment" value="upi" checked={paymentMethod === "upi"} onChange={() => setPaymentMethod("upi")} className="w-4 h-4" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">UPI Payment</p>
-                      <p className="text-xs text-muted-foreground">Google Pay, Paytm, PhonePe</p>
-                    </div>
-                  </label>
                   <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod("razorpay")}>
                     <input type="radio" name="payment" value="razorpay" checked={paymentMethod === "razorpay"} onChange={() => setPaymentMethod("razorpay")} className="w-4 h-4" />
                     <div className="flex-1">
                       <p className="font-medium text-sm">Razorpay Payment</p>
-                      <p className="text-xs text-muted-foreground">Credit/Debit Card, UPI, Wallets</p>
+                      <p className="text-xs text-muted-foreground">Credit/Debit Card, UPI, Wallets, Net Banking</p>
                     </div>
                   </label>
                 </div>
@@ -281,8 +350,15 @@ export default function Checkout() {
             </Card>
 
             {/* Place Order Button */}
-            <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={createOrder.isPending}>
-              {createOrder.isPending ? "Placing Order..." : `Place Order - ₹${Math.round(total).toLocaleString()}`}
+            <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={isProcessing}>
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                `Place Order - ₹${Math.round(total).toLocaleString()}`
+              )}
             </Button>
           </div>
 
