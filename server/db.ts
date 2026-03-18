@@ -152,7 +152,23 @@ export async function getAllProductsAdmin(limit = 100, offset = 0) {
 export async function createProduct(data: any) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(products).values(data);
+  
+  // Provide default values for required fields
+  const productData = {
+    ...data,
+    categoryId: data.categoryId || 1, // Default category
+    colorOptions: data.colorOptions || [],
+    sizeOptions: data.sizeOptions || [],
+    stockQty: data.stockQty || 100,
+    minOrderQty: data.minOrderQty || 1,
+    compatibleModels: data.compatibleModels || [],
+    compatibleBrands: data.compatibleBrands || [],
+    alternatePartNumbers: data.alternatePartNumbers || [],
+    productImages: data.productImages || [],
+    isActive: data.isActive !== undefined ? data.isActive : true,
+  };
+  
+  const result = await db.insert(products).values(productData);
   return result;
 }
 
@@ -529,19 +545,41 @@ export async function updateCartItemQuantity(cartItemId: number, quantity: numbe
 }
 
 
-// Distance-based shipping calculation using Google Maps
-// Calculates distance from warehouse to customer address and applies per-km charge
+// Distance-based shipping calculation using pincode
+// Calculates shipping cost based on distance from Surat warehouse
 export async function calculateShippingByDistance(customerAddress: string) {
   try {
-    // Fixed shipping cost for Surat delivery
-    // Base Cost: ₹45, Free shipping on orders above ₹500
-    const FIXED_SHIPPING_COST = 45;
+    // Extract pincode from address (last 6 digits)
+    const pincodeMatch = customerAddress.match(/(\d{6})/);
+    const pincode = pincodeMatch ? parseInt(pincodeMatch[1]) : 394210; // Default to Surat
     
-    console.log(`[Shipping] Calculated shipping cost for address: ${customerAddress}`);
-    return FIXED_SHIPPING_COST;
+    // Surat warehouse pincode
+    const warehousePincode = 394210;
+    
+    // Shipping rates based on pincode distance
+    // Surat area (394xxx): ₹45
+    // Gujarat area (36xxxx-39xxxx): ₹75
+    // India (other): ₹150
+    
+    let shippingCost = 45; // Default
+    
+    if (pincode >= 394000 && pincode <= 394999) {
+      // Surat area
+      shippingCost = 45;
+    } else if ((pincode >= 360000 && pincode <= 369999) || 
+               (pincode >= 370000 && pincode <= 393999)) {
+      // Other Gujarat areas
+      shippingCost = 75;
+    } else {
+      // Rest of India
+      shippingCost = 150;
+    }
+    
+    console.log(`[Shipping] Calculated shipping cost for pincode ${pincode}: Rs.${shippingCost}`);
+    return shippingCost;
   } catch (error) {
     console.error("Error calculating shipping distance:", error);
-    return 45; // Default to ₹45
+    return 45; // Default to Rs.45
   }
 }
 
