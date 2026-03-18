@@ -163,18 +163,24 @@ export const appRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cart is empty' });
         }
 
+        // Generate unique order number
+        const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
         const orderStatus = 'pending';
         const paymentStatus = input.paymentMethod === 'cod' ? 'pending' : 'pending';
 
         const orderId = await db.createOrder({
+          orderNumber: orderNumber,
           userId: ctx.user.id,
           shippingAddress: input.shippingAddress,
           paymentMethod: input.paymentMethod,
-          shippingPincode: input.shippingPincode,
           shippingCost: input.shippingCost,
           totalAmount: input.totalAmount,
+          gstAmount: 0,
+          discountAmount: 0,
+          shippingMethod: 'standard',
           orderStatus: orderStatus,
           paymentStatus: paymentStatus,
+          inventoryDeducted: false,
         });
 
         if (!orderId) {
