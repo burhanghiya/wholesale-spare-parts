@@ -43,6 +43,10 @@ export default function Checkout() {
     onError: (err) => toast.error(err.message),
   });
 
+  const createRazorpayOrder = trpc.orders.createRazorpayOrder.useMutation({
+    onError: (err) => toast.error(err.message),
+  });
+
   const clearCart = trpc.cart.clear.useMutation();
 
   // Get COD setting from admin
@@ -114,17 +118,35 @@ export default function Checkout() {
           setLocation("/profile");
         }, 2000);
       } else if (paymentMethod === "razorpay") {
-        // Razorpay - Open popup directly
+        // Razorpay - Create order first, then open popup
         if (!window.Razorpay) {
           throw new Error("Razorpay SDK not loaded. Please refresh and try again.");
         }
 
+        // Step 1: Create order in database
+        const orderResult = await createOrder.mutateAsync({
+          shippingAddress: shippingAddressFormatted,
+          paymentMethod: paymentMethod,
+          shippingPincode: address.pincode,
+          shippingCost: calculatedShipping,
+          cartItems: cartItems || [],
+          totalAmount: total,
+        });
+
+        // Step 2: Create Razorpay order
+        const razorpayOrderResult = await createRazorpayOrder.mutateAsync({
+          amount: total,
+          orderId: orderResult.orderId || 0,
+        });
+
+        // Step 3: Open Razorpay popup with order_id
         const options = {
-          key: "rzp_test_1DP5mmOlF5G5ag", // Test key - use for testing
+          key: "rzp_live_SSPEidW3JH1fgj", // Live key
           amount: Math.round(total * 100), // Convert to paise
           currency: "INR",
           name: "Patel Electricals",
           description: "Order Payment",
+          order_id: razorpayOrderResult.razorpayOrderId, // IMPORTANT: Razorpay order ID
           prefill: {
             name: user?.name || "",
             email: user?.email || "",
@@ -132,20 +154,10 @@ export default function Checkout() {
           },
           handler: async (response: any) => {
             try {
-              // Payment successful - create order
-              const result = await createOrder.mutateAsync({
-                shippingAddress: shippingAddressFormatted,
-                paymentMethod: paymentMethod,
-                shippingPincode: address.pincode,
-                shippingCost: calculatedShipping,
-                cartItems: cartItems || [],
-                totalAmount: total,
-              });
-
               // Verify payment signature
               await verifyPayment.mutateAsync({
-                orderId: result.orderId || 0,
-                razorpayOrderId: response.razorpay_order_id || "",
+                orderId: orderResult.orderId || 0,
+                razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
               });

@@ -2,6 +2,7 @@ import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import Razorpay from "razorpay";
 
 export const appRouter = router({
   auth: router({
@@ -198,6 +199,41 @@ export const appRouter = router({
           orderNumber: order?.orderNumber,
           totalAmount: order?.totalAmount,
         };
+      }),
+
+    createRazorpayOrder: protectedProcedure
+      .input(z.object({
+        amount: z.number(),
+        orderId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID || "rzp_live_SSPEidW3JH1fgj",
+            key_secret: process.env.RAZORPAY_KEY_SECRET || "",
+          });
+
+          const razorpayOrder = await razorpay.orders.create({
+            amount: input.amount * 100,
+            currency: "INR",
+            receipt: `order_${input.orderId}`,
+            notes: {
+              orderId: input.orderId.toString(),
+              userId: ctx.user.id.toString(),
+            },
+          });
+
+          console.log(`[Razorpay] Created order: ${razorpayOrder.id}`);
+
+          return {
+            razorpayOrderId: razorpayOrder.id,
+            amount: input.amount,
+            currency: "INR",
+          };
+        } catch (error: any) {
+          console.error('Razorpay order creation error:', error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create Razorpay order' });
+        }
       }),
 
     verifyRazorpayPayment: protectedProcedure

@@ -586,3 +586,12 @@
 - [x] Remove /razorpay-payment route from App.tsx
 - [x] Test complete payment flow end-to-end
 - [x] All tests passing (41/41)
+
+
+## Phase 57: Fix Razorpay Integration with Order ID
+- [x] Install Razorpay SDK in backend
+- [x] Create Razorpay Orders API procedure in backend
+- [x] Update createRazorpayOrder to return order_id
+- [x] Update Checkout.tsx to use order_id in Razorpay config
+- [x] Test payment flow with live key
+- [x] Verify order creation after payment success
