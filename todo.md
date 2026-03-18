@@ -322,6 +322,15 @@
 - [ ] Test color/size selection in cart and orders
 - [ ] All tests passing
 
+## Phase 36: Fix Stock Display and Add Category Page
+- [ ] Fix stock display showing 0 for all products - fetch from inventory table
+- [ ] Fix stock update when editing products in admin panel
+- [ ] Create dedicated category browsing page
+- [ ] Show all categories with product count
+- [ ] Allow filtering products by category
+- [ ] Test category page and stock display
+- [ ] All tests passing
+
 
 ## Phase 35: Hybrid+ Shipping (Pincode + Area + Distance)
 - [ ] Update pincode_zones table schema to add areaName field

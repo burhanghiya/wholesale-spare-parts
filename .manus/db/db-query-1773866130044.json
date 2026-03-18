@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, name, categoryId FROM products LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name, categoryId FROM products LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Hiwa celing fan",
+      "categoryId": "1"
+    },
+    {
+      "id": "30001",
+      "name": "Celing fan ",
+      "categoryId": "1"
+    },
+    {
+      "id": "60001",
+      "name": "Fan",
+      "categoryId": "30001"
+    },
+    {
+      "id": "90001",
+      "name": "Test Product",
+      "categoryId": "1"
+    },
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategoryId\n1\tHiwa celing fan\t1\n30001\tCeling fan \t1\n60001\tFan\t30001\n90001\tTest Product\t1\n120001\tBajaj \t1\n",
+  "stderr": "",
+  "execution_time_ms": 1614
+}

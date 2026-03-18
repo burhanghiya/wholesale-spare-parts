@@ -1,0 +1,30 @@
+{
+  "query": "SELECT * FROM categories; SELECT DISTINCT categoryId FROM products;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT * FROM categories; SELECT DISTINCT categoryId FROM products;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Fan",
+      "description": "NULL",
+      "parentCategoryId": "NULL",
+      "createdAt": "2026-03-12 05:56:00",
+      "updatedAt": "2026-03-12 05:56:00"
+    },
+    {
+      "id": "30001",
+      "name": "General",
+      "description": "NULL",
+      "parentCategoryId": "NULL",
+      "createdAt": "2026-03-17 09:48:14",
+      "updatedAt": "2026-03-17 09:48:14"
+    }
+  ],
+  "messages": [
+    "categoryId",
+    "1",
+    "30001"
+  ],
+  "stdout": "id\tname\tdescription\tparentCategoryId\tcreatedAt\tupdatedAt\n1\tFan\tNULL\tNULL\t2026-03-12 05:56:00\t2026-03-12 05:56:00\n30001\tGeneral\tNULL\tNULL\t2026-03-17 09:48:14\t2026-03-17 09:48:14\ncategoryId\n1\n30001\n",
+  "stderr": "",
+  "execution_time_ms": 1964
+}

@@ -21,16 +21,27 @@ export default function ProductCatalog() {
   
   // Check if search query exists in URL
   const hasUrlSearch = location.includes("search=");
+  
+  const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
+  const { data: categoriesData } = trpc.products.getCategories.useQuery();
 
-  // Get search query from URL params
+  // Get search query and category from URL params
   useEffect(() => {
     const params = new URLSearchParams(location.split('?')[1]);
     const urlSearch = params.get('search');
+    const urlCategory = params.get('category');
     if (urlSearch) {
       setSearchQuery(urlSearch);
       setDebouncedSearch(urlSearch);
     }
-  }, [location]);
+    if (urlCategory && categoriesData) {
+      const categoryName = decodeURIComponent(urlCategory);
+      const foundCat = categoriesData.find((c) => c.name === categoryName);
+      if (foundCat) {
+        setSelectedCategory(foundCat.id.toString());
+      }
+    }
+  }, [location, categoriesData]);
   
   // Debounce search
   useEffect(() => {
@@ -38,10 +49,7 @@ export default function ProductCatalog() {
       const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
       return () => clearTimeout(timer);
     }
-  }, [searchQuery, hasUrlSearch]);
-
-  const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
-  const { data: categoriesData } = trpc.products.getCategories.useQuery();
+  }, [searchQuery, hasUrlSearch]);;
   const { data: searchResults } = trpc.products.search.useQuery(
     { query: debouncedSearch, categoryId: selectedCategory !== "all" ? parseInt(selectedCategory) : undefined },
     { enabled: debouncedSearch.length > 0 }
@@ -51,14 +59,15 @@ export default function ProductCatalog() {
     let products = debouncedSearch.length > 0 && searchResults ? searchResults : productsData;
     if (!products) return [];
     if (selectedCategory && selectedCategory !== "all") {
-      products = products.filter((p) => p.categoryId === parseInt(selectedCategory));
+      const catId = parseInt(selectedCategory);
+      products = products.filter((p) => p.categoryId === catId);
     }
     switch (sortBy) {
       case "price-low": return [...products].sort((a, b) => Number(a.basePrice) - Number(b.basePrice));
       case "price-high": return [...products].sort((a, b) => Number(b.basePrice) - Number(a.basePrice));
       default: return [...products].sort((a, b) => a.name.localeCompare(b.name));
     }
-  }, [productsData, searchResults, selectedCategory, sortBy, searchQuery]);
+  }, [productsData, searchResults, selectedCategory, sortBy, categoriesData]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -176,7 +185,7 @@ export default function ProductCatalog() {
                     <div className="flex items-end justify-between">
                       <div>
                         <p className="text-xl font-bold">₹{Number(product.basePrice).toFixed(0)}</p>
-
+                        <p className="text-xs text-muted-foreground">Stock: {product.stockQty || 0}</p>
                       </div>
                       <Button size="sm" variant="outline" className="h-8 w-8 p-0">
                         <ShoppingCart className="h-3.5 w-3.5" />
@@ -210,6 +219,7 @@ export default function ProductCatalog() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xl font-bold">₹{Number(product.basePrice).toFixed(0)}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Stock: {product.stockQty || 0}</p>
                     <Badge variant={product.isActive ? "default" : "destructive"} className="text-xs">
                       {product.isActive ? "In Stock" : "Out"}
                     </Badge>
