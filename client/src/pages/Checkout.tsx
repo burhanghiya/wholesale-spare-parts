@@ -28,7 +28,6 @@ export default function Checkout() {
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   // Address
   const [address, setAddress] = useState({
@@ -41,10 +40,6 @@ export default function Checkout() {
   });
 
   const verifyPayment = trpc.orders.verifyRazorpayPayment.useMutation({
-    onError: (err) => toast.error(err.message),
-  });
-
-  const createRazorpayOrder = trpc.orders.createRazorpayOrder.useMutation({
     onError: (err) => toast.error(err.message),
   });
 
@@ -79,37 +74,6 @@ export default function Checkout() {
   const shippingCost = subtotal >= freeShippingThreshold ? 0 : calculatedShipping;
   const total = subtotal + shippingCost;
 
-  // Load Razorpay script with proper error handling
-  useEffect(() => {
-    // Check if script already exists
-    if (window.Razorpay) {
-      console.log("Razorpay already loaded");
-      setRazorpayLoaded(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    
-    script.onload = () => {
-      console.log("Razorpay script loaded successfully");
-      setRazorpayLoaded(true);
-    };
-    
-    script.onerror = () => {
-      console.error("Failed to load Razorpay script");
-      toast.error("Payment system failed to load. Please refresh and try again.");
-      setRazorpayLoaded(false);
-    };
-    
-    document.body.appendChild(script);
-
-    return () => {
-      // Don't remove script as it may be needed for multiple orders
-    };
-  }, []);
-
   const handlePlaceOrder = async () => {
     // Validate Surat-only delivery
     if (address.city !== "Surat") {
@@ -127,19 +91,20 @@ export default function Checkout() {
     try {
       const shippingAddressFormatted = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
 
-      // Create order first
-      const result = await createOrder.mutateAsync({
-        shippingAddress: shippingAddressFormatted,
-        paymentMethod: paymentMethod,
-        shippingPincode: address.pincode,
-        shippingCost: calculatedShipping,
-        cartItems: cartItems || [],
-        totalAmount: total,
-      });
-
       if (paymentMethod === "cod") {
-        // COD - Order is already created, just show success
+        // COD - Create order directly
+        const result = await createOrder.mutateAsync({
+          shippingAddress: shippingAddressFormatted,
+          paymentMethod: paymentMethod,
+          shippingPincode: address.pincode,
+          shippingCost: calculatedShipping,
+          cartItems: cartItems || [],
+          totalAmount: total,
+        });
+
+        // Clear cart
         await clearCart.mutateAsync();
+        
         setOrderPlaced(true);
         setOrderNumber(result.orderNumber);
         toast.success("Order placed successfully!");
@@ -147,29 +112,38 @@ export default function Checkout() {
           setLocation("/profile");
         }, 2000);
       } else if (paymentMethod === "razorpay") {
-        // Razorpay - Create Razorpay order and open popup
-        if (!razorpayLoaded || !window.Razorpay) {
+        // Razorpay - Open popup directly
+        if (!window.Razorpay) {
           throw new Error("Razorpay SDK not loaded. Please refresh and try again.");
         }
 
-        const razorpayOrder = await createRazorpayOrder.mutateAsync({
-          orderId: result.orderId || 0,
-          amount: Math.round(total * 100), // Convert to paise
-        });
-
         const options = {
           key: "rzp_live_SSPEidW3JH1fgj",
-          order_id: razorpayOrder.razorpayOrderId,
-          amount: razorpayOrder.amount,
-          currency: razorpayOrder.currency,
+          amount: Math.round(total * 100), // Convert to paise
+          currency: "INR",
           name: "Patel Electricals",
-          description: `Order #${result.orderNumber}`,
+          description: "Order Payment",
+          prefill: {
+            name: user?.name || "",
+            email: user?.email || "",
+            contact: address.phone || "",
+          },
           handler: async (response: any) => {
             try {
-              // Verify payment
+              // Payment successful - create order
+              const result = await createOrder.mutateAsync({
+                shippingAddress: shippingAddressFormatted,
+                paymentMethod: paymentMethod,
+                shippingPincode: address.pincode,
+                shippingCost: calculatedShipping,
+                cartItems: cartItems || [],
+                totalAmount: total,
+              });
+
+              // Verify payment signature
               await verifyPayment.mutateAsync({
                 orderId: result.orderId || 0,
-                razorpayOrderId: razorpayOrder.razorpayOrderId,
+                razorpayOrderId: response.razorpay_order_id || "",
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
               });
@@ -188,23 +162,19 @@ export default function Checkout() {
               setIsProcessing(false);
             }
           },
-          prefill: {
-            name: user?.name || "",
-            email: user?.email || "",
-          },
-          theme: {
-            color: "#3b82f6",
-          },
           modal: {
             ondismiss: () => {
               toast.error("Payment cancelled");
               setIsProcessing(false);
             },
           },
+          theme: {
+            color: "#3b82f6",
+          },
         };
 
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");

@@ -381,45 +381,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    createRazorpayOrder: protectedProcedure
-      .input(z.object({
-        orderId: z.number(),
-        amount: z.number(), // in paise (₹1 = 100 paise)
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const Razorpay = require('razorpay');
-        const { ENV } = require('./_core/env');
-        
-        if (!ENV.razorpayKeyId || !ENV.razorpayKeySecret) {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Razorpay credentials not configured' });
-        }
 
-        const razorpay = new Razorpay({
-          key_id: ENV.razorpayKeyId,
-          key_secret: ENV.razorpayKeySecret,
-        });
-
-        try {
-          const razorpayOrder = await razorpay.orders.create({
-            amount: input.amount,
-            currency: 'INR',
-            receipt: `order_${input.orderId}`,
-            notes: {
-              orderId: input.orderId,
-              userId: ctx.user.id,
-            },
-          });
-
-          return {
-            razorpayOrderId: razorpayOrder.id,
-            amount: razorpayOrder.amount,
-            currency: razorpayOrder.currency,
-          };
-        } catch (error: any) {
-          console.error('Razorpay order creation error:', error);
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create Razorpay order' });
-        }
-      }),
 
     verifyRazorpayPayment: protectedProcedure
       .input(z.object({

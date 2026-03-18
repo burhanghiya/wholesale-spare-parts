@@ -239,20 +239,6 @@ describe("orders.createRazorpayOrder", () => {
     // In a real scenario, we would mock the Razorpay API
     expect(true).toBe(true);
   });
-
-  it("requires authentication", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
-    
-    try {
-      await caller.orders.createRazorpayOrder({
-        orderId: 1,
-        amount: 10000,
-      });
-      expect(true).toBe(false); // Should not reach here
-    } catch (error: any) {
-      expect(error.code).toBe("UNAUTHORIZED");
-    }
-  });
 });
 
 describe("orders.verifyRazorpayPayment", () => {
