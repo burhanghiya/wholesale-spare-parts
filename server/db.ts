@@ -511,71 +511,26 @@ export async function updateCartItemQuantity(cartItemId: number, quantity: numbe
 // Distance-based shipping calculation using Google Maps
 // Calculates distance from warehouse to customer address and applies per-km charge
 export async function calculateShippingByDistance(customerAddress: string) {
-  const { makeRequest } = await import('./_core/map');
-  const WAREHOUSE_LOCATION = "Udhana, Surat - 394210, India";
-
   try {
-    // Use Distance Matrix API to get distance
-    const result = await makeRequest<any>(
-      "/maps/api/distancematrix/json",
-      {
-        origins: WAREHOUSE_LOCATION,
-        destinations: customerAddress,
-        mode: "driving",
-        units: "metric"
-      }
-    );
-
-    if (result.status !== "OK" || !result.rows || result.rows.length === 0) {
-      console.error("Distance Matrix API error:", result);
-      return 0;
-    }
-
-    const element = result.rows[0]?.elements?.[0];
-    if (!element || element.status !== "OK") {
-      console.error("Distance calculation failed:", element);
-      return 0;
-    }
-
-    // Distance in meters, convert to km
-    const distanceKm = Math.round(element.distance.value / 1000);
-
-    // Get per-km shipping configuration
-    const db = await getDb();
-    if (!db) return 0;
+    // Fixed shipping cost for Surat delivery
+    // Base Cost: ₹45, Free shipping on orders above ₹500
+    const FIXED_SHIPPING_COST = 45;
     
-    const config = await db.select().from(shippingRates).limit(1);
-    if (config.length === 0) {
-      console.error(`No shipping configuration found`);
-      return 0;
-    }
-
-    const baseCost = Number(config[0].baseCost) || 0;
-    const costPerKm = Number(config[0].costPerKm) || 0;
-    
-    // Calculate: Base Cost + (Distance × Cost Per Km)
-    const shippingCost = baseCost + (distanceKm * costPerKm);
-    return shippingCost;
+    console.log(`[Shipping] Calculated shipping cost for address: ${customerAddress}`);
+    return FIXED_SHIPPING_COST;
   } catch (error) {
     console.error("Error calculating shipping distance:", error);
-    return 0;
+    return 45; // Default to ₹45
   }
 }
 
 // Per-kilometer shipping configuration
 export async function getShippingConfig() {
-  const db = await getDb();
-  if (!db) return { baseCost: 0, costPerKm: 0 };
-  
-  const config = await db.select().from(shippingRates).limit(1);
-  if (config.length === 0) {
-    return { baseCost: 0, costPerKm: 0, freeShippingThreshold: 1000 };
-  }
-  
+  // Return fixed shipping configuration for Surat
   return {
-    baseCost: Number(config[0].baseCost) || 0,
-    costPerKm: Number(config[0].costPerKm) || 0,
-    freeShippingThreshold: Number(config[0].minDistance) || 1000,
+    baseCost: 45,
+    costPerKm: 0,
+    freeShippingThreshold: 500,
   };
 }
 

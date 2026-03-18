@@ -118,7 +118,7 @@ export default function Checkout() {
         }
 
         const options = {
-          key: "rzp_live_SSPEidW3JH1fgj",
+          key: "rzp_test_1DP5mmOlF5G5ag", // Test key - use for testing
           amount: Math.round(total * 100), // Convert to paise
           currency: "INR",
           name: "Patel Electricals",
