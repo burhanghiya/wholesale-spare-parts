@@ -66,12 +66,14 @@ export default function Checkout() {
     { address: fullAddress },
     { enabled: fullAddress.length > 10 && address.pincode.length === 6 }
   );
-  const calculatedShipping = shippingData?.shippingCost || 45; // Default ₹45 shipping
+  // Only calculate shipping if address is filled
+  const isAddressFilled = address.fullName && address.phone && address.addressLine1 && address.pincode;
+  const calculatedShipping = isAddressFilled ? (shippingData?.shippingCost || 45) : 0;
 
   // Totals
   const subtotal = cartItems?.reduce((sum, item) => sum + Number(item.product?.basePrice || 0) * item.quantity, 0) || 0;
   // Apply free shipping if subtotal >= threshold
-  const shippingCost = subtotal >= freeShippingThreshold ? 0 : calculatedShipping;
+  const shippingCost = isAddressFilled && subtotal >= freeShippingThreshold ? 0 : calculatedShipping;
   const total = subtotal + shippingCost;
 
   const handlePlaceOrder = async () => {
@@ -362,17 +364,24 @@ export default function Checkout() {
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
                 <div className="space-y-2 border-t pt-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    {shippingCost === 0 && subtotal >= freeShippingThreshold ? (
-                      <Badge className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1">
-                        <Check className="h-3 w-3" />
-                        FREE DELIVERY
-                      </Badge>
-                    ) : (
-                      <span>₹{Math.round(shippingCost).toLocaleString()}</span>
-                    )}
-                  </div>
+                  {isAddressFilled ? (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Shipping</span>
+                      {shippingCost === 0 && subtotal >= freeShippingThreshold ? (
+                        <Badge className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1">
+                          <Check className="h-3 w-3" />
+                          FREE DELIVERY
+                        </Badge>
+                      ) : (
+                        <span>₹{Math.round(shippingCost).toLocaleString()}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                      <span>Shipping</span>
+                      <span className="text-xs">Fill address to calculate</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
                     <span>₹{Math.round(total).toLocaleString()}</span>
