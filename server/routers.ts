@@ -82,6 +82,25 @@ export const appRouter = router({
     getCategories: publicProcedure
       .query(async () => await db.getAllCategories()),
 
+    addCategory: protectedProcedure
+      .input(z.object({ name: z.string(), description: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.createCategory({
+          name: input.name,
+          description: input.description || null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }),
+
+    deleteCategory: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await db.deleteCategory(input);
+      }),
+
     getInventory: publicProcedure
       .query(async () => await db.getAllInventory()),
 
