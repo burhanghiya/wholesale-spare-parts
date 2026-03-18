@@ -28,6 +28,7 @@ export default function Checkout() {
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   // Address
   const [address, setAddress] = useState({
@@ -78,15 +79,34 @@ export default function Checkout() {
   const shippingCost = subtotal >= freeShippingThreshold ? 0 : calculatedShipping;
   const total = subtotal + shippingCost;
 
-  // Load Razorpay script
+  // Load Razorpay script with proper error handling
   useEffect(() => {
+    // Check if script already exists
+    if (window.Razorpay) {
+      console.log("Razorpay already loaded");
+      setRazorpayLoaded(true);
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    
+    script.onload = () => {
+      console.log("Razorpay script loaded successfully");
+      setRazorpayLoaded(true);
+    };
+    
+    script.onerror = () => {
+      console.error("Failed to load Razorpay script");
+      toast.error("Payment system failed to load. Please refresh and try again.");
+      setRazorpayLoaded(false);
+    };
+    
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      // Don't remove script as it may be needed for multiple orders
     };
   }, []);
 
@@ -128,17 +148,17 @@ export default function Checkout() {
         }, 2000);
       } else if (paymentMethod === "razorpay") {
         // Razorpay - Create Razorpay order and open popup
+        if (!razorpayLoaded || !window.Razorpay) {
+          throw new Error("Razorpay SDK not loaded. Please refresh and try again.");
+        }
+
         const razorpayOrder = await createRazorpayOrder.mutateAsync({
           orderId: result.orderId || 0,
           amount: Math.round(total * 100), // Convert to paise
         });
 
-        if (!window.Razorpay) {
-          throw new Error("Razorpay SDK not loaded");
-        }
-
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          key: "rzp_live_SSPEidW3JH1fgj",
           order_id: razorpayOrder.razorpayOrderId,
           amount: razorpayOrder.amount,
           currency: razorpayOrder.currency,
