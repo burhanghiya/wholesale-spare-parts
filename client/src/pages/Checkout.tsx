@@ -80,12 +80,19 @@ export default function Checkout() {
       : `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
     
     try {
+      console.log('[DEBUG] cartItems before send:', cartItems);
+      console.log('[DEBUG] total before send:', total);
       const result = await createOrder.mutateAsync({
         shippingAddress: shippingAddressFormatted,
         paymentMethod: paymentMethod,
         shippingPincode: address.pincode,
         shippingCost: calculatedShipping,
+        cartItems: cartItems || [],
+        totalAmount: total,
       });
+      
+      console.log('[DEBUG] Order result:', result);
+      console.log('[DEBUG] totalAmount:', result.totalAmount, 'type:', typeof result.totalAmount);
       
       if (result.paymentRequired) {
         // Payment required - redirect to payment page

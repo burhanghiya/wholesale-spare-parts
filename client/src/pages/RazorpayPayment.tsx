@@ -27,15 +27,22 @@ export default function RazorpayPayment() {
 
   // Parse URL parameters
   useEffect(() => {
-    const params = new URLSearchParams(location.split('?')[1]);
+    console.log('[DEBUG RazorpayPayment] location:', location);
+    console.log('[DEBUG RazorpayPayment] location.split:', location.split('?'));
+    const queryString = location.split('?')[1];
+    console.log('[DEBUG RazorpayPayment] queryString:', queryString);
+    const params = new URLSearchParams(queryString);
     const id = params.get("orderId");
     const num = params.get("orderNumber");
     const amt = params.get("amount");
+
+    console.log('[DEBUG RazorpayPayment] parsed - id:', id, 'num:', num, 'amt:', amt);
 
     if (id && num && amt) {
       setOrderId(parseInt(id));
       setOrderNumber(num);
       setAmount(parseFloat(amt));
+      console.log('[DEBUG RazorpayPayment] state updated - orderId:', parseInt(id), 'amount:', parseFloat(amt));
     }
   }, [location]);
 

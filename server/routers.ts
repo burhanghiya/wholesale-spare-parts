@@ -227,29 +227,68 @@ export const appRouter = router({
         paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay']),
         shippingPincode: z.string().optional(),
         shippingCost: z.number().optional().default(0),
+        totalAmount: z.number().optional(),
+        cartItems: z.array(z.object({
+          id: z.number(),
+          productId: z.number(),
+          quantity: z.number(),
+          addedPrice: z.string().optional(),
+          product: z.object({
+            id: z.number(),
+            name: z.string(),
+            basePrice: z.string(),
+          }).optional(),
+        })).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const cartItemsList = await db.getCartItems(ctx.user.id);
+        // Use provided cartItems or fetch from DB
+        let cartItemsList = input.cartItems || await db.getCartItems(ctx.user.id);
+        console.log('[DEBUG] Cart items for user', ctx.user.id, ':', cartItemsList.length, cartItemsList);
         if (cartItemsList.length === 0) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cart is empty' });
 
-        let totalAmount = 0;
+        // Use totalAmount from client if provided, otherwise calculate from cartItems
+        let totalAmount = input.totalAmount || 0;
         const orderItemsData = [];
-        for (const item of cartItemsList) {
-          const product = await db.getProductById(item.productId);
-          if (!product) continue;
-          const inventory = await db.getInventoryByProductId(item.productId);
-          const availableStock = inventory?.quantityInStock || 0;
-          if (availableStock < item.quantity) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: `${product.name} has only ${availableStock} units available, but you requested ${item.quantity}` });
+        
+        // If totalAmount not provided, calculate from cartItems
+        if (!input.totalAmount && cartItemsList.length > 0) {
+          for (const item of cartItemsList) {
+            let product = (item as any).product;
+            if (!product) {
+              product = await db.getProductById(item.productId);
+            }
+            if (!product) continue;
+            
+            const inventory = await db.getInventoryByProductId(item.productId);
+            const availableStock = inventory?.quantityInStock || 0;
+            if (availableStock < item.quantity) {
+              throw new TRPCError({ code: 'BAD_REQUEST', message: `${product.name} has only ${availableStock} units available, but you requested ${item.quantity}` });
+            }
+            const itemTotal = Number(product.basePrice) * item.quantity;
+            totalAmount += itemTotal;
+            orderItemsData.push({
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: String(Number(product.basePrice)),
+              totalPrice: String(itemTotal),
+            });
           }
-          const itemTotal = Number(product.basePrice) * item.quantity;
-          totalAmount += itemTotal;
-          orderItemsData.push({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: String(Number(product.basePrice)),
-            totalPrice: String(itemTotal),
-          });
+        } else if (input.totalAmount && cartItemsList.length > 0) {
+          // Still validate stock even if using client totalAmount
+          for (const item of cartItemsList) {
+            const inventory = await db.getInventoryByProductId(item.productId);
+            const availableStock = inventory?.quantityInStock || 0;
+            if (availableStock < item.quantity) {
+              const product = (item as any).product || await db.getProductById(item.productId);
+              throw new TRPCError({ code: 'BAD_REQUEST', message: `${product?.name} has only ${availableStock} units available, but you requested ${item.quantity}` });
+            }
+            orderItemsData.push({
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: String(item.addedPrice || '0'),
+              totalPrice: String(Number(item.addedPrice || 0) * item.quantity),
+            });
+          }
         }
 
         const orderNumber = `ORD-${Date.now()}`;
