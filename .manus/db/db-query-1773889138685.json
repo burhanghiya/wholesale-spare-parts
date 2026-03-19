@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, orderNumber, paymentMethod, inventoryDeducted, orderStatus FROM orders WHERE orderNumber = 'ORD-1773889105809-FM2IJ3HSR';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, orderNumber, paymentMethod, inventoryDeducted, orderStatus FROM orders WHERE orderNumber = 'ORD-1773889105809-FM2IJ3HSR';",
+  "rows": [
+    {
+      "id": "930001",
+      "orderNumber": "ORD-1773889105809-FM2IJ3HSR",
+      "paymentMethod": "cod",
+      "inventoryDeducted": "1",
+      "orderStatus": "pending"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tpaymentMethod\tinventoryDeducted\torderStatus\n930001\tORD-1773889105809-FM2IJ3HSR\tcod\t1\tpending\n",
+  "stderr": "",
+  "execution_time_ms": 1572
+}

@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, name, stockQty FROM products WHERE name LIKE '%Bajaj%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name, stockQty FROM products WHERE name LIKE '%Bajaj%';",
+  "rows": [
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "stockQty": "93"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tstockQty\n120001\tBajaj \t93\n",
+  "stderr": "",
+  "execution_time_ms": 1633
+}

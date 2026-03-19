@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, stockQty FROM products ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name, stockQty FROM products ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Hiwa celing fan",
+      "stockQty": "0"
+    },
+    {
+      "id": "30001",
+      "name": "Celing fan ",
+      "stockQty": "0"
+    },
+    {
+      "id": "60001",
+      "name": "Fan",
+      "stockQty": "0"
+    },
+    {
+      "id": "90001",
+      "name": "Test Product",
+      "stockQty": "100"
+    },
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "stockQty": "100"
+    },
+    {
+      "id": "150001",
+      "name": "Vhi",
+      "stockQty": "100"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tstockQty\n1\tHiwa celing fan\t0\n30001\tCeling fan \t0\n60001\tFan\t0\n90001\tTest Product\t100\n120001\tBajaj \t100\n150001\tVhi\t100\n",
+  "stderr": "",
+  "execution_time_ms": 1659
+}

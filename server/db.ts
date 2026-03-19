@@ -785,3 +785,71 @@ export async function updateSettings(data: {
   
   return true;
 }
+
+
+// ========================
+// STOCK MANAGEMENT FUNCTIONS
+// ========================
+
+/**
+ * Decrease product stock by the given quantity
+ * Prevents stock from going negative
+ * Returns true if successful, false if insufficient stock
+ */
+export async function decreaseProductStock(productId: number, quantity: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  // Get current stock
+  const product = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+  if (!product || product.length === 0) return false;
+  
+  const currentStock = parseInt(String(product[0].stockQty || 0));
+  const quantityToDeduct = parseInt(String(quantity));
+  
+  // Check if stock is sufficient
+  if (currentStock < quantityToDeduct) {
+    console.warn(`[Stock] Insufficient stock for product ${productId}. Current: ${currentStock}, Requested: ${quantityToDeduct}`);
+    return false;
+  }
+  
+  // Deduct stock
+  const newStock = currentStock - quantityToDeduct;
+  await db.update(products).set({ stockQty: newStock, updatedAt: new Date() }).where(eq(products.id, productId));
+  
+  console.log(`[Stock] Deducted ${quantityToDeduct} units from product ${productId}. New stock: ${newStock}`);
+  return true;
+}
+
+/**
+ * Deduct stock for all items in an order
+ * Returns true if all items were successfully deducted
+ */
+export async function deductOrderStock(orderId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  try {
+    // Get order items
+    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+    if (!items || items.length === 0) return true; // No items to deduct
+    
+    // Deduct stock for each item
+    for (const item of items) {
+      const success = await decreaseProductStock(item.productId, item.quantity);
+      if (!success) {
+        console.error(`[Stock] Failed to deduct stock for product ${item.productId} in order ${orderId}`);
+        return false;
+      }
+    }
+    
+    // Mark order as inventory deducted
+    await db.update(orders).set({ inventoryDeducted: true, updatedAt: new Date() }).where(eq(orders.id, orderId));
+    
+    console.log(`[Stock] Successfully deducted stock for order ${orderId}`);
+    return true;
+  } catch (error) {
+    console.error(`[Stock] Error deducting stock for order ${orderId}:`, error);
+    return false;
+  }
+}

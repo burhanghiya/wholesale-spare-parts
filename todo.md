@@ -639,3 +639,26 @@
 - [x] Stock values displaying correctly in Admin Products
 - [x] Category filter working with URL parameters
 - [x] Home page error banner gone
+
+
+## Phase 60: Clean Stock & Order Logic Implementation
+- [x] Store stock only in products.stockQty (not in inventory table)
+- [x] Implement decreaseProductStock() function with validation
+- [x] Implement deductOrderStock() function for order items
+- [x] COD flow: Create order → Add items → Deduct stock → Set inventoryDeducted flag
+- [x] Razorpay flow: Payment success → Deduct stock → Set inventoryDeducted flag
+- [x] Stock validation: Never allow stock to go negative
+- [x] Prevent double deduction: Check inventoryDeducted flag before deducting
+- [x] Tested COD order flow: Bajaj stock 100 → 93 (7 units deducted correctly)
+- [x] Verified inventoryDeducted flag is set to true after deduction
+- [x] All 37 vitest tests passing
+- [x] Stock logic clean and simple - no cart/checkout modifications
+- [x] Stock only updated AFTER successful order creation
+
+## Current Status:
+- ✅ Clean stock logic fully implemented and tested
+- ✅ COD orders deduct stock immediately after order creation
+- ✅ Razorpay orders ready to deduct stock after payment success
+- ✅ Stock protection: Never goes negative
+- ✅ No modifications to cart or checkout logic
+- ✅ All tests passing

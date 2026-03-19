@@ -232,6 +232,15 @@ export const appRouter = router({
           await db.addOrderItems(orderId, orderItemsData);
         }
 
+        // For COD orders, deduct stock immediately after order creation
+        if (input.paymentMethod === 'cod') {
+          const stockDeducted = await db.deductOrderStock(orderId);
+          if (!stockDeducted) {
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to deduct stock. Order may be cancelled.' });
+          }
+        }
+        // For Razorpay orders, stock will be deducted after payment success
+
         const order = await db.getOrderById(orderId);
         return {
           orderId: order?.id,
@@ -290,7 +299,17 @@ export const appRouter = router({
 
           console.log(`[Razorpay] Payment verified for order ${input.orderId}, payment ID: ${input.razorpayPaymentId}`);
 
+          // Update payment status to completed
           await db.updateOrderPaymentStatus(input.orderId, 'completed');
+
+          // Deduct stock after successful payment
+          if (!order.inventoryDeducted) {
+            const stockDeducted = await db.deductOrderStock(input.orderId);
+            if (!stockDeducted) {
+              console.error(`[Stock] Failed to deduct stock for order ${input.orderId} after payment`);
+              // Don't throw error - payment was successful, stock deduction failure shouldn't block order
+            }
+          }
 
           return { success: true, message: 'Payment verified and completed' };
         } catch (error: any) {
