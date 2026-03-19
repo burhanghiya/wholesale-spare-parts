@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, categoryId, partNumber FROM products WHERE isActive = true;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name, categoryId, partNumber FROM products WHERE isActive = true;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Hiwa celing fan",
+      "categoryId": "1",
+      "partNumber": "F001"
+    },
+    {
+      "id": "30001",
+      "name": "Celing fan ",
+      "categoryId": "1",
+      "partNumber": "F002"
+    },
+    {
+      "id": "60001",
+      "name": "Fan",
+      "categoryId": "30001",
+      "partNumber": "F"
+    },
+    {
+      "id": "90001",
+      "name": "Test Product",
+      "categoryId": "1",
+      "partNumber": "TEST-001"
+    },
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "categoryId": "1",
+      "partNumber": "Mix01"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategoryId\tpartNumber\n1\tHiwa celing fan\t1\tF001\n30001\tCeling fan \t1\tF002\n60001\tFan\t30001\tF\n90001\tTest Product\t1\tTEST-001\n120001\tBajaj \t1\tMix01\n",
+  "stderr": "",
+  "execution_time_ms": 1568
+}

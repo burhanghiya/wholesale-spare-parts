@@ -146,7 +146,19 @@ export async function getAllProducts(limit = 50, offset = 0) {
 export async function getAllProductsAdmin(limit = 100, offset = 0) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
+  const prods = await db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
+  
+  // Fetch inventory for each product
+  const enriched = await Promise.all(
+    prods.map(async (prod) => {
+      const inv = await db.select().from(inventory).where(eq(inventory.productId, prod.id));
+      return {
+        ...prod,
+        inventory: inv[0] || null,
+      };
+    })
+  );
+  return enriched;
 }
 
 export async function createProduct(data: any) {
@@ -175,7 +187,31 @@ export async function createProduct(data: any) {
 export async function updateProduct(id: number, data: Record<string, unknown>) {
   const db = await getDb();
   if (!db) return false;
-  await db.update(products).set({ ...data, updatedAt: new Date() } as any).where(eq(products.id, id));
+  
+  // Extract stock and moq from data (these go to inventory table)
+  const { stock, moq, ...productData } = data;
+  
+  // Update products table
+  await db.update(products).set({ ...productData, updatedAt: new Date() } as any).where(eq(products.id, id));
+  
+  // Update inventory table if stock or moq provided
+  if (stock !== undefined || moq !== undefined) {
+    const inventoryData: Record<string, unknown> = {};
+    if (stock !== undefined) inventoryData.quantityInStock = stock;
+    if (moq !== undefined) inventoryData.minimumOrderQuantity = moq;
+    
+    const existingInventory = await db.select().from(inventory).where(eq(inventory.productId, id)).limit(1);
+    if (existingInventory.length > 0) {
+      await db.update(inventory).set(inventoryData).where(eq(inventory.productId, id));
+    } else {
+      await db.insert(inventory).values({
+        productId: id,
+        quantityInStock: stock || 0,
+        minimumOrderQuantity: moq || 1,
+      });
+    }
+  }
+  
   return true;
 }
 

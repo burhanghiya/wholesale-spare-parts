@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export default function ProductCatalog() {
-  const [location] = useLocation();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -25,20 +24,39 @@ export default function ProductCatalog() {
   const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
   const { data: categoriesData } = trpc.products.getCategories.useQuery();
 
-  // Get search query and category from URL params
+  // Parse URL for search query
   useEffect(() => {
-    const params = new URLSearchParams(location.split('?')[1]);
+    const params = new URLSearchParams(window.location.search);
     const urlSearch = params.get('search');
-    const urlCategory = params.get('category');
+    
     if (urlSearch) {
       setSearchQuery(urlSearch);
       setDebouncedSearch(urlSearch);
     }
-    if (urlCategory && categoriesData) {
+  }, []);
+
+  // Parse URL for category (after categoriesData is loaded)
+  useEffect(() => {
+    if (!categoriesData || categoriesData.length === 0) {
+      console.log('[DEBUG] categoriesData not ready yet');
+      return;
+    }
+    
+    const params = new URLSearchParams(window.location.search);
+    const urlCategory = params.get('category');
+    
+    console.log('[DEBUG] Checking URL category:', urlCategory);
+    console.log('[DEBUG] Available categories:', categoriesData.map(c => ({ id: c.id, name: c.name })));
+    
+    if (urlCategory) {
       const categoryName = decodeURIComponent(urlCategory);
       const foundCat = categoriesData.find((c) => c.name === categoryName);
+      console.log('[DEBUG] Looking for category name:', categoryName, 'Found:', foundCat);
+      
       if (foundCat) {
-        setSelectedCategory(foundCat.id.toString());
+        const catIdStr = foundCat.id.toString();
+        console.log('[DEBUG] Setting selectedCategory to:', catIdStr);
+        setSelectedCategory(catIdStr);
       }
     }
   }, [location, categoriesData]);
@@ -49,25 +67,61 @@ export default function ProductCatalog() {
       const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
       return () => clearTimeout(timer);
     }
-  }, [searchQuery, hasUrlSearch]);;
+  }, [searchQuery, hasUrlSearch]);
+
   const { data: searchResults } = trpc.products.search.useQuery(
     { query: debouncedSearch, categoryId: selectedCategory !== "all" ? parseInt(selectedCategory) : undefined },
     { enabled: debouncedSearch.length > 0 }
   );
 
   const displayProducts = useMemo(() => {
+    // Start with search results if available, otherwise use all products
     let products = debouncedSearch.length > 0 && searchResults ? searchResults : productsData;
+    
     if (!products) return [];
+    
+    console.log('[DEBUG] displayProducts - selectedCategory:', selectedCategory, 'productsCount:', products.length);
+    
+    // Apply category filter
     if (selectedCategory && selectedCategory !== "all") {
-      const catId = parseInt(selectedCategory);
-      products = products.filter((p) => p.categoryId === catId);
+      const catId = selectedCategory;
+      console.log('[DEBUG] Filtering by categoryId:', catId);
+      const before = products.length;
+      products = products.filter((p) => {
+        const pCategoryId = typeof p.categoryId === 'number' ? p.categoryId.toString() : String(p.categoryId);
+        const matches = pCategoryId === catId;
+        if (!matches) {
+          console.log(`[DEBUG] Filtering out ${p.name}: categoryId=${pCategoryId} !== ${catId}`);
+        }
+        return matches;
+      });
+      console.log('[DEBUG] Filtered from', before, 'to', products.length, 'products');
     }
+    
+    // Apply sorting
+    const sorted = [...products];
     switch (sortBy) {
-      case "price-low": return [...products].sort((a, b) => Number(a.basePrice) - Number(b.basePrice));
-      case "price-high": return [...products].sort((a, b) => Number(b.basePrice) - Number(a.basePrice));
-      default: return [...products].sort((a, b) => a.name.localeCompare(b.name));
+      case "price-low":
+        return sorted.sort((a, b) => Number(a.basePrice) - Number(b.basePrice));
+      case "price-high":
+        return sorted.sort((a, b) => Number(b.basePrice) - Number(a.basePrice));
+      default:
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
-  }, [productsData, searchResults, selectedCategory, sortBy, categoriesData]);
+  }, [productsData, searchResults, selectedCategory, sortBy, debouncedSearch]);
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    // Update URL
+    if (value === "all") {
+      setLocation("/products");
+    } else {
+      const categoryName = categoriesData?.find((c) => c.id.toString() === value)?.name;
+      if (categoryName) {
+        setLocation(`/products?category=${encodeURIComponent(categoryName)}`);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -104,7 +158,7 @@ export default function ProductCatalog() {
                 className="pl-10"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
@@ -145,85 +199,72 @@ export default function ProductCatalog() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-32 bg-muted rounded-lg mb-4" />
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-muted rounded w-1/2" />
+                <CardContent className="p-4">
+                  <div className="bg-muted h-48 rounded mb-4" />
+                  <div className="bg-muted h-4 rounded mb-2" />
+                  <div className="bg-muted h-4 rounded w-2/3" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : displayProducts.length === 0 ? (
-          <div className="text-center py-20">
-            <Package className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+          <div className="text-center py-12">
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No products found</h3>
-            <p className="text-muted-foreground mb-4">Try adjusting your search or filter criteria</p>
-            <Button variant="outline" onClick={() => { setSearchQuery(""); setSelectedCategory("all"); }}>Clear Filters</Button>
+            <p className="text-muted-foreground">Try adjusting your search or category filters</p>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {displayProducts.map((product) => (
-              <Card
-                key={product.id}
-                className="group cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-300 overflow-hidden"
-                onClick={() => setLocation(`/products/${product.id}`)}
-              >
-                <CardContent className="p-0">
-                  <div className="h-40 bg-gradient-to-br from-secondary to-muted flex items-center justify-center relative">
-                    {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Package className="h-12 w-12 text-muted-foreground/30" />
-                    )}
-                    <Badge className="absolute top-2 right-2" variant={product.isActive ? "default" : "destructive"}>
-                      {product.isActive ? "In Stock" : "Out"}
-                    </Badge>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-xs text-muted-foreground font-mono mb-1">#{product.partNumber}</p>
-                    <h3 className="font-semibold text-sm mb-2 line-clamp-2 group-hover:text-primary transition-colors">{product.name}</h3>
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <p className="text-xl font-bold">₹{Number(product.basePrice).toFixed(0)}</p>
-                        <p className="text-xs text-muted-foreground">Stock: {product.stockQty || 0}</p>
-                      </div>
-                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                      </Button>
+              <Card key={product.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover rounded mb-4" />
+                  ) : (
+                    <div className="w-full h-48 bg-muted rounded mb-4 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground" />
                     </div>
+                  )}
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold text-sm">{product.name}</h3>
+                      <p className="text-xs text-muted-foreground">#{product.partNumber}</p>
+                    </div>
+                    {product.inventory?.quantityInStock > 0 && (
+                      <Badge variant="secondary" className="text-xs">In Stock</Badge>
+                    )}
                   </div>
+                  <p className="text-lg font-bold mb-2">₹{product.basePrice}</p>
+                  <p className="text-xs text-muted-foreground mb-4">Stock: {product.inventory?.quantityInStock || 0}</p>
+                  <Button className="w-full" size="sm">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {displayProducts.map((product) => (
-              <Card
-                key={product.id}
-                className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
-                onClick={() => setLocation(`/products/${product.id}`)}
-              >
+              <Card key={product.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className="h-16 w-16 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0">
-                    {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                    ) : (
-                      <Package className="h-6 w-6 text-muted-foreground/30" />
-                    )}
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-20 h-20 object-cover rounded" />
+                  ) : (
+                    <div className="w-20 h-20 bg-muted rounded flex items-center justify-center">
+                      <Package className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{product.name}</h3>
+                    <p className="text-sm text-muted-foreground">#{product.partNumber}</p>
+                    <p className="text-sm mt-1">₹{product.basePrice} • Stock: {product.inventory?.quantityInStock || 0}</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground font-mono">#{product.partNumber}</p>
-                    <h3 className="font-semibold truncate">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{product.description}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xl font-bold">₹{Number(product.basePrice).toFixed(0)}</p>
-                    <p className="text-xs text-muted-foreground mb-1">Stock: {product.stockQty || 0}</p>
-                    <Badge variant={product.isActive ? "default" : "destructive"} className="text-xs">
-                      {product.isActive ? "In Stock" : "Out"}
-                    </Badge>
-                  </div>
+                  <Button size="sm">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </Button>
                 </CardContent>
               </Card>
             ))}

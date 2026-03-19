@@ -105,8 +105,8 @@ export const appRouter = router({
       .query(async () => await db.getAllInventory()),
 
     search: publicProcedure
-      .input(z.object({ query: z.string() }))
-      .query(async ({ input }) => await db.searchProducts(input.query)),
+      .input(z.object({ query: z.string(), categoryId: z.number().optional() }))
+      .query(async ({ input }) => await db.searchProducts(input.query, input.categoryId)),
 
     adminList: protectedProcedure
       .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
@@ -131,13 +131,22 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        basePrice: z.number().optional(),
+        data: z.object({
+          name: z.string().optional(),
+          description: z.string().optional(),
+          basePrice: z.number().optional(),
+          categoryName: z.string().optional(),
+          imageUrl: z.string().optional(),
+          productImages: z.array(z.string()).optional(),
+          stock: z.number().optional(),
+          moq: z.number().optional(),
+          colorOptions: z.array(z.string()).optional(),
+          sizeOptions: z.array(z.string()).optional(),
+        })
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.updateProduct(input.id, input);
+        return await db.updateProduct(input.id, input.data);
       }),
 
     delete: protectedProcedure
