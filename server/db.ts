@@ -2,21 +2,16 @@ import { eq, and, like, desc, asc, sql, or, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, gstConfiguration, shippingRates, settings
+  quotations, categories, gstConfiguration, shippingRates
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
 export async function getDb() {
-  if (!_db) {
-    if (!ENV.databaseUrl) {
-      console.warn("[Database] DATABASE_URL not configured");
-      return null;
-    }
+  if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(ENV.databaseUrl);
-      console.log("[Database] Connected successfully to", ENV.databaseUrl.split('@')[1]?.split('/')[0] || 'unknown');
+      _db = drizzle(process.env.DATABASE_URL);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -146,72 +141,20 @@ export async function getAllProducts(limit = 50, offset = 0) {
 export async function getAllProductsAdmin(limit = 100, offset = 0) {
   const db = await getDb();
   if (!db) return [];
-  const prods = await db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
-  
-  // Fetch inventory for each product
-  const enriched = await Promise.all(
-    prods.map(async (prod) => {
-      const inv = await db.select().from(inventory).where(eq(inventory.productId, prod.id));
-      return {
-        ...prod,
-        inventory: inv[0] || null,
-      };
-    })
-  );
-  return enriched;
+  return await db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
 }
 
 export async function createProduct(data: any) {
   const db = await getDb();
   if (!db) return undefined;
-  
-  // Provide default values for required fields
-  const productData = {
-    ...data,
-    categoryId: data.categoryId || 1, // Default category
-    colorOptions: data.colorOptions || [],
-    sizeOptions: data.sizeOptions || [],
-    stockQty: data.stockQty || 100,
-    minOrderQty: data.minOrderQty || 1,
-    compatibleModels: data.compatibleModels || [],
-    compatibleBrands: data.compatibleBrands || [],
-    alternatePartNumbers: data.alternatePartNumbers || [],
-    productImages: data.productImages || [],
-    isActive: data.isActive !== undefined ? data.isActive : true,
-  };
-  
-  const result = await db.insert(products).values(productData);
+  const result = await db.insert(products).values(data);
   return result;
 }
 
 export async function updateProduct(id: number, data: Record<string, unknown>) {
   const db = await getDb();
   if (!db) return false;
-  
-  // Extract stock and moq from data (these go to inventory table)
-  const { stock, moq, ...productData } = data;
-  
-  // Update products table
-  await db.update(products).set({ ...productData, updatedAt: new Date() } as any).where(eq(products.id, id));
-  
-  // Update inventory table if stock or moq provided
-  if (stock !== undefined || moq !== undefined) {
-    const inventoryData: Record<string, unknown> = {};
-    if (stock !== undefined) inventoryData.quantityInStock = stock;
-    if (moq !== undefined) inventoryData.minimumOrderQuantity = moq;
-    
-    const existingInventory = await db.select().from(inventory).where(eq(inventory.productId, id)).limit(1);
-    if (existingInventory.length > 0) {
-      await db.update(inventory).set(inventoryData).where(eq(inventory.productId, id));
-    } else {
-      await db.insert(inventory).values({
-        productId: id,
-        quantityInStock: stock || 0,
-        minimumOrderQuantity: moq || 1,
-      });
-    }
-  }
-  
+  await db.update(products).set({ ...data, updatedAt: new Date() } as any).where(eq(products.id, id));
   return true;
 }
 
@@ -371,34 +314,11 @@ export async function updateOrderStatus(orderId: number, status: string, trackin
   return true;
 }
 
-export async function updateOrderPaymentStatus(orderId: number, paymentStatus: string) {
-  const db = await getDb();
-  if (!db) return false;
-  await db.update(orders).set({ paymentStatus: paymentStatus as any, updatedAt: new Date() }).where(eq(orders.id, orderId));
-  return true;
-}
-
 export async function addOrderItems(orderId: number, items: any[]) {
   const db = await getDb();
   if (!db) return false;
   for (const item of items) {
-    // Calculate totalPrice from unitPrice and quantity
-    const unitPrice = parseFloat(String(item.price || item.unitPrice || 0));
-    const quantity = parseInt(String(item.quantity || 1));
-    const totalPrice = unitPrice * quantity;
-    
-    const insertData: any = {
-      orderId: orderId,
-      productId: parseInt(String(item.productId)),
-      quantity: quantity,
-      unitPrice: unitPrice.toString(),
-      totalPrice: totalPrice.toString(),
-    };
-    
-    if (item.selectedColor) insertData.selectedColor = item.selectedColor;
-    if (item.selectedSize) insertData.selectedSize = item.selectedSize;
-    
-    await db.insert(orderItems).values(insertData as any);
+    await db.insert(orderItems).values({ orderId, ...item });
   }
   return true;
 }
@@ -581,51 +501,74 @@ export async function updateCartItemQuantity(cartItemId: number, quantity: numbe
 }
 
 
-// Distance-based shipping calculation using pincode
-// Calculates shipping cost based on distance from Surat warehouse
+// Distance-based shipping calculation using Google Maps
+// Calculates distance from warehouse to customer address and applies per-km charge
 export async function calculateShippingByDistance(customerAddress: string) {
+  const { makeRequest } = await import('./_core/map');
+  const WAREHOUSE_LOCATION = "Udhana, Surat - 394210, India";
+
   try {
-    // Extract pincode from address (last 6 digits)
-    const pincodeMatch = customerAddress.match(/(\d{6})/);
-    const pincode = pincodeMatch ? parseInt(pincodeMatch[1]) : 394210; // Default to Surat
-    
-    // Surat warehouse pincode
-    const warehousePincode = 394210;
-    
-    // Shipping rates based on pincode distance
-    // Surat area (394xxx): ₹45
-    // Gujarat area (36xxxx-39xxxx): ₹75
-    // India (other): ₹150
-    
-    let shippingCost = 45; // Default
-    
-    if (pincode >= 394000 && pincode <= 394999) {
-      // Surat area
-      shippingCost = 45;
-    } else if ((pincode >= 360000 && pincode <= 369999) || 
-               (pincode >= 370000 && pincode <= 393999)) {
-      // Other Gujarat areas
-      shippingCost = 75;
-    } else {
-      // Rest of India
-      shippingCost = 150;
+    // Use Distance Matrix API to get distance
+    const result = await makeRequest<any>(
+      "/maps/api/distancematrix/json",
+      {
+        origins: WAREHOUSE_LOCATION,
+        destinations: customerAddress,
+        mode: "driving",
+        units: "metric"
+      }
+    );
+
+    if (result.status !== "OK" || !result.rows || result.rows.length === 0) {
+      console.error("Distance Matrix API error:", result);
+      return 0;
     }
+
+    const element = result.rows[0]?.elements?.[0];
+    if (!element || element.status !== "OK") {
+      console.error("Distance calculation failed:", element);
+      return 0;
+    }
+
+    // Distance in meters, convert to km
+    const distanceKm = Math.round(element.distance.value / 1000);
+
+    // Get per-km shipping configuration
+    const db = await getDb();
+    if (!db) return 0;
     
-    console.log(`[Shipping] Calculated shipping cost for pincode ${pincode}: Rs.${shippingCost}`);
+    const config = await db.select().from(shippingRates).limit(1);
+    if (config.length === 0) {
+      console.error(`No shipping configuration found`);
+      return 0;
+    }
+
+    const baseCost = Number(config[0].baseCost) || 0;
+    const costPerKm = Number(config[0].costPerKm) || 0;
+    
+    // Calculate: Base Cost + (Distance × Cost Per Km)
+    const shippingCost = baseCost + (distanceKm * costPerKm);
     return shippingCost;
   } catch (error) {
     console.error("Error calculating shipping distance:", error);
-    return 45; // Default to Rs.45
+    return 0;
   }
 }
 
 // Per-kilometer shipping configuration
 export async function getShippingConfig() {
-  // Return fixed shipping configuration for Surat
+  const db = await getDb();
+  if (!db) return { baseCost: 0, costPerKm: 0 };
+  
+  const config = await db.select().from(shippingRates).limit(1);
+  if (config.length === 0) {
+    return { baseCost: 0, costPerKm: 0, freeShippingThreshold: 1000 };
+  }
+  
   return {
-    baseCost: 45,
-    costPerKm: 0,
-    freeShippingThreshold: 500,
+    baseCost: Number(config[0].baseCost) || 0,
+    costPerKm: Number(config[0].costPerKm) || 0,
+    freeShippingThreshold: Number(config[0].minDistance) || 1000,
   };
 }
 
@@ -733,123 +676,6 @@ export async function restoreInventoryForOrder(orderId: number): Promise<boolean
     return true;
   } catch (error) {
     console.error("[Inventory] Error restoring inventory:", error);
-    return false;
-  }
-}
-
-
-// ========================
-// SETTINGS FUNCTIONS
-// ========================
-
-export async function getSettings() {
-  const db = await getDb();
-  if (!db) return null;
-  
-  const result = await db.select().from(settings).limit(1);
-  return result.length > 0 ? result[0] : null;
-}
-
-export async function updateSettings(data: {
-  siteName?: string;
-  siteDescription?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  address?: string;
-  paymentGateway?: string;
-  shippingProvider?: string;
-  taxRate?: string;
-  codEnabled?: boolean;
-}) {
-  const db = await getDb();
-  if (!db) return false;
-  
-  const updateData: any = { updatedAt: new Date() };
-  if (data.siteName !== undefined) updateData.siteName = data.siteName;
-  if (data.siteDescription !== undefined) updateData.siteDescription = data.siteDescription;
-  if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail;
-  if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
-  if (data.address !== undefined) updateData.address = data.address;
-  if (data.paymentGateway !== undefined) updateData.paymentGateway = data.paymentGateway;
-  if (data.shippingProvider !== undefined) updateData.shippingProvider = data.shippingProvider;
-  if (data.taxRate !== undefined) updateData.taxRate = data.taxRate;
-  if (data.codEnabled !== undefined) updateData.codEnabled = data.codEnabled;
-  
-  const existing = await db.select().from(settings).limit(1);
-  
-  if (existing.length > 0) {
-    await db.update(settings).set(updateData).where(eq(settings.id, existing[0].id));
-  } else {
-    await db.insert(settings).values({ ...updateData, siteName: data.siteName || 'Patel Electricals' });
-  }
-  
-  return true;
-}
-
-
-// ========================
-// STOCK MANAGEMENT FUNCTIONS
-// ========================
-
-/**
- * Decrease product stock by the given quantity
- * Prevents stock from going negative
- * Returns true if successful, false if insufficient stock
- */
-export async function decreaseProductStock(productId: number, quantity: number): Promise<boolean> {
-  const db = await getDb();
-  if (!db) return false;
-  
-  // Get current stock
-  const product = await db.select().from(products).where(eq(products.id, productId)).limit(1);
-  if (!product || product.length === 0) return false;
-  
-  const currentStock = parseInt(String(product[0].stockQty || 0));
-  const quantityToDeduct = parseInt(String(quantity));
-  
-  // Check if stock is sufficient
-  if (currentStock < quantityToDeduct) {
-    console.warn(`[Stock] Insufficient stock for product ${productId}. Current: ${currentStock}, Requested: ${quantityToDeduct}`);
-    return false;
-  }
-  
-  // Deduct stock
-  const newStock = currentStock - quantityToDeduct;
-  await db.update(products).set({ stockQty: newStock, updatedAt: new Date() }).where(eq(products.id, productId));
-  
-  console.log(`[Stock] Deducted ${quantityToDeduct} units from product ${productId}. New stock: ${newStock}`);
-  return true;
-}
-
-/**
- * Deduct stock for all items in an order
- * Returns true if all items were successfully deducted
- */
-export async function deductOrderStock(orderId: number): Promise<boolean> {
-  const db = await getDb();
-  if (!db) return false;
-  
-  try {
-    // Get order items
-    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
-    if (!items || items.length === 0) return true; // No items to deduct
-    
-    // Deduct stock for each item
-    for (const item of items) {
-      const success = await decreaseProductStock(item.productId, item.quantity);
-      if (!success) {
-        console.error(`[Stock] Failed to deduct stock for product ${item.productId} in order ${orderId}`);
-        return false;
-      }
-    }
-    
-    // Mark order as inventory deducted
-    await db.update(orders).set({ inventoryDeducted: true, updatedAt: new Date() }).where(eq(orders.id, orderId));
-    
-    console.log(`[Stock] Successfully deducted stock for order ${orderId}`);
-    return true;
-  } catch (error) {
-    console.error(`[Stock] Error deducting stock for order ${orderId}:`, error);
     return false;
   }
 }

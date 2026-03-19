@@ -18,15 +18,6 @@ function AdminNav({ current }: { current: string }) {
     { label: "Quotations", path: "/admin/quotations" },
     { label: "Dealers", path: "/admin/dealers" },
     { label: "Shipping", path: "/admin/shipping" },
-    { label: "Inventory", path: "/admin/inventory" },
-    { label: "Pricing", path: "/admin/pricing" },
-    { label: "Analytics", path: "/admin/analytics" },
-    { label: "Coupons", path: "/admin/coupons" },
-    { label: "Categories", path: "/admin/categories" },
-    { label: "Notifications", path: "/admin/notifications" },
-    { label: "Export", path: "/admin/export" },
-    { label: "Audit Logs", path: "/admin/audit-logs" },
-    { label: "Settings", path: "/admin/settings" },
   ];
   return (
     <div className="bg-[oklch(0.22_0.05_260)] text-white">

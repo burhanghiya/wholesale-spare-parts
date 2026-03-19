@@ -1,28 +1,175 @@
-import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
-import { TRPCError } from "@trpc/server";
+import { COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "./_core/cookies";
+import { systemRouter } from "./_core/systemRouter";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
-import Razorpay from "razorpay";
+import { TRPCError } from "@trpc/server";
+import { storagePut } from "./storage";
+import { nanoid } from "nanoid";
+
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== 'admin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin access required' });
+  }
+  return next({ ctx });
+});
 
 export const appRouter = router({
+  system: systemRouter,
+
   auth: router({
-    me: publicProcedure.query(({ ctx }) => ctx.user),
-    logout: publicProcedure.mutation(async ({ ctx }) => {
-      ctx.res.clearCookie("session");
-      return { success: true };
+    me: publicProcedure.query(opts => opts.ctx.user),
+    logout: publicProcedure.mutation(({ ctx }) => {
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { success: true } as const;
     }),
+  }),
+
+  products: router({
+    list: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(20), offset: z.number().min(0).default(0) }))
+      .query(async ({ input }) => db.getAllProducts(input.limit, input.offset)),
+
+    search: publicProcedure
+      .input(z.object({ query: z.string().min(1), categoryId: z.number().optional() }))
+      .query(async ({ input }) => db.searchProducts(input.query, input.categoryId)),
+
+    getById: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        const product = await db.getProductById(input);
+        if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
+        const inventory = await db.getInventoryByProductId(input);
+        return { product, inventory };
+      }),
+
+    getByCategory: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => db.getProductsByCategory(input)),
+
+    getCategories: publicProcedure.query(async () => db.getAllCategories()),
+
+    getInventory: publicProcedure.query(async () => db.getAllInventory()),
+
+    create: adminProcedure
+      .input(z.object({
+        partNumber: z.string(), name: z.string(), description: z.string().optional(),
+        categoryName: z.string().default("General"),
+        basePrice: z.number(),
+        compatibleModels: z.array(z.string()).optional(),
+        compatibleBrands: z.array(z.string()).optional(),
+        alternatePartNumbers: z.array(z.string()).optional(),
+        imageUrl: z.string().optional(), explodedViewUrl: z.string().optional(),
+        productImages: z.array(z.string()).optional(),
+        colorOptions: z.array(z.string()).optional(),
+        sizeOptions: z.array(z.string()).optional(),
+        stock: z.number().optional(), moq: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { stock, moq, categoryName, productImages, colorOptions, sizeOptions, ...rest } = input;
+        // Find or create category by name
+        const categoryId = await db.findOrCreateCategory(categoryName);
+        const productData = {
+          ...rest,
+          categoryId,
+          basePrice: String(input.basePrice),
+          compatibleModels: input.compatibleModels ? JSON.stringify(input.compatibleModels) : null,
+          compatibleBrands: input.compatibleBrands ? JSON.stringify(input.compatibleBrands) : null,
+          alternatePartNumbers: input.alternatePartNumbers ? JSON.stringify(input.alternatePartNumbers) : null,
+          productImages: productImages ? JSON.stringify(productImages) : null,
+          colorOptions: colorOptions ? JSON.stringify(colorOptions) : null,
+          sizeOptions: sizeOptions ? JSON.stringify(sizeOptions) : null,
+        };
+        await db.createProduct(productData);
+        const productResult = await db.getProductByPartNumber(input.partNumber);
+        if (productResult) {
+          await db.upsertInventory(productResult.id, {
+            quantityInStock: stock || 0,
+            minimumOrderQuantity: moq || 1,
+            reorderLevel: 10,
+          });
+        }
+        return { success: true };
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.object({
+          name: z.string().optional(), description: z.string().optional(),
+          basePrice: z.number().optional(), isActive: z.boolean().optional(),
+          partNumber: z.string().optional(), categoryName: z.string().optional(),
+          imageUrl: z.string().optional(), productImages: z.array(z.string()).optional(),
+          colorOptions: z.array(z.string()).optional(),
+          sizeOptions: z.array(z.string()).optional(),
+          stock: z.number().optional(), moq: z.number().optional(),
+        }),
+      }))
+      .mutation(async ({ input }) => {
+        const { categoryName, stock, moq, productImages, colorOptions, sizeOptions, ...restData } = input.data;
+        const updateData: any = { ...restData };
+        if (updateData.basePrice) updateData.basePrice = String(updateData.basePrice);
+        if (productImages) updateData.productImages = JSON.stringify(productImages);
+        if (colorOptions) updateData.colorOptions = JSON.stringify(colorOptions);
+        if (sizeOptions) updateData.sizeOptions = JSON.stringify(sizeOptions);
+        if (categoryName) {
+          updateData.categoryId = await db.findOrCreateCategory(categoryName);
+        }
+        await db.updateProduct(input.id, updateData);
+        // Update inventory if stock/moq provided
+        if (stock !== undefined || moq !== undefined) {
+          const invData: any = {};
+          if (stock !== undefined) invData.quantityInStock = stock;
+          if (moq !== undefined) invData.minimumOrderQuantity = moq;
+          await db.upsertInventory(input.id, invData);
+        }
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input }) => {
+        await db.deleteProduct(input);
+        return { success: true };
+      }),
+
+    adminList: adminProcedure
+      .input(z.object({ limit: z.number().default(100), offset: z.number().default(0) }))
+      .query(async ({ input }) => {
+        const prods = await db.getAllProductsAdmin(input.limit, input.offset);
+        // Attach inventory info to each product
+        const result = await Promise.all(prods.map(async (p) => {
+          const inv = await db.getInventoryByProductId(p.id);
+          const cat = await db.getCategoryById(p.categoryId);
+          return { ...p, inventory: inv, categoryName: cat?.name || "General" };
+        }));
+        return result;
+      }),
+  }),
+
+  // Image upload endpoint
+  upload: router({
+    image: adminProcedure
+      .input(z.object({ base64: z.string(), filename: z.string(), contentType: z.string() }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.base64, 'base64');
+        const ext = input.filename.split('.').pop() || 'jpg';
+        const key = `products/${nanoid()}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.contentType);
+        return { url };
+      }),
   }),
 
   cart: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const items = await db.getCartItems(ctx.user.id);
-      const enriched = await Promise.all(
-        items.map(async (item: any) => ({
-          ...item,
-          product: await db.getProductById(item.productId),
-        }))
-      );
-      return enriched;
+      return await Promise.all(items.map(async (item) => {
+        const product = await db.getProductById(item.productId);
+        const inv = await db.getInventoryByProductId(item.productId);
+        return { ...item, product, inventory: inv };
+      }));
     }),
 
     add: protectedProcedure
@@ -30,385 +177,127 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const product = await db.getProductById(input.productId);
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
-        return await db.addToCart(ctx.user.id, input.productId, input.quantity);
+        return await db.addToCart(ctx.user.id, input.productId, input.quantity, Number(product.basePrice));
       }),
 
     updateQuantity: protectedProcedure
       .input(z.object({ cartItemId: z.number(), quantity: z.number().min(1) }))
-      .mutation(async ({ ctx, input }) => {
-        return await db.updateCartItemQuantity(input.cartItemId, input.quantity);
+      .mutation(async ({ input }) => {
+        await db.updateCartItemQuantity(input.cartItemId, input.quantity);
+        return { success: true };
       }),
 
-    remove: protectedProcedure
-      .input(z.number())
-      .mutation(async ({ ctx, input }) => db.removeFromCart(input)),
-
+    remove: protectedProcedure.input(z.number()).mutation(async ({ input }) => db.removeFromCart(input)),
     clear: protectedProcedure.mutation(async ({ ctx }) => db.clearCart(ctx.user.id)),
-  }),
-
-  products: router({
-    list: publicProcedure
-      .input(z.object({ 
-        search: z.string().optional(),
-        page: z.number().default(1),
-        limit: z.number().default(20),
-      }).optional())
-      .query(async ({ input }) => {
-        const searchTerm = input?.search || "";
-        const page = input?.page || 1;
-        const limit = input?.limit || 20;
-        
-        if (searchTerm) {
-          return await db.searchProducts(searchTerm);
-        }
-        return await db.getAllProducts(limit, (page - 1) * limit);
-      }),
-
-    getAll: publicProcedure
-      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
-      .query(async ({ input }) => {
-        return await db.getAllProducts(input?.limit || 50, input?.offset || 0);
-      }),
-
-    getById: publicProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        const product = await db.getProductById(input.id);
-        if (!product) return null;
-        const inventory = await db.getInventoryByProductId(input.id);
-        return { product, inventory };
-      }),
-
-    getCategories: publicProcedure
-      .query(async () => await db.getAllCategories()),
-
-    addCategory: protectedProcedure
-      .input(z.object({ name: z.string(), description: z.string().optional() }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.createCategory({
-          name: input.name,
-          description: input.description || null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      }),
-
-    deleteCategory: protectedProcedure
-      .input(z.number())
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.deleteCategory(input);
-      }),
-
-    getInventory: publicProcedure
-      .query(async () => await db.getAllInventory()),
-
-    search: publicProcedure
-      .input(z.object({ query: z.string(), categoryId: z.number().optional() }))
-      .query(async ({ input }) => await db.searchProducts(input.query, input.categoryId)),
-
-    adminList: protectedProcedure
-      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
-      .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.getAllProductsAdmin(input?.limit || 50, input?.offset || 0);
-      }),
-
-    create: protectedProcedure
-      .input(z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        basePrice: z.number(),
-        partNumber: z.string(),
-        categoryId: z.number().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.createProduct(input);
-      }),
-
-    update: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        data: z.object({
-          name: z.string().optional(),
-          description: z.string().optional(),
-          basePrice: z.number().optional(),
-          categoryName: z.string().optional(),
-          imageUrl: z.string().optional(),
-          productImages: z.array(z.string()).optional(),
-          stock: z.number().optional(),
-          moq: z.number().optional(),
-          colorOptions: z.array(z.string()).optional(),
-          sizeOptions: z.array(z.string()).optional(),
-        })
-      }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.updateProduct(input.id, input.data);
-      }),
-
-    delete: protectedProcedure
-      .input(z.number())
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.deleteProduct(input);
-      }),
   }),
 
   orders: router({
     list: protectedProcedure.query(async ({ ctx }) => db.getOrdersByUserId(ctx.user.id)),
 
-    getAll: protectedProcedure
-      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
-      .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.getAllOrders(input?.limit || 50, input?.offset || 0);
-      }),
-
-    getAllOrders: protectedProcedure
-      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
-      .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.getAllOrders(input?.limit || 50, input?.offset || 0);
-      }),
-
-    getById: protectedProcedure
-      .input(z.number())
-      .query(async ({ ctx, input }) => {
-        const order = await db.getOrderById(input);
-        if (!order) throw new TRPCError({ code: 'NOT_FOUND' });
-        return order;
-      }),
+    getById: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
+      const order = await db.getOrderById(input);
+      if (!order) throw new TRPCError({ code: 'NOT_FOUND' });
+      if (order.userId !== ctx.user.id && ctx.user.role !== 'admin') {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+      const items = await db.getOrderItems(input);
+      // Attach product info to each item
+      const itemsWithProduct = await Promise.all(items.map(async (item) => {
+        const product = await db.getProductById(item.productId);
+        return { ...item, product };
+      }));
+      return { order, items: itemsWithProduct };
+    }),
 
     create: protectedProcedure
       .input(z.object({
         shippingAddress: z.string(),
-        paymentMethod: z.enum(['cod', 'razorpay']),
-        shippingPincode: z.string(),
-        shippingCost: z.number(),
-        cartItems: z.array(z.any()),
-        totalAmount: z.number(),
+        paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay']),
+        shippingPincode: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (!input.cartItems || input.cartItems.length === 0) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cart is empty' });
+        const cartItemsList = await db.getCartItems(ctx.user.id);
+        if (cartItemsList.length === 0) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cart is empty' });
+
+        let totalAmount = 0;
+        const orderItemsData = [];
+        for (const item of cartItemsList) {
+          const product = await db.getProductById(item.productId);
+          if (!product) continue;
+          const inventory = await db.getInventoryByProductId(item.productId);
+          const availableStock = inventory?.quantityInStock || 0;
+          if (availableStock < item.quantity) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: `${product.name} has only ${availableStock} units available, but you requested ${item.quantity}` });
+          }
+          const itemTotal = Number(product.basePrice) * item.quantity;
+          totalAmount += itemTotal;
+          orderItemsData.push({
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: String(Number(product.basePrice)),
+            totalPrice: String(itemTotal),
+          });
         }
 
-        // Generate unique order number
-        const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-        const orderStatus = 'pending';
-        const paymentStatus = input.paymentMethod === 'cod' ? 'pending' : 'pending';
+        const orderNumber = `ORD-${Date.now()}`;
 
+        // Create order with PENDING status - admin must confirm
         const orderId = await db.createOrder({
-          orderNumber: orderNumber,
-          userId: ctx.user.id,
-          shippingAddress: input.shippingAddress,
+          orderNumber, userId: ctx.user.id,
+          totalAmount: String(totalAmount), gstAmount: String(0),
+          shippingCost: String(0), shippingAddress: input.shippingAddress,
           paymentMethod: input.paymentMethod,
-          shippingCost: input.shippingCost,
-          totalAmount: input.totalAmount,
-          gstAmount: 0,
-          discountAmount: 0,
-          shippingMethod: 'standard',
-          orderStatus: orderStatus,
-          paymentStatus: paymentStatus,
-          inventoryDeducted: false,
+          paymentStatus: 'pending',
+          orderStatus: 'pending', // Always start as pending
+          notes: null,
         });
 
-        if (!orderId) {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create order' });
-        }
-
-        const orderItemsData = input.cartItems
-          .filter((item: any) => item.product)
-          .map((item: any) => ({
-            productId: item.product.id,
-            quantity: item.quantity,
-            price: item.product.basePrice,
-          }));
-
-        if (orderItemsData.length > 0) {
+        // Add order items
+        if (orderId) {
           await db.addOrderItems(orderId, orderItemsData);
         }
 
-        // For COD orders, deduct stock immediately after order creation
-        if (input.paymentMethod === 'cod') {
-          const stockDeducted = await db.deductOrderStock(orderId);
-          if (!stockDeducted) {
-            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to deduct stock. Order may be cancelled.' });
-          }
-        }
-        // For Razorpay orders, stock will be deducted after payment success
-
-        const order = await db.getOrderById(orderId);
-        return {
-          orderId: order?.id,
-          orderNumber: order?.orderNumber,
-          totalAmount: order?.totalAmount,
-        };
+        await db.clearCart(ctx.user.id);
+        return { orderNumber, totalAmount: totalAmount, orderId };
       }),
 
-    createRazorpayOrder: protectedProcedure
-      .input(z.object({
-        amount: z.number(),
-        orderId: z.number(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        try {
-          const razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID || "rzp_live_SSPEidW3JH1fgj",
-            key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-          });
-
-          const razorpayOrder = await razorpay.orders.create({
-            amount: input.amount * 100,
-            currency: "INR",
-            receipt: `order_${input.orderId}`,
-            notes: {
-              orderId: input.orderId.toString(),
-              userId: ctx.user.id.toString(),
-            },
-          });
-
-          console.log(`[Razorpay] Created order: ${razorpayOrder.id}`);
-
-          return {
-            razorpayOrderId: razorpayOrder.id,
-            amount: input.amount,
-            currency: "INR",
-          };
-        } catch (error: any) {
-          console.error('Razorpay order creation error:', error);
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create Razorpay order' });
-        }
+    getAllOrders: adminProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
+      .query(async ({ input }) => {
+        const ordersList = await db.getAllOrders(input.limit, input.offset);
+        // Attach user info
+        const result = await Promise.all(ordersList.map(async (order) => {
+          const user = await db.getUserById(order.userId);
+          return { ...order, userName: user?.name || user?.email || 'Unknown' };
+        }));
+        return result;
       }),
 
-    verifyRazorpayPayment: protectedProcedure
+    updateStatus: adminProcedure
       .input(z.object({
         orderId: z.number(),
-        razorpayOrderId: z.string().optional(),
-        razorpayPaymentId: z.string(),
-        razorpaySignature: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        try {
-          const order = await db.getOrderById(input.orderId);
-          if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
-          if (order.userId !== ctx.user.id) throw new TRPCError({ code: 'FORBIDDEN', message: 'Not your order' });
-
-          console.log(`[Razorpay] Payment verified for order ${input.orderId}, payment ID: ${input.razorpayPaymentId}`);
-
-          // Update payment status to completed
-          await db.updateOrderPaymentStatus(input.orderId, 'completed');
-
-          // Deduct stock after successful payment
-          if (!order.inventoryDeducted) {
-            const stockDeducted = await db.deductOrderStock(input.orderId);
-            if (!stockDeducted) {
-              console.error(`[Stock] Failed to deduct stock for order ${input.orderId} after payment`);
-              // Don't throw error - payment was successful, stock deduction failure shouldn't block order
-            }
-          }
-
-          return { success: true, message: 'Payment verified and completed' };
-        } catch (error: any) {
-          console.error('Razorpay verification error:', error);
-          if (error.code === 'NOT_FOUND' || error.code === 'FORBIDDEN') {
-            throw error;
-          }
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Payment verification failed' });
-        }
-      }),
-
-    updateStatus: protectedProcedure
-      .input(z.object({
-        orderId: z.number(),
-        status: z.string(),
+        status: z.enum(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']),
         trackingNumber: z.string().optional(),
       }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.updateOrderStatus(input.orderId, input.status, input.trackingNumber);
-      }),
-  }),
-
-  admin: router({
-    getShippingConfig: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return await db.getShippingConfig();
-    }),
-
-    calculateShippingByDistance: publicProcedure
-      .input(z.object({ address: z.string() }))
-      .query(async ({ input }) => {
-        return await db.calculateShippingByDistance(input.address);
-      }),
-
-    updateShippingConfig: protectedProcedure
-      .input(z.object({
-        baseCost: z.number().optional(),
-        costPerKm: z.number().optional(),
-        freeShippingThreshold: z.number().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        if (input.baseCost !== undefined && input.costPerKm !== undefined && input.freeShippingThreshold !== undefined) {
-          return await db.updateShippingConfig(input.baseCost, input.costPerKm, input.freeShippingThreshold);
+      .mutation(async ({ input }) => {
+        await db.updateOrderStatus(input.orderId, input.status, input.trackingNumber);
+        
+        // Automatically deduct inventory when order is confirmed or delivered
+        if (input.status === 'confirmed' || input.status === 'delivered') {
+          await db.deductInventoryForOrder(input.orderId);
         }
-        return null;
-      }),
-
-    stats: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return await db.getDashboardStats();
-    }),
-  }),
-
-  system: router({
-    getSettings: publicProcedure.query(async () => {
-      return await db.getSettings();
-    }),
-
-    updateSettings: protectedProcedure
-      .input(z.object({
-        codEnabled: z.boolean().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.updateSettings(input);
-      }),
-
-    sendNotification: protectedProcedure
-      .input(z.object({
-        title: z.string(),
-        content: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        console.log(`[Notification] ${input.title}: ${input.content}`);
-        return { success: true };
-      }),
-
-    notifyOwner: protectedProcedure
-      .input(z.object({
-        title: z.string(),
-        content: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        console.log(`[Notification] ${input.title}: ${input.content}`);
+        
+        // Restore inventory when order is cancelled
+        if (input.status === 'cancelled') {
+          await db.restoreInventoryForOrder(input.orderId);
+        }
+        
         return { success: true };
       }),
   }),
 
   quotations: router({
     list: protectedProcedure.query(async ({ ctx }) => db.getQuotationsByUserId(ctx.user.id)),
-
-    getAllQuotations: protectedProcedure
-      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }).optional())
-      .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.getAllQuotations(input?.limit || 50, input?.offset || 0);
-      }),
 
     getById: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
       const quotation = await db.getQuotationById(input);
@@ -419,94 +308,152 @@ export const appRouter = router({
 
     create: protectedProcedure
       .input(z.object({
-        items: z.array(z.object({
-          productId: z.number(),
-          quantity: z.number(),
-        })),
+        items: z.array(z.object({ productId: z.number(), quantity: z.number(), requestedPrice: z.number().optional() })),
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const quotation = await db.createQuotation({
-          userId: ctx.user.id,
-          notes: input.notes || '',
-        });
-
-        if (quotation) {
-          const itemsData = [];
-          for (const item of input.items) {
-            const product = await db.getProductById(item.productId);
-            if (product) {
-              itemsData.push({
-                productId: item.productId,
-                quantity: item.quantity,
-                price: product.basePrice,
-              });
-            }
-          }
-          if (itemsData.length > 0) {
-            await db.addOrderItems(quotation.id, itemsData);
-          }
+        let totalAmount = 0;
+        for (const item of input.items) {
+          const product = await db.getProductById(item.productId);
+          if (product) totalAmount += Number(product.basePrice) * item.quantity;
         }
-
-        return quotation;
+        const quotationNumber = `QT-${Date.now()}`;
+        await db.createQuotation({
+          quotationNumber, userId: ctx.user.id,
+          items: JSON.stringify(input.items), totalAmount: String(totalAmount),
+          status: 'pending', expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          adminNotes: input.notes || null,
+        });
+        return { quotationNumber };
       }),
 
-    update: protectedProcedure
+    getAllQuotations: adminProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
+      .query(async ({ input }) => db.getAllQuotations(input.limit, input.offset)),
+
+    update: adminProcedure
       .input(z.object({
         quotationId: z.number(),
-        status: z.string().optional(),
+        status: z.enum(['pending', 'quoted', 'accepted', 'rejected', 'expired']),
         quotedPrice: z.number().optional(),
+        adminNotes: z.string().optional(),
       }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.updateQuotationStatus(input.quotationId, input.status || 'pending', input.quotedPrice);
-      }),
+      .mutation(async ({ input }) => db.updateQuotationStatus(input.quotationId, input.status, input.quotedPrice)),
   }),
 
   users: router({
+    profile: protectedProcedure.query(async ({ ctx }) => ctx.user),
+
     updateProfile: protectedProcedure
       .input(z.object({
-        name: z.string().optional(),
-        email: z.string().optional(),
+        name: z.string().optional(), businessName: z.string().optional(),
+        businessPhone: z.string().optional(), businessAddress: z.string().optional(),
+        gstNumber: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        return await db.updateUserProfile(ctx.user.id, input);
+        await db.updateUserProfile(ctx.user.id, input);
+        return { success: true };
       }),
 
-    updateCreditLimit: protectedProcedure
-      .input(z.object({
-        userId: z.number(),
-        creditLimit: z.number(),
-        creditApproved: z.boolean(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.updateUserCreditLimit(input.userId, input.creditLimit, input.creditApproved);
-      }),
+    getAllDealers: adminProcedure
+      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
+      .query(async ({ input }) => db.getAllUsers(input.limit, input.offset)),
 
-    getAllDealers: protectedProcedure
-      .query(async ({ ctx }) => {
-        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await db.getAllUsers(100, 0);
+    updateCreditLimit: adminProcedure
+      .input(z.object({ userId: z.number(), creditLimit: z.number(), creditApproved: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await db.updateUserCreditLimit(input.userId, input.creditLimit, input.creditApproved);
+        return { success: true };
       }),
   }),
 
-  upload: router({
-    image: protectedProcedure
+  admin: router({
+    stats: adminProcedure.query(async () => db.getDashboardStats()),
+
+    inventory: adminProcedure.query(async () => db.getAllInventory()),
+
+    updateInventory: adminProcedure
+      .input(z.object({ productId: z.number(), quantity: z.number(), moq: z.number().optional() }))
+      .mutation(async ({ input }) => {
+        await db.upsertInventory(input.productId, {
+          quantityInStock: input.quantity,
+          ...(input.moq ? { minimumOrderQuantity: input.moq } : {}),
+        });
+        return { success: true };
+      }),
+
+    createCategory: adminProcedure
+      .input(z.object({ name: z.string(), description: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        await db.createCategory(input);
+        return { success: true };
+      }),
+
+    deleteCategory: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input }) => {
+        await db.deleteCategory(input);
+        return { success: true };
+      }),
+
+
+
+    // Shipping configuration
+    getShippingRates: adminProcedure.query(async () => db.getShippingRates()),
+
+    updateShippingRate: adminProcedure
       .input(z.object({
-        filename: z.string(),
-        data: z.string(),
+        id: z.number(),
+        minDistance: z.number().optional(),
+        maxDistance: z.number().optional(),
+        baseCost: z.number().optional(),
+        isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        return { success: true, url: '/uploaded-image' };
+        const updated = await db.updateShippingRate(input.id, {
+          minDistance: input.minDistance,
+          maxDistance: input.maxDistance,
+          baseCost: input.baseCost,
+          isActive: input.isActive,
+        });
+        return updated || { success: false };
       }),
-  }),
 
-  chat: router({
-    loadMessages: publicProcedure
-      .input(z.object({ conversationId: z.string() }).optional())
-      .query(async () => {
-        return [];
+    calculateShipping: publicProcedure
+      .input(z.object({ distanceKm: z.number() }))
+      .query(async ({ input }) => {
+        const cost = await db.calculateShippingCost(input.distanceKm);
+        return { shippingCost: cost };
+      }),
+
+    calculateShippingByDistance: publicProcedure
+      .input(z.object({ address: z.string().min(1) }))
+      .query(async ({ input }) => {
+        const cost = await db.calculateShippingByDistance(input.address);
+        return { shippingCost: cost };
+      }),
+
+    setManualShippingCharge: adminProcedure
+      .input(z.object({
+        orderId: z.number(),
+        shippingCharge: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.setManualShippingCharge(input.orderId, input.shippingCharge);
+        return { success };
+      }),
+
+    getShippingConfig: adminProcedure.query(async () => db.getShippingConfig()),
+
+    updateShippingConfig: adminProcedure
+      .input(z.object({
+        baseCost: z.number().min(0),
+        costPerKm: z.number().min(0),
+        freeShippingThreshold: z.number().min(0),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.updateShippingConfig(input.baseCost, input.costPerKm, input.freeShippingThreshold);
+        return { success };
       }),
   }),
 });

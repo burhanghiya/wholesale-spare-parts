@@ -340,25 +340,3 @@ export const pinCodeZones = mysqlTable("pin_code_zones", {
 
 export type PinCodeZone = typeof pinCodeZones.$inferSelect;
 export type InsertPinCodeZone = typeof pinCodeZones.$inferInsert;
-
-
-/**
- * Website Settings
- */
-export const settings = mysqlTable("settings", {
-  id: int("id").autoincrement().primaryKey(),
-  siteName: varchar("siteName", { length: 255 }).notNull().default("Patel Electricals"),
-  siteDescription: text("siteDescription"),
-  contactEmail: varchar("contactEmail", { length: 320 }),
-  contactPhone: varchar("contactPhone", { length: 20 }),
-  address: text("address"),
-  paymentGateway: varchar("paymentGateway", { length: 100 }).default("Stripe"),
-  shippingProvider: varchar("shippingProvider", { length: 100 }).default("Custom"),
-  taxRate: varchar("taxRate", { length: 10 }).default("18"),
-  codEnabled: boolean("codEnabled").default(false).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Settings = typeof settings.$inferSelect;
-export type InsertSettings = typeof settings.$inferInsert;

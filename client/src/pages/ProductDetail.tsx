@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,31 +19,8 @@ export default function ProductDetail() {
   const productId = params?.id ? parseInt(params.id) : 0;
   const [quantity, setQuantity] = useState(1);
   const [selectedModel, setSelectedModel] = useState("");
-  const [product, setProduct] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch product directly using tRPC
-  useEffect(() => {
-    if (productId <= 0) return;
-    
-    const fetchProduct = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/trpc/products.list?input={"limit":100,"offset":0}`);
-        const data = await response.json();
-        const products = data.result?.data?.json || [];
-        const found = products.find((p: any) => Number(p.id) === productId);
-        setProduct(found || null);
-      } catch (error) {
-        console.error('Error fetching product:', error);
-        setProduct(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [productId]);
+  const { data: productData, isLoading } = trpc.products.getById.useQuery(productId, { enabled: productId > 0 });
 
   const utils = trpc.useUtils();
   const addToCartMutation = trpc.cart.add.useMutation({
@@ -72,7 +49,7 @@ export default function ProductDetail() {
     );
   }
 
-  if (!product) {
+  if (!productData?.product) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -87,10 +64,11 @@ export default function ProductDetail() {
     );
   }
 
+  const { product, inventory } = productData;
   const basePrice = Number(product.basePrice);
   const totalPrice = basePrice * quantity;
   const discountedPrice = totalPrice;
-  const maxQuantity = 100; // Default stock
+  const maxQuantity = inventory?.quantityInStock || 0;
   const isQuantityExceeded = quantity > maxQuantity;
 
   let compatibleModels: string[] = [];
@@ -120,137 +98,160 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 container py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Product Image */}
-          <div className="flex items-center justify-center bg-secondary/10 rounded-lg p-8 min-h-96">
-            {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-96 object-contain" />
-            ) : (
-              <div className="text-center text-muted-foreground">
-                <Package className="h-24 w-24 mx-auto mb-4 opacity-50" />
-                <p>No image available</p>
-              </div>
-            )}
-          </div>
-
-          {/* Product Details */}
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h1 className="text-3xl font-bold">{product.name}</h1>
-                  <p className="text-muted-foreground">Part #: {product.partNumber}</p>
-                </div>
-                <Badge variant="secondary">In Stock</Badge>
-              </div>
-              <p className="text-muted-foreground mt-2">{product.description}</p>
-            </div>
-
-            {/* Price */}
-            <Card className="bg-accent/5 border-accent/20">
-              <CardContent className="pt-6">
-                <div className="space-y-2">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">₹{basePrice.toFixed(2)}</span>
-                    <span className="text-sm text-muted-foreground">per unit</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Minimum order: 1 unit</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quantity Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Quantity</label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                >
-                  −
-                </Button>
-                <Input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-20 text-center"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setQuantity(quantity + 1)}
-                >
-                  +
-                </Button>
-              </div>
-              {isQuantityExceeded && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>Quantity exceeds available stock</AlertDescription>
-                </Alert>
+      <div className="container py-8 flex-1">
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* Left: Product Image */}
+          <div>
+            <div className="bg-gradient-to-br from-secondary to-muted rounded-xl h-80 md:h-96 flex items-center justify-center overflow-hidden">
+              {product.imageUrl ? (
+                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+              ) : (
+                <Package className="h-24 w-24 text-muted-foreground/20" />
               )}
             </div>
 
-            {/* Total Price */}
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-muted-foreground">Total:</span>
-                <span className="text-2xl font-bold">₹{totalPrice.toFixed(2)}</span>
+            {/* Exploded View */}
+            {product.explodedViewUrl && (
+              <Card className="mt-4">
+                <CardHeader><CardTitle className="text-base">Exploded View Diagram</CardTitle></CardHeader>
+                <CardContent>
+                  <img src={product.explodedViewUrl} alt="Exploded View" className="w-full rounded-lg" />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right: Product Info */}
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div>
+                  <p className="text-sm text-muted-foreground font-mono mb-1">Part #{product.partNumber}</p>
+                  <h1 className="text-2xl md:text-3xl font-bold">{product.name}</h1>
+                </div>
+                <Badge variant={inventory?.quantityInStock ? "default" : "destructive"} className="flex-shrink-0">
+                  {inventory?.quantityInStock ? `${inventory.quantityInStock} in stock` : "Out of Stock"}
+                </Badge>
               </div>
+              {product.description && (
+                <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+              )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button
-                size="lg"
-                className="flex-1"
-                onClick={() => {
-                  if (isQuantityExceeded) {
-                    toast.error("Quantity exceeds available stock");
-                    return;
-                  }
-                  addToCartMutation.mutate({
-                    productId: product.id,
-                    quantity,
-                  });
-                }}
-                disabled={addToCartMutation.isPending || isQuantityExceeded}
-              >
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="flex-1"
-                asChild
-              >
-                <a href={`${WHATSAPP_URL}I'm interested in ${product.name} (Part #${product.partNumber})`} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  WhatsApp
-                </a>
-              </Button>
-            </div>
+            {/* Pricing */}
+            <Card className="border-2 border-primary/20 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold">₹{basePrice.toFixed(2)}</span>
 
-            {/* Additional Info */}
+                </div>
+                {inventory?.minimumOrderQuantity && (
+                  <p className="text-sm text-amber-600 font-medium">
+                    Minimum order: {inventory.minimumOrderQuantity} units
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+
+
+            {/* Compatibility Checker */}
+            {compatibleModels.length > 0 && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Compatibility Checker</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm"
+                  >
+                    <option value="">Select your model...</option>
+                    {compatibleModels.map((model: string) => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                  {selectedModel && (
+                    <Alert className={isCompatible ? "border-green-300 bg-green-50 text-green-800" : "border-red-300 bg-red-50 text-red-800"}>
+                      <div className="flex items-center gap-2">
+                        {isCompatible ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                        <AlertDescription>
+                          {isCompatible ? "Compatible with your model!" : "Not compatible with this model."}
+                        </AlertDescription>
+                      </div>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Alternate Part Numbers */}
             {alternatePartNumbers.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Alternate Part Numbers</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">Cross-Reference Part Numbers</CardTitle></CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {alternatePartNumbers.map((part) => (
-                      <Badge key={part} variant="secondary">{part}</Badge>
+                    {alternatePartNumbers.map((part: string) => (
+                      <Badge key={part} variant="secondary" className="font-mono">{part}</Badge>
                     ))}
                   </div>
                 </CardContent>
               </Card>
             )}
+
+            {/* Add to Cart */}
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Quantity</label>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</Button>
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      max={maxQuantity}
+                      value={quantity} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1;
+                        setQuantity(Math.min(Math.max(1, val), maxQuantity));
+                      }} 
+                      className={`w-24 text-center ${isQuantityExceeded ? 'border-red-500 border-2' : ''}`}
+                    />
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.min(quantity + 1, maxQuantity))} disabled={quantity >= maxQuantity}>+</Button>
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.min(quantity + 10, maxQuantity))} disabled={quantity >= maxQuantity}>+10</Button>
+                    <Button variant="outline" size="sm" onClick={() => setQuantity(Math.min(quantity + 50, maxQuantity))} disabled={quantity >= maxQuantity}>+50</Button>
+                  </div>
+                  {isQuantityExceeded && (
+                    <p className="text-sm text-red-600 font-medium">Only {maxQuantity} units available</p>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-4 space-y-2">
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total ({quantity} units):</span>
+                    <span>₹{totalPrice.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    size="lg"
+                    className="flex-1"
+                    disabled={!inventory?.quantityInStock || addToCartMutation.isPending || isQuantityExceeded}
+                    onClick={() => addToCartMutation.mutate({ productId, quantity })}
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    {addToCartMutation.isPending ? "Adding..." : isQuantityExceeded ? "Quantity Exceeds Stock" : "Add to Cart"}
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => window.open(`${WHATSAPP_URL}Hi, I want to enquire about ${product.name} (Part #${product.partNumber}), Qty: ${quantity}`, "_blank")}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
