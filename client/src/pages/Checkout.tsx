@@ -169,11 +169,11 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>City *</Label>
-                    <Input placeholder="City" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
+                    <Input placeholder="City" value={address.city} readOnly disabled className="bg-muted cursor-not-allowed" />
                   </div>
                   <div>
                     <Label>State *</Label>
-                    <Input placeholder="State" value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
+                    <Input placeholder="State" value={address.state} readOnly disabled className="bg-muted cursor-not-allowed" />
                   </div>
                   <div>
                     <Label>Pincode *</Label>

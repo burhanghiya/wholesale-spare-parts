@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, orderNumber, totalAmount, shippingCost FROM orders LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, orderNumber, totalAmount, shippingCost FROM orders LIMIT 5;",
+  "rows": [
+    {
+      "id": "900002",
+      "orderNumber": "ORD-1773860549773-UWN5HY347",
+      "totalAmount": "55.00",
+      "shippingCost": "45.00"
+    },
+    {
+      "id": "930001",
+      "orderNumber": "ORD-1773889105809-FM2IJ3HSR",
+      "totalAmount": "17500.00",
+      "shippingCost": "45.00"
+    },
+    {
+      "id": "960001",
+      "orderNumber": "ORD-1773908768851",
+      "totalAmount": "500.00",
+      "shippingCost": "0.00"
+    },
+    {
+      "id": "990001",
+      "orderNumber": "ORD-1773911637859",
+      "totalAmount": "10.00",
+      "shippingCost": "0.00"
+    },
+    {
+      "id": "1020001",
+      "orderNumber": "ORD-1774090996496",
+      "totalAmount": "1000.00",
+      "shippingCost": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\ttotalAmount\tshippingCost\n900002\tORD-1773860549773-UWN5HY347\t55.00\t45.00\n930001\tORD-1773889105809-FM2IJ3HSR\t17500.00\t45.00\n960001\tORD-1773908768851\t500.00\t0.00\n990001\tORD-1773911637859\t10.00\t0.00\n1020001\tORD-1774090996496\t1000.00\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 1871
+}

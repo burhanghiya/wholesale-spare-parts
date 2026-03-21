@@ -381,3 +381,18 @@
 - [x] Mixture category shows 0 products (no products assigned)
 - [x] Category dropdown updates when navigating via URL
 - [x] Products properly filtered by category (no mixing)
+
+
+## Phase 62: Fix Checkout Form - Make State and City Read-Only
+- [x] Make State field read-only (Gujarat) - DONE
+- [x] Make City field read-only (Surat) - DONE
+- [x] Keep Pincode field editable - DONE
+- [x] Test checkout form - VERIFIED
+- [x] Verify users cannot change State and City - VERIFIED
+- [x] Fields properly disabled with read-only and disabled attributes
+
+## Phase 63: Display Shipping Charge in Admin Panel
+- [x] Check if shipping charge is saved in database - VERIFIED (45 rupees in database)
+- [x] Update AdminOrders to display shipping charge - ALREADY WORKING
+- [x] Show shipping charge in order details - VERIFIED (showing 45 for orders with shipping)
+- [x] Test admin panel order display - VERIFIED (all orders displaying correctly)
