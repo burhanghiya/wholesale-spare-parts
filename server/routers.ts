@@ -214,6 +214,7 @@ export const appRouter = router({
         shippingAddress: z.string(),
         paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay']),
         shippingPincode: z.string().optional(),
+        shippingCost: z.number().optional().default(0),
       }))
       .mutation(async ({ ctx, input }) => {
         const cartItemsList = await db.getCartItems(ctx.user.id);
@@ -244,13 +245,16 @@ export const appRouter = router({
         // Create order with PENDING status - admin must confirm
         const orderId = await db.createOrder({
           orderNumber, userId: ctx.user.id,
-          totalAmount: String(totalAmount), gstAmount: String(0),
-          shippingCost: String(0), shippingAddress: input.shippingAddress,
+          totalAmount: String(totalAmount + input.shippingCost), gstAmount: String(0),
+          shippingCost: String(input.shippingCost), shippingAddress: input.shippingAddress,
           paymentMethod: input.paymentMethod,
           paymentStatus: 'pending',
           orderStatus: 'pending', // Always start as pending
           notes: null,
         });
+
+        // Update totalAmount in return to include shipping
+        const finalTotal = totalAmount + input.shippingCost;
 
         // Add order items
         if (orderId) {
@@ -258,7 +262,7 @@ export const appRouter = router({
         }
 
         await db.clearCart(ctx.user.id);
-        return { orderNumber, totalAmount: totalAmount, orderId };
+        return { orderNumber, totalAmount: finalTotal, orderId };
       }),
 
     getAllOrders: adminProcedure

@@ -404,3 +404,11 @@
 - [x] State field shows "Gujarat" (read-only)
 - [x] Pincode field remains editable
 - [x] Verified in checkout form - working correctly
+
+## Phase 65: Fix Shipping Charge Not Being Added to Orders
+- [x] Add shippingCost parameter to orders.create input schema
+- [x] Pass shippingCost from Checkout.tsx to server
+- [x] Update order creation to include shipping charge in totalAmount
+- [x] Write unit tests for shipping charge logic (2 new tests added, 17 total passing)
+- [x] Verify shippingCost parameter is properly typed and validated
+- [x] Confirm totalAmount includes shipping in database

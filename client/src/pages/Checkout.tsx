@@ -64,6 +64,7 @@ export default function Checkout() {
       shippingAddress: fullAddress,
       paymentMethod: "cod",
       shippingPincode: address.pincode,
+      shippingCost: Math.round(shippingCost),
     });
   };
 
