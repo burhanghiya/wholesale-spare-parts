@@ -396,3 +396,11 @@
 - [x] Update AdminOrders to display shipping charge - ALREADY WORKING
 - [x] Show shipping charge in order details - VERIFIED (showing 45 for orders with shipping)
 - [x] Test admin panel order display - VERIFIED (all orders displaying correctly)
+
+
+## Phase 64: Fix City Field Display in Checkout
+- [x] City field now shows "Surat" value (pre-filled)
+- [x] City field is read-only and cannot be changed
+- [x] State field shows "Gujarat" (read-only)
+- [x] Pincode field remains editable
+- [x] Verified in checkout form - working correctly

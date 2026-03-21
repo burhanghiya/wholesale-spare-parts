@@ -24,7 +24,7 @@ export default function Checkout() {
   // Address
   const [address, setAddress] = useState({
     fullName: "", phone: "", addressLine1: "", addressLine2: "",
-    city: "", state: "Gujarat", pincode: "",
+    city: "Surat", state: "Gujarat", pincode: "",
   });
 
   const createOrder = trpc.orders.create.useMutation({
@@ -169,7 +169,7 @@ export default function Checkout() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>City *</Label>
-                    <Input placeholder="City" value={address.city} readOnly disabled className="bg-muted cursor-not-allowed" />
+                    <Input placeholder="Surat" value={address.city} readOnly disabled className="bg-muted cursor-not-allowed" />
                   </div>
                   <div>
                     <Label>State *</Label>
