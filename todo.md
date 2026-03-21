@@ -366,3 +366,18 @@
 - [x] Update order tracking page to display date/time for each status in timeline
 - [x] Test: Verify timeline shows complete date/time for all status changes - Order placed: 15 Mar 2026, 07:28 pm
 - [x] All tests passing
+
+
+## Phase 61: Dynamic Category Browsing System
+- [x] Create category cards section on Home page - DONE (already existed in Home.tsx)
+- [x] Fetch categories from database and display as clickable cards - DONE
+- [x] Each category card links to /products?category=CategoryName - DONE
+- [x] Ensure category filter works on Products page - FIXED (window.location.search parsing)
+- [x] Test clicking each category card shows correct filtered products - VERIFIED
+- [x] Verify new categories added in admin automatically appear on home page - VERIFIED
+- [x] Test end-to-end flow: Home → Click Category → See filtered products - ALL WORKING
+- [x] Fan category shows 5 products correctly
+- [x] General category shows 1 product correctly
+- [x] Mixture category shows 0 products (no products assigned)
+- [x] Category dropdown updates when navigating via URL
+- [x] Products properly filtered by category (no mixing)

@@ -19,18 +19,32 @@ export default function ProductCatalog() {
   const [sortBy, setSortBy] = useState("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
+  const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
+  const { data: categoriesData } = trpc.products.getCategories.useQuery();
+  
   // Check if search query exists in URL
   const hasUrlSearch = location.includes("search=");
 
-  // Get search query from URL params
+  // Get search query and category from URL params
   useEffect(() => {
-    const params = new URLSearchParams(location.split('?')[1]);
+    const params = new URLSearchParams(window.location.search);
     const urlSearch = params.get('search');
+    const urlCategory = params.get('category');
+    
     if (urlSearch) {
       setSearchQuery(urlSearch);
       setDebouncedSearch(urlSearch);
     }
-  }, [location]);
+    
+    if (urlCategory && categoriesData) {
+      // Find category by name and set its ID
+      const categoryName = decodeURIComponent(urlCategory);
+      const foundCat = categoriesData.find((c) => c.name === categoryName);
+      if (foundCat) {
+        setSelectedCategory(foundCat.id.toString());
+      }
+    }
+  }, [location, categoriesData]);
   
   // Debounce search
   useEffect(() => {
@@ -39,9 +53,6 @@ export default function ProductCatalog() {
       return () => clearTimeout(timer);
     }
   }, [searchQuery, hasUrlSearch]);
-
-  const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
-  const { data: categoriesData } = trpc.products.getCategories.useQuery();
   const { data: searchResults } = trpc.products.search.useQuery(
     { query: debouncedSearch, categoryId: selectedCategory !== "all" ? parseInt(selectedCategory) : undefined },
     { enabled: debouncedSearch.length > 0 }
