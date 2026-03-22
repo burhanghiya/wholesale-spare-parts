@@ -167,7 +167,7 @@ export const orders = mysqlTable("orders", {
   shippingMethod: varchar("shippingMethod", { length: 50 }),
   
   // Payment
-  paymentMethod: mysqlEnum("paymentMethod", ["upi", "bank_transfer", "card", "cod", "razorpay"]).notNull(),
+  paymentMethod: mysqlEnum("paymentMethod", ["upi", "bank_transfer", "card", "cod", "razorpay", "credit"]).notNull(),
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "completed", "failed", "refunded"]).default("pending").notNull(),
   razorpayOrderId: varchar("razorpayOrderId", { length: 100 }),
   razorpayPaymentId: varchar("razorpayPaymentId", { length: 100 }),

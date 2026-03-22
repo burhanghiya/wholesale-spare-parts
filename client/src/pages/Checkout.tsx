@@ -20,6 +20,7 @@ export default function Checkout() {
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "razorpay" | "card" | "upi" | "bank_transfer" | "credit">("cod");
 
   // Address
   const [address, setAddress] = useState({
@@ -62,7 +63,7 @@ export default function Checkout() {
     const fullAddress = `${address.fullName}, ${address.phone}\n${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}\n${address.city}, ${address.state} - ${address.pincode}`;
     createOrder.mutate({
       shippingAddress: fullAddress,
-      paymentMethod: "cod",
+      paymentMethod: paymentMethod,
       shippingPincode: address.pincode,
       shippingCost: Math.round(shippingCost),
     });
@@ -200,6 +201,23 @@ export default function Checkout() {
                     <p className="font-semibold text-sm">₹{(Number(item.product?.basePrice || 0) * item.quantity).toLocaleString()}</p>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+
+            {/* Payment Method */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Payment Method</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod('cod')}>
+                  <input type="radio" name="payment" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
+                  <div><p className="font-medium">Cash on Delivery (COD)</p><p className="text-xs text-muted-foreground">Pay when order arrives</p></div>
+                </label>
+                {user?.creditApproved && user?.creditLimit && Number(user.creditLimit) > 0 && (
+                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted" onClick={() => setPaymentMethod('credit')}>
+                    <input type="radio" name="payment" checked={paymentMethod === 'credit'} onChange={() => setPaymentMethod('credit')} />
+                    <div><p className="font-medium">Dealer Credit</p><p className="text-xs text-muted-foreground">Available: ₹{Number(user.creditLimit).toLocaleString()}</p></div>
+                  </label>
+                )}
               </CardContent>
             </Card>
 

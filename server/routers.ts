@@ -212,7 +212,7 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         shippingAddress: z.string(),
-        paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay']),
+        paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay', 'credit']),
         shippingPincode: z.string().optional(),
         shippingCost: z.number().optional().default(0),
       }))

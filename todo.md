@@ -453,3 +453,14 @@
 - [x] Confirmation dialog "Delete this product?" before deletion
 - [x] All 17 tests passing - no regressions
 - [x] Product images now display larger in admin orders panel
+
+
+## Phase 71: Fix Quotation and Dealer Credit Issues
+- [x] Added quotation request button (FileText icon) to product grid
+- [x] Added quotation request dialog with quantity input
+- [x] Customers can now create quotation requests from ProductCatalog
+- [x] Added "credit" payment method to database schema
+- [x] Added payment method selector to Checkout page (COD vs Credit)
+- [x] Credit option only shows when dealer has approved credit
+- [x] Shows available credit limit in payment method selector
+- [x] All 17 tests passing - no regressions

@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, ShoppingCart, Grid3X3, List, Package } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Search, ShoppingCart, Grid3X3, List, Package, FileText } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -18,9 +20,21 @@ export default function ProductCatalog() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [quotationOpen, setQuotationOpen] = useState(false);
+  const [quotationProduct, setQuotationProduct] = useState<any>(null);
+  const [quotationQty, setQuotationQty] = useState(1);
   
   const { data: productsData, isLoading } = trpc.products.list.useQuery({ limit: 100, offset: 0 });
   const { data: categoriesData } = trpc.products.getCategories.useQuery();
+  const createQuotation = trpc.quotations.create.useMutation({
+    onSuccess: () => {
+      toast.success("Quotation request sent!");
+      setQuotationOpen(false);
+      setQuotationProduct(null);
+      setQuotationQty(1);
+    },
+    onError: (err) => toast.error(err.message),
+  });
   
   // Check if search query exists in URL
   const hasUrlSearch = location.includes("search=");
@@ -189,9 +203,26 @@ export default function ProductCatalog() {
                         <p className="text-xl font-bold">₹{Number(product.basePrice).toFixed(0)}</p>
 
                       </div>
-                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Dialog open={quotationOpen && quotationProduct?.id === product.id} onOpenChange={(open) => {
+                          if (open) { setQuotationProduct(product); setQuotationOpen(true); } else { setQuotationOpen(false); }
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                              <FileText className="h-3.5 w-3.5" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent onClick={(e) => e.stopPropagation()}>
+                            <DialogHeader><DialogTitle>Request Quotation</DialogTitle></DialogHeader>
+                            <div className="space-y-4">
+                              <div><p className="font-semibold">{product.name}</p><p className="text-sm text-muted-foreground">₹{Number(product.basePrice).toFixed(0)}</p></div>
+                              <div><label className="text-sm font-medium">Quantity</label><Input type="number" min="1" value={quotationQty} onChange={(e) => setQuotationQty(Math.max(1, parseInt(e.target.value) || 1))} /></div>
+                              <Button onClick={() => createQuotation.mutate({ items: [{ productId: product.id, quantity: quotationQty }] })} disabled={createQuotation.isPending}>Send Request</Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button size="sm" variant="outline" className="h-8 w-8 p-0"><ShoppingCart className="h-3.5 w-3.5" /></Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
