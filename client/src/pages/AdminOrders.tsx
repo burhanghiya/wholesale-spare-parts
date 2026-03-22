@@ -86,7 +86,7 @@ export default function AdminOrders() {
                               return (
                                 <div key={idx} className="text-xs space-y-0.5 flex gap-2">
                                   {item.productImage && (
-                                    <img src={item.productImage} alt={item.productName} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                                    <img src={item.productImage} alt={item.productName} className="w-16 h-16 rounded object-cover flex-shrink-0" />
                                   )}
                                   <div className="flex-1">
                                     <div className="flex justify-between">

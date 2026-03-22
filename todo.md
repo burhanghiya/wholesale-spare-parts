@@ -444,3 +444,12 @@
 - [x] Restarted dev server to pick up changes
 - [x] All 17 tests passing
 - [x] Product images should now display in admin orders panel
+
+
+## Phase 70: Increase Product Image Size and Add Delete Functionality
+- [x] Increased product image size in admin orders (w-10 h-10 → w-16 h-16)
+- [x] Delete button already exists in AdminProducts with confirmation dialog
+- [x] Soft delete implemented (marks isActive as false)
+- [x] Confirmation dialog "Delete this product?" before deletion
+- [x] All 17 tests passing - no regressions
+- [x] Product images now display larger in admin orders panel
