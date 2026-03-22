@@ -277,7 +277,7 @@ export async function getAllOrders(limit = 50, offset = 0) {
   if (!db) return [];
   const orderList = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
   
-  // Fetch items for each order with product names
+  // Fetch items for each order with product names and images
   const ordersWithItems = await Promise.all(orderList.map(async (order) => {
     const items = await db.select({
       id: orderItems.id,
@@ -288,6 +288,9 @@ export async function getAllOrders(limit = 50, offset = 0) {
       partNumber: products.partNumber,
       basePrice: products.basePrice,
       price: orderItems.unitPrice,
+      productImage: products.imageUrl,
+      selectedColor: orderItems.selectedColor,
+      selectedSize: orderItems.selectedSize,
     }).from(orderItems)
       .leftJoin(products, eq(orderItems.productId, products.id))
       .where(eq(orderItems.orderId, order.id));
