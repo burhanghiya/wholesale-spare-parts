@@ -154,6 +154,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Shipping Location Banner */}
+      <section className="bg-[oklch(0.65_0.15_85)]/10 border-b border-[oklch(0.65_0.15_85)]/30 py-4">
+        <div className="container">
+          <div className="flex items-center justify-center gap-2 text-center">
+            <MapPin className="h-5 w-5 text-[oklch(0.65_0.15_85)] flex-shrink-0" />
+            <p className="text-sm font-semibold text-[oklch(0.65_0.15_85)]">Shipping Available Only in Surat, Gujarat</p>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-16 md:py-20 bg-secondary/50">
         <div className="container">
