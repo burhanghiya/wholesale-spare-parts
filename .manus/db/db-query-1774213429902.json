@@ -1,0 +1,17 @@
+{
+  "query": "SELECT o.id, o.orderNumber, oi.productId, p.name, p.imageUrl FROM orders o LEFT JOIN order_items oi ON o.id = oi.orderId LEFT JOIN products p ON oi.productId = p.id WHERE o.orderNumber = 'ORD-1773908768851';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT o.id, o.orderNumber, oi.productId, p.name, p.imageUrl FROM orders o LEFT JOIN order_items oi ON o.id = oi.orderId LEFT JOIN products p ON oi.productId = p.id WHERE o.orderNumber = 'ORD-1773908768851';",
+  "rows": [
+    {
+      "id": "960001",
+      "orderNumber": "ORD-1773908768851",
+      "productId": "150001",
+      "name": "Vhi",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Vhi"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderNumber\tproductId\tname\timageUrl\n960001\tORD-1773908768851\t150001\tVhi\thttps://via.placeholder.com/300x300?text=Vhi\n",
+  "stderr": "",
+  "execution_time_ms": 1585
+}

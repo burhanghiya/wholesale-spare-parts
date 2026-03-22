@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE products SET imageUrl = CONCAT('https://via.placeholder.com/300x300?text=', REPLACE(name, ' ', '+')) WHERE imageUrl IS NULL OR imageUrl = '' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute UPDATE products SET imageUrl = CONCAT('https://via.placeholder.com/300x300?text=', REPLACE(name, ' ', '+')) WHERE imageUrl IS NULL OR imageUrl = '' LIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1801
+}

@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, name, imageUrl FROM products LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name, imageUrl FROM products LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Hiwa celing fan",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Hiwa+celing+fan"
+    },
+    {
+      "id": "30001",
+      "name": "Celing fan ",
+      "imageUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663422273436/ebujeUui4GaxaRzt7B3UYu/products/mI2HAmLL_XEXyZVyT1Etr.jpg"
+    },
+    {
+      "id": "60001",
+      "name": "Fan",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Fan"
+    },
+    {
+      "id": "90001",
+      "name": "Test Product",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Test+Product"
+    },
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Bajaj+"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\timageUrl\n1\tHiwa celing fan\thttps://via.placeholder.com/300x300?text=Hiwa+celing+fan\n30001\tCeling fan \thttps://d2xsxph8kpxj0f.cloudfront.net/310519663422273436/ebujeUui4GaxaRzt7B3UYu/products/mI2HAmLL_XEXyZVyT1Etr.jpg\n60001\tFan\thttps://via.placeholder.com/300x300?text=Fan\n90001\tTest Product\thttps://via.placeholder.com/300x300?text=Test+Product\n120001\tBajaj \thttps://via.placeholder.com/300x300?text=Bajaj+\n",
+  "stderr": "",
+  "execution_time_ms": 1612
+}

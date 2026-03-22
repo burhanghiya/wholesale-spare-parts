@@ -311,7 +311,10 @@ export async function updateOrderStatus(orderId: number, status: string, trackin
   if (status === 'confirmed') updateData.confirmedAt = now;
   else if (status === 'processing') updateData.processingAt = now;
   else if (status === 'shipped') updateData.shippedAt = now;
-  else if (status === 'delivered') updateData.deliveredAt = now;
+  else if (status === 'delivered') {
+    updateData.deliveredAt = now;
+    updateData.paymentStatus = 'completed';
+  }
   
   await db.update(orders).set(updateData).where(eq(orders.id, orderId));
   return true;

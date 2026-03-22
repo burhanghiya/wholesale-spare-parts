@@ -1,0 +1,45 @@
+{
+  "query": "SELECT oi.id, oi.orderId, oi.productId, p.name, p.imageUrl FROM order_items oi LEFT JOIN products p ON oi.productId = p.id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT oi.id, oi.orderId, oi.productId, p.name, p.imageUrl FROM order_items oi LEFT JOIN products p ON oi.productId = p.id LIMIT 5;",
+  "rows": [
+    {
+      "id": "960001",
+      "orderId": "990001",
+      "productId": "60001",
+      "name": "Fan",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Fan"
+    },
+    {
+      "id": "870002",
+      "orderId": "900002",
+      "productId": "60001",
+      "name": "Fan",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Fan"
+    },
+    {
+      "id": "900001",
+      "orderId": "930001",
+      "productId": "120001",
+      "name": "Bajaj ",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Bajaj+"
+    },
+    {
+      "id": "930001",
+      "orderId": "960001",
+      "productId": "150001",
+      "name": "Vhi",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Vhi"
+    },
+    {
+      "id": "990001",
+      "orderId": "1020001",
+      "productId": "180001",
+      "name": "Hasn",
+      "imageUrl": "https://via.placeholder.com/300x300?text=Hasn"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\torderId\tproductId\tname\timageUrl\n960001\t990001\t60001\tFan\thttps://via.placeholder.com/300x300?text=Fan\n870002\t900002\t60001\tFan\thttps://via.placeholder.com/300x300?text=Fan\n900001\t930001\t120001\tBajaj \thttps://via.placeholder.com/300x300?text=Bajaj+\n930001\t960001\t150001\tVhi\thttps://via.placeholder.com/300x300?text=Vhi\n990001\t1020001\t180001\tHasn\thttps://via.placeholder.com/300x300?text=Hasn\n",
+  "stderr": "",
+  "execution_time_ms": 1632
+}
