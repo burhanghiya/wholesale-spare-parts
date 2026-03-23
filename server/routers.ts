@@ -374,25 +374,6 @@ export const appRouter = router({
   admin: router({
     stats: adminProcedure.query(async () => db.getDashboardStats()),
 
-    revenueByDate: adminProcedure
-      .input(z.object({ days: z.number().default(30) }))
-      .query(async ({ input }) => db.getRevenueByDate(input.days)),
-
-    ordersByDate: adminProcedure
-      .input(z.object({ days: z.number().default(30) }))
-      .query(async ({ input }) => db.getOrdersByDate(input.days)),
-
-    topProducts: adminProcedure
-      .input(z.object({ limit: z.number().default(10) }))
-      .query(async ({ input }) => db.getTopProducts(input.limit)),
-
-    customerAcquisition: adminProcedure
-      .input(z.object({ days: z.number().default(30) }))
-      .query(async ({ input }) => db.getCustomerAcquisition(input.days)),
-
-    orderStatusDistribution: adminProcedure
-      .query(async () => db.getOrderStatusDistribution()),
-
     inventory: adminProcedure.query(async () => db.getAllInventory()),
 
     updateInventory: adminProcedure

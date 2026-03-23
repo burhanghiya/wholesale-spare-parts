@@ -286,26 +286,7 @@ export type InsertWhatsappMessage = typeof whatsappMessages.$inferInsert;
 /**
  * Shipping Calculator Configuration
  */
-// ========================
-// REVIEWS TABLE
-// ========================
-
-export const reviews = mysqlTable("reviews", {
-  id: int("id").autoincrement().primaryKey(),
-  productId: int("productId").notNull(),
-  userId: int("userId").notNull(),
-  rating: int("rating").notNull(), // 1-5 stars
-  title: varchar("title", { length: 100 }),
-  comment: text("comment"),
-  isApproved: boolean("isApproved").default(false).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
-export type Review = typeof reviews.$inferSelect;
-export type NewReview = typeof reviews.$inferInsert;
-
-export const shippingRates = mysqlTable("shippingRates", {
+export const shippingRates = mysqlTable("shipping_rates", {
   id: int("id").autoincrement().primaryKey(),
   minWeight: decimal("minWeight", { precision: 8, scale: 2 }),
   maxWeight: decimal("maxWeight", { precision: 8, scale: 2 }),
