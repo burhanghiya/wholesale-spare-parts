@@ -464,3 +464,10 @@
 - [x] Credit option only shows when dealer has approved credit
 - [x] Shows available credit limit in payment method selector
 - [x] All 17 tests passing - no regressions
+
+
+## Phase 75: Critical Bug Fixes (User Reported)
+- [x] Fix product delete not working in admin panel (delete button not deleting) - Added WHERE isActive = true to getAllProductsAdmin()
+- [x] Fix color variations not showing on customer product pages - Added JSON parsing and display in ProductDetail
+- [x] Fix size variations not showing on customer product pages - Added JSON parsing and display in ProductDetail
+- [x] Test all three fixes end-to-end

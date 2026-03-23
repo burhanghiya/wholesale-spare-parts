@@ -141,7 +141,7 @@ export async function getAllProducts(limit = 50, offset = 0) {
 export async function getAllProductsAdmin(limit = 100, offset = 0) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
+  return await db.select().from(products).where(eq(products.isActive, true)).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
 }
 
 export async function createProduct(data: any) {

@@ -81,6 +81,16 @@ export default function ProductDetail() {
     if (product.alternatePartNumbers) alternatePartNumbers = JSON.parse(product.alternatePartNumbers as string);
   } catch {}
 
+  let colorOptions: string[] = [];
+  try {
+    if (product.colorOptions) colorOptions = JSON.parse(product.colorOptions as string);
+  } catch {}
+
+  let sizeOptions: string[] = [];
+  try {
+    if (product.sizeOptions) sizeOptions = JSON.parse(product.sizeOptions as string);
+  } catch {}
+
   const isCompatible = !selectedModel || compatibleModels.includes(selectedModel);
 
   return (
@@ -194,6 +204,35 @@ export default function ProductDetail() {
                       <Badge key={part} variant="secondary" className="font-mono">{part}</Badge>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Color & Size Options */}
+            {(colorOptions.length > 0 || sizeOptions.length > 0) && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Available Options</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  {colorOptions.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Color</label>
+                      <div className="flex flex-wrap gap-2">
+                        {colorOptions.map((color: string) => (
+                          <Badge key={color} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">{color}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {sizeOptions.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Size</label>
+                      <div className="flex flex-wrap gap-2">
+                        {sizeOptions.map((size: string) => (
+                          <Badge key={size} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">{size}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
