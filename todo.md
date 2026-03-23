@@ -498,6 +498,14 @@
 - [ ] Add average rating calculation
 - [ ] Add review sorting (newest, helpful, highest rated)
 
+## Phase 73: Bug Fixes - Product Delete, Top Products, Reviews
+- [x] Fixed product delete functionality - added isActive filter to getAllProductsAdmin
+- [x] Fixed top products analytics - now only counts delivered orders
+- [x] Added reviews table schema (productId, userId, rating, title, comment, isApproved)
+- [ ] Complete reviews implementation (procedures, UI)
+- [ ] Test all fixes
+- [ ] Verify analytics show correct data
+
 ## Phase 76: Order Tracking
 - [ ] Add order status timeline view
 - [ ] Add SMS/Email notifications on status change
