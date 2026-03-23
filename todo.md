@@ -513,3 +513,14 @@
 - [ ] Add tracking number display
 - [ ] Add customer order tracking page
 - [ ] Add delivery proof (photo upload)
+
+
+## Phase 74: Critical Bug Fixes - Color/Size, Shipping, Reviews
+- [x] Created reviews table in database
+- [x] Created shippingRates table in database
+- [x] Server restarted to pick up new tables
+- [ ] Populate shippingRates with shipping cost data
+- [ ] Fix color and size options not displaying in customer product page
+- [ ] Fix color and size options not displaying in admin orders panel
+- [ ] Fix shipping charge calculation (now tables exist)
+- [ ] Add product reviews and ratings display on customer product page
