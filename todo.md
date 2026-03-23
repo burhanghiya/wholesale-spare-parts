@@ -479,4 +479,8 @@
 - [x] Update cart to store selected color/size with each item - Added fields to cartItems table
 - [x] Update checkout to pass color/size to order items - Updated create order procedure
 - [x] Update admin order detail page to display color/size for each item - Already implemented
-- [ ] Test end-to-end: select color/size, place order, verify in admin panel
+- [x] Test end-to-end: select color/size, place order, verify in admin panel
+
+## Phase 77: Fix Admin Order Details Display (User Reported)
+- [x] Update getAllOrders to fetch order items with product details
+- [x] Ensure color, size, quantity all display in admin order view

@@ -271,10 +271,14 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
       .query(async ({ input }) => {
         const ordersList = await db.getAllOrders(input.limit, input.offset);
-        // Attach user info
         const result = await Promise.all(ordersList.map(async (order) => {
           const user = await db.getUserById(order.userId);
-          return { ...order, userName: user?.name || user?.email || 'Unknown' };
+          const items = await db.getOrderItems(order.id);
+          const itemsWithProduct = await Promise.all(items.map(async (item) => {
+            const product = await db.getProductById(item.productId);
+            return { ...item, productName: product?.name, partNumber: product?.partNumber, productImage: product?.imageUrl, basePrice: product?.basePrice };
+          }));
+          return { ...order, userName: user?.name || user?.email || 'Unknown', items: itemsWithProduct };
         }));
         return result;
       }),
