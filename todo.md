@@ -464,3 +464,44 @@
 - [x] Credit option only shows when dealer has approved credit
 - [x] Shows available credit limit in payment method selector
 - [x] All 17 tests passing - no regressions
+
+
+## Phase 72: Admin Dashboard Analytics
+- [ ] Add revenue chart (daily/weekly/monthly)
+- [ ] Add orders chart (trends)
+- [ ] Add top products list
+- [ ] Add customer acquisition stats
+- [ ] Add inventory value calculation
+- [ ] Add KPI cards (total revenue, orders, customers, products)
+
+## Phase 73: Inventory Management
+- [ ] Add stock level tracking per product
+- [ ] Add low stock alerts (configurable threshold)
+- [ ] Add reorder level settings
+- [ ] Add inventory history/logs
+- [ ] Add bulk inventory update
+- [ ] Add stock adjustment (manual corrections)
+
+## Phase 74: Customer Management
+- [ ] Add customer profile page with full history
+- [ ] Add customer lifetime value (CLV) calculation
+- [ ] Add customer order history view
+- [ ] Add customer credit score/rating
+- [ ] Add customer communication logs
+- [ ] Add customer segmentation (by spending, frequency)
+
+## Phase 75: Product Reviews & Ratings
+- [ ] Add review submission form on product page
+- [ ] Add star rating (1-5 stars)
+- [ ] Add review moderation (approve/reject)
+- [ ] Add review display on product cards
+- [ ] Add average rating calculation
+- [ ] Add review sorting (newest, helpful, highest rated)
+
+## Phase 76: Order Tracking
+- [ ] Add order status timeline view
+- [ ] Add SMS/Email notifications on status change
+- [ ] Add estimated delivery date
+- [ ] Add tracking number display
+- [ ] Add customer order tracking page
+- [ ] Add delivery proof (photo upload)

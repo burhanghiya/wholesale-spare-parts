@@ -1,12 +1,13 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   Package, ShoppingCart, Users, FileText, TrendingUp, AlertCircle,
   Zap, ArrowRight, LogOut
 } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 function AdminNav({ current }: { current: string }) {
   const [, setLocation] = useLocation();
@@ -57,6 +58,11 @@ export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { data: stats, isLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: revenueData } = trpc.admin.revenueByDate.useQuery({ days: 30 }, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: ordersData } = trpc.admin.ordersByDate.useQuery({ days: 30 }, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: topProducts } = trpc.admin.topProducts.useQuery({ limit: 10 }, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: statusDist } = trpc.admin.orderStatusDistribution.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
@@ -122,6 +128,80 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Charts Section */}
+        <div className="mt-12 space-y-6">
+          <h2 className="text-lg font-semibold">Analytics</h2>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Revenue Chart */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Revenue (Last 30 Days)</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={revenueData || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => `₹${Number(value).toLocaleString()}`} />
+                    <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Orders Chart */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Orders (Last 30 Days)</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={ordersData || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="orders" fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Order Status Distribution */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Order Status Distribution</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={statusDist || []} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={100}>
+                      {(statusDist || []).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Top Products */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Top Products</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(topProducts || []).map((product, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 border rounded">
+                      <div>
+                        <p className="font-medium text-sm">{product.productName}</p>
+                        <p className="text-xs text-muted-foreground">{product.quantity} units sold</p>
+                      </div>
+                      <p className="font-semibold">₹{product.revenue.toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

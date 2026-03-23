@@ -685,3 +685,110 @@ export async function restoreInventoryForOrder(orderId: number): Promise<boolean
     return false;
   }
 }
+
+
+// ========================
+// ANALYTICS & DASHBOARD
+// ========================
+
+export async function getRevenueByDate(days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  const result = await db.select({
+    date: sql<string>`DATE(createdAt)`,
+    revenue: sql<string>`COALESCE(SUM(totalAmount), 0)`,
+  }).from(orders)
+    .where(sql`createdAt >= ${startDate} AND paymentStatus = 'completed'`)
+    .groupBy(sql`DATE(createdAt)`)
+    .orderBy(sql`DATE(createdAt)`);
+  
+  return result.map(r => ({
+    date: r.date,
+    revenue: Number(r.revenue || 0),
+  }));
+}
+
+export async function getOrdersByDate(days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  const result = await db.select({
+    date: sql<string>`DATE(createdAt)`,
+    count: sql<number>`count(*)`,
+  }).from(orders)
+    .where(sql`createdAt >= ${startDate}`)
+    .groupBy(sql`DATE(createdAt)`)
+    .orderBy(sql`DATE(createdAt)`);
+  
+  return result.map(r => ({
+    date: r.date,
+    orders: r.count || 0,
+  }));
+}
+
+export async function getTopProducts(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    productId: orderItems.productId,
+    productName: products.name,
+    quantity: sql<number>`SUM(${orderItems.quantity})`,
+    revenue: sql<string>`SUM(${orderItems.quantity} * ${orderItems.unitPrice})`,
+  }).from(orderItems)
+    .innerJoin(products, eq(orderItems.productId, products.id))
+    .groupBy(orderItems.productId)
+    .orderBy(sql`SUM(${orderItems.quantity}) DESC`)
+    .limit(limit);
+  
+  return result.map(r => ({
+    productId: r.productId,
+    productName: r.productName,
+    quantity: r.quantity || 0,
+    revenue: Number(r.revenue || 0),
+  }));
+}
+
+export async function getCustomerAcquisition(days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  const result = await db.select({
+    date: sql<string>`DATE(createdAt)`,
+    count: sql<number>`count(*)`,
+  }).from(users)
+    .where(sql`createdAt >= ${startDate}`)
+    .groupBy(sql`DATE(createdAt)`)
+    .orderBy(sql`DATE(createdAt)`);
+  
+  return result.map(r => ({
+    date: r.date,
+    newCustomers: r.count || 0,
+  }));
+}
+
+export async function getOrderStatusDistribution() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    status: orders.orderStatus,
+    count: sql<number>`count(*)`,
+  }).from(orders)
+    .groupBy(orders.orderStatus);
+  
+  return result.map(r => ({
+    status: r.status,
+    count: r.count || 0,
+  }));
+}
