@@ -19,6 +19,8 @@ export default function ProductDetail() {
   const productId = params?.id ? parseInt(params.id) : 0;
   const [quantity, setQuantity] = useState(1);
   const [selectedModel, setSelectedModel] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
 
   const { data: productData, isLoading } = trpc.products.getById.useQuery(productId, { enabled: productId > 0 });
 
@@ -28,6 +30,8 @@ export default function ProductDetail() {
       toast.success("Product added to cart!");
       utils.cart.list.invalidate();
       setQuantity(1);
+      setSelectedColor("");
+      setSelectedSize("");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -218,7 +222,7 @@ export default function ProductDetail() {
                       <label className="text-sm font-medium mb-2 block">Color</label>
                       <div className="flex flex-wrap gap-2">
                         {colorOptions.map((color: string) => (
-                          <Badge key={color} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">{color}</Badge>
+                          <Badge key={color} variant={selectedColor === color ? "default" : "outline"} className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => setSelectedColor(color)}>{color}</Badge>
                         ))}
                       </div>
                     </div>
@@ -228,7 +232,7 @@ export default function ProductDetail() {
                       <label className="text-sm font-medium mb-2 block">Size</label>
                       <div className="flex flex-wrap gap-2">
                         {sizeOptions.map((size: string) => (
-                          <Badge key={size} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">{size}</Badge>
+                          <Badge key={size} variant={selectedSize === size ? "default" : "outline"} className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => setSelectedSize(size)}>{size}</Badge>
                         ))}
                       </div>
                     </div>
@@ -276,7 +280,7 @@ export default function ProductDetail() {
                     size="lg"
                     className="flex-1"
                     disabled={!inventory?.quantityInStock || addToCartMutation.isPending || isQuantityExceeded}
-                    onClick={() => addToCartMutation.mutate({ productId, quantity })}
+                    onClick={() => addToCartMutation.mutate({ productId, quantity, selectedColor: selectedColor || undefined, selectedSize: selectedSize || undefined })}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     {addToCartMutation.isPending ? "Adding..." : isQuantityExceeded ? "Quantity Exceeds Stock" : "Add to Cart"}

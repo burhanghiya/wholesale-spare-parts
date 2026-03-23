@@ -137,6 +137,8 @@ export const cartItems = mysqlTable("cart_items", {
   productId: int("productId").notNull(),
   quantity: int("quantity").notNull().default(1),
   addedPrice: decimal("addedPrice", { precision: 12, scale: 2 }), // Price at time of adding
+  selectedColor: varchar("selectedColor", { length: 100 }),
+  selectedSize: varchar("selectedSize", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

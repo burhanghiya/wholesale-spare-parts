@@ -471,3 +471,12 @@
 - [x] Fix color variations not showing on customer product pages - Added JSON parsing and display in ProductDetail
 - [x] Fix size variations not showing on customer product pages - Added JSON parsing and display in ProductDetail
 - [x] Test all three fixes end-to-end
+
+
+## Phase 76: Color/Size Selection in Orders (User Reported)
+- [x] Update database schema to store selectedColor and selectedSize in orderItems table
+- [x] Add color/size selection UI to ProductDetail page (radio buttons or dropdowns) - Made color/size badges clickable
+- [x] Update cart to store selected color/size with each item - Added fields to cartItems table
+- [x] Update checkout to pass color/size to order items - Updated create order procedure
+- [x] Update admin order detail page to display color/size for each item - Already implemented
+- [ ] Test end-to-end: select color/size, place order, verify in admin panel

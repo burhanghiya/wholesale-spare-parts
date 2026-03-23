@@ -220,17 +220,17 @@ export async function getCartItems(userId: number) {
   return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
 }
 
-export async function addToCart(userId: number, productId: number, quantity: number, price?: number) {
+export async function addToCart(userId: number, productId: number, quantity: number, price?: number, selectedColor?: string, selectedSize?: string) {
   const db = await getDb();
   if (!db) return undefined;
   const existing = await db.select().from(cartItems).where(
     and(eq(cartItems.userId, userId), eq(cartItems.productId, productId))
   ).limit(1);
   if (existing.length > 0) {
-    await db.update(cartItems).set({ quantity: existing[0].quantity + quantity, updatedAt: new Date() }).where(eq(cartItems.id, existing[0].id));
+    await db.update(cartItems).set({ quantity: existing[0].quantity + quantity, selectedColor: selectedColor || existing[0].selectedColor, selectedSize: selectedSize || existing[0].selectedSize, updatedAt: new Date() }).where(eq(cartItems.id, existing[0].id));
     return existing[0];
   }
-  return await db.insert(cartItems).values({ productId, quantity, userId, addedPrice: price ? String(price) : undefined } as any);
+  return await db.insert(cartItems).values({ productId, quantity, userId, addedPrice: price ? String(price) : undefined, selectedColor, selectedSize } as any);
 }
 
 export async function removeFromCart(cartItemId: number) {

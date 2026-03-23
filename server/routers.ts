@@ -173,11 +173,11 @@ export const appRouter = router({
     }),
 
     add: protectedProcedure
-      .input(z.object({ productId: z.number(), quantity: z.number().min(1) }))
+      .input(z.object({ productId: z.number(), quantity: z.number().min(1), selectedColor: z.string().optional(), selectedSize: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
         const product = await db.getProductById(input.productId);
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
-        return await db.addToCart(ctx.user.id, input.productId, input.quantity, Number(product.basePrice));
+        return await db.addToCart(ctx.user.id, input.productId, input.quantity, Number(product.basePrice), input.selectedColor, input.selectedSize);
       }),
 
     updateQuantity: protectedProcedure
@@ -237,6 +237,8 @@ export const appRouter = router({
             quantity: item.quantity,
             unitPrice: String(Number(product.basePrice)),
             totalPrice: String(itemTotal),
+            selectedColor: item.selectedColor || undefined,
+            selectedSize: item.selectedSize || undefined,
           });
         }
 
