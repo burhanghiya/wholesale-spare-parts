@@ -398,7 +398,42 @@ export const appRouter = router({
 
     customerMetrics: adminProcedure.query(async () => db.getCustomerMetrics()),
 
-    inventory: adminProcedure.query(async () => db.getAllInventory()),
+    inventory: adminProcedure.query(async () => db.getAllInventoryWithStatus()),
+
+    inventoryMovementHistory: adminProcedure
+      .input(z.object({ productId: z.number().optional(), limit: z.number().default(100) }))
+      .query(async ({ input }) => db.getInventoryMovementHistory(input.productId, input.limit)),
+
+    lowStockSummary: adminProcedure.query(async () => db.getLowStockSummary()),
+
+    adjustInventory: adminProcedure
+      .input(z.object({
+        productId: z.number(),
+        quantityChange: z.number(),
+        movementType: z.enum(['purchase', 'sale', 'adjustment', 'return', 'damage']),
+        reason: z.string().optional(),
+        orderId: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.adjustInventory(
+          input.productId,
+          input.quantityChange,
+          input.movementType,
+          input.reason,
+          ctx.user?.id,
+          input.orderId,
+          input.notes
+        );
+        return result || { success: false };
+      }),
+
+    updateReorderLevel: adminProcedure
+      .input(z.object({ productId: z.number(), reorderLevel: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.updateReorderLevel(input.productId, input.reorderLevel);
+        return { success: true };
+      }),
 
     updateInventory: adminProcedure
       .input(z.object({ productId: z.number(), quantity: z.number(), moq: z.number().optional() }))

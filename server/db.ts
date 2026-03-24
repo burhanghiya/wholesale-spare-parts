@@ -2,7 +2,7 @@ import { eq, and, like, desc, asc, sql, or, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, gstConfiguration, shippingRates
+  quotations, categories, gstConfiguration, shippingRates, inventoryMovement
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -810,4 +810,157 @@ export async function getCustomerMetrics() {
     repeatCustomers: repeatCustomers?.count || 0,
     totalRevenue: Number(revenue?.total || 0),
   };
+}
+
+
+// ========================
+// INVENTORY MANAGEMENT
+// ========================
+
+export async function adjustInventory(
+  productId: number,
+  quantityChange: number,
+  movementType: 'purchase' | 'sale' | 'adjustment' | 'return' | 'damage',
+  reason?: string,
+  performedBy?: number,
+  orderId?: number,
+  notes?: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    // Get current inventory
+    const [current] = await db.select().from(inventory).where(eq(inventory.productId, productId));
+    if (!current) throw new Error("Product inventory not found");
+
+    const previousQty = current.quantityInStock;
+    const newQty = Math.max(0, previousQty + quantityChange);
+
+    // Update inventory
+    await db.update(inventory)
+      .set({ quantityInStock: newQty, updatedAt: new Date() })
+      .where(eq(inventory.productId, productId));
+
+    // Log movement
+    await db.insert(inventoryMovement).values({
+      productId,
+      quantityChanged: quantityChange,
+      movementType,
+      reason,
+      previousQuantity: previousQty,
+      newQuantity: newQty,
+      performedBy,
+      orderId,
+      notes,
+    });
+
+    return { previousQty, newQty, success: true };
+  } catch (error) {
+    console.error("[Inventory] Adjustment failed:", error);
+    return null;
+  }
+}
+
+export async function getInventoryWithMovement(productId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [inv] = await db.select().from(inventory).where(eq(inventory.productId, productId));
+  if (!inv) return null;
+
+  const movements = await db.select()
+    .from(inventoryMovement)
+    .where(eq(inventoryMovement.productId, productId))
+    .orderBy(desc(inventoryMovement.createdAt))
+    .limit(50);
+
+  return { inventory: inv, movements };
+}
+
+export async function getAllInventoryWithStatus() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.select({
+    id: inventory.id,
+    productId: inventory.productId,
+    productName: products.name,
+    partNumber: products.partNumber,
+    quantityInStock: inventory.quantityInStock,
+    minimumOrderQuantity: inventory.minimumOrderQuantity,
+    reorderLevel: inventory.reorderLevel,
+    warehouseLocation: inventory.warehouseLocation,
+    lastRestockedAt: inventory.lastRestockedAt,
+    status: sql`CASE 
+      WHEN ${inventory.quantityInStock} = 0 THEN 'out_of_stock'
+      WHEN ${inventory.quantityInStock} <= ${inventory.reorderLevel} THEN 'low_stock'
+      ELSE 'in_stock'
+    END`,
+  }).from(inventory)
+    .innerJoin(products, eq(inventory.productId, products.id))
+    .where(eq(products.isActive, true))
+    .orderBy(inventory.quantityInStock);
+
+  return result;
+}
+
+export async function getInventoryMovementHistory(productId?: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const baseQuery = db.select({
+    id: inventoryMovement.id,
+    productId: inventoryMovement.productId,
+    productName: products.name,
+    partNumber: products.partNumber,
+    quantityChanged: inventoryMovement.quantityChanged,
+    movementType: inventoryMovement.movementType,
+    reason: inventoryMovement.reason,
+    previousQuantity: inventoryMovement.previousQuantity,
+    newQuantity: inventoryMovement.newQuantity,
+    performedBy: inventoryMovement.performedBy,
+    orderId: inventoryMovement.orderId,
+    notes: inventoryMovement.notes,
+    createdAt: inventoryMovement.createdAt,
+  }).from(inventoryMovement)
+    .innerJoin(products, eq(inventoryMovement.productId, products.id));
+
+  if (productId) {
+    return baseQuery.where(eq(inventoryMovement.productId, productId))
+      .orderBy(desc(inventoryMovement.createdAt))
+      .limit(limit);
+  }
+
+  return baseQuery.orderBy(desc(inventoryMovement.createdAt)).limit(limit);
+}
+
+export async function getLowStockSummary() {
+  const db = await getDb();
+  if (!db) return { total: 0, critical: 0, low: 0 };
+
+  const [result] = await db.select({
+    total: sql<number>`COUNT(*)`,
+    critical: sql<number>`SUM(CASE WHEN ${inventory.quantityInStock} = 0 THEN 1 ELSE 0 END)`,
+    low: sql<number>`SUM(CASE WHEN ${inventory.quantityInStock} > 0 AND ${inventory.quantityInStock} <= ${inventory.reorderLevel} THEN 1 ELSE 0 END)`,
+  }).from(inventory)
+    .innerJoin(products, eq(inventory.productId, products.id))
+    .where(eq(products.isActive, true));
+
+  return {
+    total: result?.total || 0,
+    critical: result?.critical || 0,
+    low: result?.low || 0,
+  };
+}
+
+export async function updateReorderLevel(productId: number, newReorderLevel: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.update(inventory)
+    .set({ reorderLevel: newReorderLevel, updatedAt: new Date() })
+    .where(eq(inventory.productId, productId));
+
+  return true;
 }

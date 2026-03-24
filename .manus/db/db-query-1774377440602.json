@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `inventory_movement` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`productId` int NOT NULL,\n\t`quantityChanged` int NOT NULL,\n\t`movementType` varchar(50) NOT NULL,\n\t`reason` varchar(255),\n\t`previousQuantity` int NOT NULL,\n\t`newQuantity` int NOT NULL,\n\t`performedBy` int,\n\t`orderId` int,\n\t`notes` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `inventory_movement_id` PRIMARY KEY(`id`)\n);\nCREATE INDEX `movement_product_idx` ON `inventory_movement` (`productId`);\nCREATE INDEX `movement_order_idx` ON `inventory_movement` (`orderId`);\nCREATE INDEX `movement_created_idx` ON `inventory_movement` (`createdAt`);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute CREATE TABLE `inventory_movement` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`productId` int NOT NULL,\n\t`quantityChanged` int NOT NULL,\n\t`movementType` varchar(50) NOT NULL,\n\t`reason` varchar(255),\n\t`previousQuantity` int NOT NULL,\n\t`newQuantity` int NOT NULL,\n\t`performedBy` int,\n\t`orderId` int,\n\t`notes` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `inventory_movement_id` PRIMARY KEY(`id`)\n);\nCREATE INDEX `movement_product_idx` ON `inventory_movement` (`productId`);\nCREATE INDEX `movement_order_idx` ON `inventory_movement` (`orderId`);\nCREATE INDEX `movement_created_idx` ON `inventory_movement` (`createdAt`);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3333
+}

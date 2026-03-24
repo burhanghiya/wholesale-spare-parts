@@ -126,7 +126,29 @@ export const inventory = mysqlTable("inventory", {
 export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = typeof inventory.$inferInsert;
 
+/**
+ * Inventory Movement History
+ */
+export const inventoryMovement = mysqlTable("inventory_movement", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  quantityChanged: int("quantityChanged").notNull(),
+  movementType: varchar("movementType", { length: 50 }).notNull(),
+  reason: varchar("reason", { length: 255 }),
+  previousQuantity: int("previousQuantity").notNull(),
+  newQuantity: int("newQuantity").notNull(),
+  performedBy: int("performedBy"),
+  orderId: int("orderId"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  productIdx: index("movement_product_idx").on(table.productId),
+  orderIdx: index("movement_order_idx").on(table.orderId),
+  createdIdx: index("movement_created_idx").on(table.createdAt),
+}));
 
+export type InventoryMovement = typeof inventoryMovement.$inferSelect;
+export type InsertInventoryMovement = typeof inventoryMovement.$inferInsert;
 
 /**
  * Shopping Cart

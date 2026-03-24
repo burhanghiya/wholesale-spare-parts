@@ -120,6 +120,13 @@
       "when": 1774273058378,
       "tag": "0016_add_color_size_to_cart",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1774377427037,
+      "tag": "0017_lovely_dragon_man",
+      "breakpoints": true
     }
   ]
 }
