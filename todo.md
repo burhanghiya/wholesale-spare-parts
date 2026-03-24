@@ -484,3 +484,13 @@
 ## Phase 77: Fix Admin Order Details Display (User Reported)
 - [x] Update getAllOrders to fetch order items with product details
 - [x] Ensure color, size, quantity all display in admin order view
+
+
+## Phase 78: Improve Admin Dashboard Analytics (User Requested)
+- [x] Review current dashboard and identify gaps
+- [x] Add revenue trend analytics (daily/weekly/monthly) - Line chart with 30-day data
+- [x] Add top products and low stock alerts - Bar chart for top 5 products, red alert for low stock
+- [x] Add customer acquisition and repeat order metrics - New vs repeat customers display
+- [x] Add order fulfillment analytics (pending/processing/delivered rates) - Pie chart for order status
+- [x] Add payment method breakdown - Table showing COD/UPI/Card/Credit breakdown
+- [x] Test all analytics and verify data accuracy

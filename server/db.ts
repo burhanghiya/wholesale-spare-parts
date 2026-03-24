@@ -685,3 +685,129 @@ export async function restoreInventoryForOrder(orderId: number): Promise<boolean
     return false;
   }
 }
+
+
+// ========================
+// ADVANCED ANALYTICS
+// ========================
+
+export async function getRevenueByDate(days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  const result = await db.select({
+    date: sql<string>`DATE(createdAt)`,
+    revenue: sql<string>`COALESCE(SUM(totalAmount), 0)`,
+    orderCount: sql<number>`COUNT(*)`,
+  }).from(orders)
+    .where(sql`createdAt >= ${startDate} AND paymentStatus = 'completed'`)
+    .groupBy(sql`DATE(createdAt)`)
+    .orderBy(sql`DATE(createdAt)`);
+  
+  return result;
+}
+
+export async function getTopProducts(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    productId: orderItems.productId,
+    productName: products.name,
+    partNumber: products.partNumber,
+    totalSold: sql<number>`SUM(${orderItems.quantity})`,
+    revenue: sql<string>`SUM(${orderItems.totalPrice})`,
+  }).from(orderItems)
+    .innerJoin(products, sql`${orderItems.productId} = ${products.id}`)
+    .groupBy(orderItems.productId, products.name, products.partNumber)
+    .orderBy(sql`SUM(${orderItems.quantity}) DESC`)
+    .limit(limit);
+  
+  return result;
+}
+
+export async function getOrderStatusBreakdown() {
+  const db = await getDb();
+  if (!db) return {};
+  
+  const result = await db.select({
+    status: orders.orderStatus,
+    count: sql<number>`COUNT(*)`,
+  }).from(orders)
+    .groupBy(orders.orderStatus);
+  
+  const breakdown: Record<string, number> = {};
+  result.forEach(r => {
+    breakdown[r.status] = r.count;
+  });
+  
+  return breakdown;
+}
+
+export async function getPaymentMethodBreakdown() {
+  const db = await getDb();
+  if (!db) return {};
+  
+  const result = await db.select({
+    method: orders.paymentMethod,
+    count: sql<number>`COUNT(*)`,
+    revenue: sql<string>`SUM(totalAmount)`,
+  }).from(orders)
+    .where(eq(orders.paymentStatus, 'completed'))
+    .groupBy(orders.paymentMethod);
+  
+  const breakdown: Record<string, { count: number; revenue: number }> = {};
+  result.forEach(r => {
+    breakdown[r.method] = { count: r.count, revenue: Number(r.revenue || 0) };
+  });
+  
+  return breakdown;
+}
+
+export async function getLowStockProducts(threshold: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    id: products.id,
+    name: products.name,
+    partNumber: products.partNumber,
+    basePrice: products.basePrice,
+    stock: inventory.quantityInStock,
+    moq: inventory.minimumOrderQuantity,
+  }).from(products)
+    .innerJoin(inventory, sql`${products.id} = ${inventory.productId}`)
+    .where(sql`${inventory.quantityInStock} <= ${threshold} AND ${products.isActive} = true`)
+    .orderBy(sql`${inventory.quantityInStock} ASC`);
+  
+  return result;
+}
+
+export async function getCustomerMetrics() {
+  const db = await getDb();
+  if (!db) return { newCustomers: 0, repeatCustomers: 0, totalRevenue: 0 };
+  
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const [newCustomers] = await db.select({ count: sql<number>`COUNT(DISTINCT userId)` })
+    .from(orders)
+    .where(sql`createdAt >= ${thirtyDaysAgo}`);
+  
+  const [repeatCustomers] = await db.select({ count: sql<number>`COUNT(DISTINCT userId)` })
+    .from(orders)
+    .where(sql`userId IN (SELECT userId FROM orders GROUP BY userId HAVING COUNT(*) > 1)`);
+  
+  const [revenue] = await db.select({ total: sql<string>`COALESCE(SUM(totalAmount), 0)` })
+    .from(orders)
+    .where(sql`createdAt >= ${thirtyDaysAgo} AND paymentStatus = 'completed'`);
+  
+  return {
+    newCustomers: newCustomers?.count || 0,
+    repeatCustomers: repeatCustomers?.count || 0,
+    totalRevenue: Number(revenue?.total || 0),
+  };
+}

@@ -5,8 +5,9 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   Package, ShoppingCart, Users, FileText, TrendingUp, AlertCircle,
-  Zap, ArrowRight, LogOut
+  Zap, ArrowRight, LogOut, TrendingDown, AlertTriangle
 } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 function AdminNav({ current }: { current: string }) {
   const [, setLocation] = useLocation();
@@ -57,6 +58,12 @@ export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { data: stats, isLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: revenueData } = trpc.admin.revenueChart.useQuery({ days: 30 }, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: topProducts } = trpc.admin.topProducts.useQuery({ limit: 5 }, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: orderBreakdown } = trpc.admin.orderStatusBreakdown.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: paymentBreakdown } = trpc.admin.paymentMethodBreakdown.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: lowStock } = trpc.admin.lowStockProducts.useQuery({ threshold: 10 }, { enabled: isAuthenticated && user?.role === 'admin' });
+  const { data: customerMetrics } = trpc.admin.customerMetrics.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
@@ -110,6 +117,126 @@ export default function AdminDashboard() {
             </Card>
           ))}
         </div>
+        <div className="grid gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Revenue Trend (Last 30 Days)</h2>
+              {revenueData && revenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Revenue" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : <p className="text-muted-foreground">No data available</p>}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Top Products</h2>
+              {topProducts && topProducts.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={topProducts}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="productName" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="totalSold" fill="#3b82f6" name="Units Sold" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <p className="text-muted-foreground">No data available</p>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Order Status Distribution</h2>
+              {orderBreakdown && Object.keys(orderBreakdown).length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={Object.entries(orderBreakdown).map(([status, count]) => ({ name: status, value: count }))} cx="50%" cy="50%" labelLine={false} label={({name, value}) => `${name}: ${value}`} outerRadius={80} fill="#8884d8" dataKey="value">
+                      {['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'].map((color) => <Cell key={color} fill={color} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : <p className="text-muted-foreground">No data available</p>}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Payment Methods</h2>
+              {paymentBreakdown && Object.keys(paymentBreakdown).length > 0 ? (
+                <div className="space-y-3">
+                  {Object.entries(paymentBreakdown).map(([method, data]) => (
+                    <div key={method} className="flex justify-between items-center p-3 bg-muted rounded">
+                      <span className="capitalize font-medium">{method}</span>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">{data.count} orders</p>
+                        <p className="font-semibold">₹{Number(data.revenue).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-muted-foreground">No data available</p>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Customer Metrics (30 Days)</h2>
+              {customerMetrics ? (
+                <div className="space-y-4">
+                  <div className="p-3 bg-blue-50 rounded">
+                    <p className="text-sm text-muted-foreground">New Customers</p>
+                    <p className="text-2xl font-bold text-blue-600">{customerMetrics.newCustomers}</p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded">
+                    <p className="text-sm text-muted-foreground">Repeat Customers</p>
+                    <p className="text-2xl font-bold text-green-600">{customerMetrics.repeatCustomers}</p>
+                  </div>
+                  <div className="p-3 bg-amber-50 rounded">
+                    <p className="text-sm text-muted-foreground">Revenue</p>
+                    <p className="text-2xl font-bold text-amber-600">₹{customerMetrics.totalRevenue.toLocaleString()}</p>
+                  </div>
+                </div>
+              ) : <p className="text-muted-foreground">No data available</p>}
+            </CardContent>
+          </Card>
+        </div>
+
+        {lowStock && lowStock.length > 0 && (
+          <Card className="border-red-200 bg-red-50 mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <h2 className="text-lg font-semibold text-red-900">Low Stock Alert</h2>
+              </div>
+              <div className="space-y-2">
+                {lowStock.map((product) => (
+                  <div key={product.id} className="flex justify-between items-center p-2 bg-white rounded border border-red-100">
+                    <div>
+                      <p className="font-medium">{product.name} ({product.partNumber})</p>
+                      <p className="text-sm text-muted-foreground">Stock: {product.stock} units | MOQ: {product.moq}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-red-600">₹{Number(product.basePrice).toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {quickLinks.map((link) => (

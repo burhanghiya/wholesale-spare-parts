@@ -380,6 +380,24 @@ export const appRouter = router({
   admin: router({
     stats: adminProcedure.query(async () => db.getDashboardStats()),
 
+    revenueChart: adminProcedure
+      .input(z.object({ days: z.number().default(30) }))
+      .query(async ({ input }) => db.getRevenueByDate(input.days)),
+
+    topProducts: adminProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ input }) => db.getTopProducts(input.limit)),
+
+    orderStatusBreakdown: adminProcedure.query(async () => db.getOrderStatusBreakdown()),
+
+    paymentMethodBreakdown: adminProcedure.query(async () => db.getPaymentMethodBreakdown()),
+
+    lowStockProducts: adminProcedure
+      .input(z.object({ threshold: z.number().default(10) }))
+      .query(async ({ input }) => db.getLowStockProducts(input.threshold)),
+
+    customerMetrics: adminProcedure.query(async () => db.getCustomerMetrics()),
+
     inventory: adminProcedure.query(async () => db.getAllInventory()),
 
     updateInventory: adminProcedure
