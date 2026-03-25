@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle, Loader2, MessageCircle, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle, Loader2, MessageCircle, ShoppingBag, Star } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { toast } from "sonner";
 
 const statusSteps = [
   { key: "pending", label: "Order Placed", desc: "Waiting for admin review", icon: Clock, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30" },
@@ -39,10 +43,29 @@ export default function OrderTracking() {
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const orderId = Number(params.id);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [rating, setRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewContent, setReviewContent] = useState("");
 
   const { data, isLoading, error } = trpc.orders.getById.useQuery(orderId, {
     enabled: isAuthenticated && !!orderId,
+  });
+
+  const createReviewMutation = trpc.reviews.create.useMutation({
+    onSuccess: () => {
+      toast.success("Review submitted successfully!");
+      setShowReviewForm(false);
+      setSelectedProductId(null);
+      setRating(5);
+      setReviewTitle("");
+      setReviewContent("");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to submit review");
+    },
   });
 
   if (isLoading) {
@@ -70,6 +93,7 @@ export default function OrderTracking() {
   const { order, items } = data;
   const currentIdx = getStatusIndex(order.orderStatus);
   const isCancelled = order.orderStatus === "cancelled";
+  const isDelivered = order.orderStatus === "delivered";
 
   return (
     <div className="min-h-screen bg-background flex flex-col"><Navbar />
@@ -174,6 +198,134 @@ export default function OrderTracking() {
                 ))}
               </CardContent>
             </Card>
+
+            {/* Review Form - Show only for delivered orders */}
+            {isDelivered && (
+              <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+                    Share Your Feedback
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!showReviewForm ? (
+                    <Button 
+                      onClick={() => setShowReviewForm(true)}
+                      className="w-full"
+                    >
+                      Write a Review
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Select Product */}
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Select Product to Review</label>
+                        <select
+                          value={selectedProductId || ""}
+                          onChange={(e) => setSelectedProductId(Number(e.target.value))}
+                          className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm"
+                        >
+                          <option value="">Choose a product...</option>
+                          {items.map((item) => (
+                            <option key={item.productId} value={item.productId}>
+                              {item.product?.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Star Rating */}
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Rating</label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onClick={() => setRating(star)}
+                              className="transition-transform hover:scale-110"
+                            >
+                              <Star
+                                className={`h-8 w-8 ${
+                                  star <= rating
+                                    ? "fill-amber-400 text-amber-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Review Title */}
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Review Title</label>
+                        <Input
+                          placeholder="e.g., Great quality product"
+                          value={reviewTitle}
+                          onChange={(e) => setReviewTitle(e.target.value)}
+                        />
+                      </div>
+
+                      {/* Review Content */}
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Your Review</label>
+                        <Textarea
+                          placeholder="Share your experience with this product..."
+                          value={reviewContent}
+                          onChange={(e) => setReviewContent(e.target.value)}
+                          rows={4}
+                        />
+                      </div>
+
+                      {/* Submit Buttons */}
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            if (!selectedProductId) {
+                              toast.error("Please select a product");
+                              return;
+                            }
+                            if (!reviewTitle.trim()) {
+                              toast.error("Please enter a review title");
+                              return;
+                            }
+                            if (!reviewContent.trim()) {
+                              toast.error("Please enter your review");
+                              return;
+                            }
+                            createReviewMutation.mutate({
+                              productId: selectedProductId,
+                              orderId,
+                              rating,
+                              title: reviewTitle,
+                              content: reviewContent,
+                            });
+                          }}
+                          disabled={createReviewMutation.isPending}
+                          className="flex-1"
+                        >
+                          {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowReviewForm(false);
+                            setSelectedProductId(null);
+                            setRating(5);
+                            setReviewTitle("");
+                            setReviewContent("");
+                          }}
+                          disabled={createReviewMutation.isPending}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}

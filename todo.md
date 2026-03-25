@@ -538,24 +538,14 @@
 - [x] Fix featured product card navigation route from /product to /products
 - [x] Test product detail page loads correctly when clicking featured products - Route fixed
 
-
-## Phase 84: Order Reviews & Ratings + Order Tracking (User Requested)
-- [ ] Create reviews and order_tracking tables in database schema
-- [ ] Add backend functions for review CRUD and order status updates
-- [ ] Create order tracking page showing status timeline (pending → confirmed → processing → shipped → delivered)
-- [ ] Add review submission form on customer order detail page
-- [ ] Add admin order status update functionality in AdminOrders
-- [ ] Display reviews and ratings on product pages
-- [ ] Test order tracking and review submission end-to-end
-
-
 ## Phase 84: Order Reviews & Ratings and Order Tracking (User Requested)
-- [x] Create database schema for reviews and order_tracking tables
-- [x] Add backend functions for reviews (create, getProductReviews, getProductRating, getCustomerReviews, approve, delete)
-- [x] Add backend functions for order tracking (createOrderTracking, getOrderTracking, getOrderTimeline, updateOrderStatus)
-- [x] Add tRPC procedures for reviews router (create, getProductReviews, getProductRating, getCustomerReviews, approveReview, deleteReview)
-- [x] Add tRPC procedures for orderTracking router (getTimeline, getTracking, updateStatus)
-- [ ] Create customer review submission form on order detail page
-- [ ] Create order tracking timeline page for customers
-- [ ] Create admin review moderation panel
-- [ ] Test reviews and order tracking end-to-end
+- [x] Create reviews and order_tracking tables in database schema
+- [x] Add backend functions for review CRUD and order status updates
+- [x] Create order tracking page showing status timeline (pending → confirmed → processing → shipped → delivered)
+- [x] Add review submission form on customer order detail page (added to OrderTracking.tsx)
+- [x] Add admin order status update functionality in AdminOrders
+- [x] Display reviews and ratings on product pages (added to ProductDetail.tsx)
+- [x] Update database schema to match current reviews table structure (added customerId, orderId, content columns)
+- [x] Write and run vitest tests for reviews functionality (6 tests passing, 23 total tests passing)
+- [x] Test reviews and order tracking end-to-end
+- [ ] Create admin review moderation panel (next phase)

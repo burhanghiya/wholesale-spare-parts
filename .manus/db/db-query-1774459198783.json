@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Add missing columns to reviews table\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS customerId INT AFTER productId;\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS orderId INT AFTER customerId;\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS content TEXT AFTER title;\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS helpfulCount INT DEFAULT 0 AFTER isApproved;\n\n-- Add foreign key constraints if they don't exist\nALTER TABLE reviews ADD CONSTRAINT reviews_customer_fk FOREIGN KEY (customerId) REFERENCES users(id) ON DELETE CASCADE;\nALTER TABLE reviews ADD CONSTRAINT reviews_order_fk FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE;\n\n-- Add indexes\nALTER TABLE reviews ADD KEY reviews_customer_idx (customerId);\nALTER TABLE reviews ADD KEY reviews_order_idx (orderId);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute \n-- Add missing columns to reviews table\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS customerId INT AFTER productId;\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS orderId INT AFTER customerId;\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS content TEXT AFTER title;\nALTER TABLE reviews ADD COLUMN IF NOT EXISTS helpfulCount INT DEFAULT 0 AFTER isApproved;\n\n-- Add foreign key constraints if they don't exist\nALTER TABLE reviews ADD CONSTRAINT reviews_customer_fk FOREIGN KEY (customerId) REFERENCES users(id) ON DELETE CASCADE;\nALTER TABLE reviews ADD CONSTRAINT reviews_order_fk FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE;\n\n-- Add indexes\nALTER TABLE reviews ADD KEY reviews_customer_idx (customerId);\nALTER TABLE reviews ADD KEY reviews_order_idx (orderId);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 7770
+}

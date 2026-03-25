@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ShoppingCart, AlertCircle, CheckCircle, Package, ArrowLeft, MessageCircle } from "lucide-react";
+import { ShoppingCart, AlertCircle, CheckCircle, Package, ArrowLeft, MessageCircle, Star } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const WHATSAPP_URL = `https://wa.me/918780657095?text=`;
 
@@ -23,6 +25,9 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState("");
 
   const { data: productData, isLoading } = trpc.products.getById.useQuery(productId, { enabled: productId > 0 });
+  const { data: reviews } = trpc.reviews.getProductReviews.useQuery(productId, { enabled: productId > 0 });
+  const { data: rating } = trpc.reviews.getProductRating.useQuery(productId, { enabled: productId > 0 });
+  const { user } = useAuth();
 
   const utils = trpc.useUtils();
   const addToCartMutation = trpc.cart.add.useMutation({
@@ -151,6 +156,32 @@ export default function ProductDetail() {
                 <p className="text-muted-foreground leading-relaxed">{product.description}</p>
               )}
             </div>
+
+            {/* Rating Display */}
+            {rating && (
+              <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star
+                          key={i}
+                          className={`h-5 w-5 ${
+                            i <= Math.round(rating.avgRating)
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div>
+                      <p className="font-semibold">{rating.avgRating.toFixed(1)} / 5</p>
+                      <p className="text-sm text-muted-foreground">{rating.totalReviews} reviews</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Pricing */}
             <Card className="border-2 border-primary/20 bg-primary/5">
@@ -296,6 +327,49 @@ export default function ProductDetail() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12 max-w-4xl">
+          <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+          
+          {reviews && reviews.length > 0 ? (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <Card key={review.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i <= review.rating
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="font-semibold">{review.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString("en-IN")}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-foreground">{review.content}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <p className="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
