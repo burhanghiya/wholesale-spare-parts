@@ -2,7 +2,8 @@ import { eq, and, like, desc, asc, sql, or, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
-  quotations, categories, gstConfiguration, shippingRates, inventoryMovement
+  quotations, categories, gstConfiguration, shippingRates, inventoryMovement,
+  customerNotes, customerSegments
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -963,4 +964,229 @@ export async function updateReorderLevel(productId: number, newReorderLevel: num
     .where(eq(inventory.productId, productId));
 
   return true;
+}
+
+
+// ========================
+// CUSTOMER MANAGEMENT FUNCTIONS
+// ========================
+
+export async function getAllCustomers(filters?: {
+  search?: string;
+  segment?: string;
+  role?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const limit = filters?.limit || 50;
+  const offset = filters?.offset || 0;
+
+  return await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      businessName: users.businessName,
+      businessPhone: users.businessPhone,
+      role: users.role,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(and(
+      or(eq(users.role, "user"), eq(users.role, "dealer")),
+      filters?.search ? or(
+        like(users.name, `%${filters.search}%`),
+        like(users.email, `%${filters.search}%`),
+        like(users.businessName, `%${filters.search}%`)
+      ) : undefined
+    ))
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function getCustomerDetail(customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const customerList = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, customerId))
+    .limit(1);
+
+  const customer = customerList.length > 0 ? customerList[0] : null;
+  if (!customer) return null;
+
+  // Get customer orders
+  const customerOrders = await db
+    .select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      totalAmount: orders.totalAmount,
+      orderStatus: orders.orderStatus,
+      createdAt: orders.createdAt,
+    })
+    .from(orders)
+    .where(eq(orders.userId, customerId))
+    .orderBy(desc(orders.createdAt))
+    .limit(20);
+
+  // Get customer segment
+  const segmentList = await db
+    .select()
+    .from(customerSegments)
+    .where(eq(customerSegments.customerId, customerId))
+    .limit(1);
+  const segment = segmentList.length > 0 ? segmentList[0] : null;
+
+  // Get recent notes
+  const notes = await db
+    .select()
+    .from(customerNotes)
+    .where(eq(customerNotes.customerId, customerId))
+    .orderBy(desc(customerNotes.createdAt))
+    .limit(10);
+
+  return {
+    ...customer,
+    orders: customerOrders,
+    segment,
+    notes,
+  };
+}
+
+export async function getCustomerAnalytics(customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const orderList = await db
+    .select({
+      totalAmount: orders.totalAmount,
+      createdAt: orders.createdAt,
+    })
+    .from(orders)
+    .where(eq(orders.userId, customerId));
+
+  const totalSpent = orderList.reduce((sum, o) => sum + parseFloat(o.totalAmount.toString()), 0);
+  const orderCount = orderList.length;
+  const avgOrderValue = orderCount > 0 ? totalSpent / orderCount : 0;
+  const lastOrderDate = orderList.length > 0 ? orderList[0].createdAt : null;
+  const daysSinceLastOrder = lastOrderDate
+    ? Math.floor((Date.now() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  return {
+    totalSpent,
+    orderCount,
+    avgOrderValue,
+    lastOrderDate,
+    daysSinceLastOrder,
+  };
+}
+
+export async function addCustomerNote(
+  customerId: number,
+  adminId: number,
+  noteData: {
+    noteType: string;
+    subject?: string;
+    content: string;
+    isInternal?: boolean;
+  }
+) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.insert(customerNotes).values({
+    customerId,
+    adminId,
+    noteType: noteData.noteType as any,
+    subject: noteData.subject,
+    content: noteData.content,
+    isInternal: noteData.isInternal ?? true,
+  });
+
+  return result;
+}
+
+export async function updateCustomerSegment(
+  customerId: number,
+  segment: string,
+  reason?: string
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const analytics = await getCustomerAnalytics(customerId);
+  if (!analytics) return false;
+
+  const result = await db
+    .insert(customerSegments)
+    .values({
+      customerId,
+      segment: segment as any,
+      reason,
+      totalSpent: String(analytics.totalSpent) as any,
+      orderCount: analytics.orderCount,
+      lastOrderDate: analytics.lastOrderDate,
+      avgOrderValue: String(analytics.avgOrderValue) as any,
+      daysSinceLastOrder: analytics.daysSinceLastOrder,
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        segment: segment as any,
+        reason,
+        totalSpent: String(analytics.totalSpent) as any,
+        orderCount: analytics.orderCount,
+        lastOrderDate: analytics.lastOrderDate,
+        avgOrderValue: String(analytics.avgOrderValue) as any,
+        daysSinceLastOrder: analytics.daysSinceLastOrder,
+        updatedAt: new Date(),
+      },
+    });
+
+  return true;
+}
+
+export async function getCustomersBySegment(segment: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      businessName: users.businessName,
+      segment: customerSegments.segment,
+      totalSpent: customerSegments.totalSpent,
+      orderCount: customerSegments.orderCount,
+    })
+    .from(customerSegments)
+    .innerJoin(users, eq(customerSegments.customerId, users.id))
+    .where(eq(customerSegments.segment, segment as any));
+}
+
+export async function getCustomerNotes(customerId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: customerNotes.id,
+      noteType: customerNotes.noteType,
+      subject: customerNotes.subject,
+      content: customerNotes.content,
+      adminName: users.name,
+      createdAt: customerNotes.createdAt,
+    })
+    .from(customerNotes)
+    .innerJoin(users, eq(customerNotes.adminId, users.id))
+    .where(eq(customerNotes.customerId, customerId))
+    .orderBy(desc(customerNotes.createdAt))
+    .limit(limit);
 }

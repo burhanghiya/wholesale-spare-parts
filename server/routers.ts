@@ -518,6 +518,64 @@ export const appRouter = router({
         const success = await db.updateShippingConfig(input.baseCost, input.costPerKm, input.freeShippingThreshold);
         return { success };
       }),
+
+    customers: adminProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        segment: z.string().optional(),
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+      }))
+      .query(async ({ input }) => db.getAllCustomers(input)),
+
+    customerDetail: adminProcedure
+      .input(z.number())
+      .query(async ({ input }) => db.getCustomerDetail(input)),
+
+    customerAnalytics: adminProcedure
+      .input(z.number())
+      .query(async ({ input }) => db.getCustomerAnalytics(input)),
+
+    addCustomerNote: adminProcedure
+      .input(z.object({
+        customerId: z.number(),
+        noteType: z.enum(['call', 'email', 'meeting', 'follow_up', 'issue', 'feedback', 'other']),
+        subject: z.string().optional(),
+        content: z.string(),
+        isInternal: z.boolean().default(true),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
+        await db.addCustomerNote(input.customerId, ctx.user.id, {
+          noteType: input.noteType,
+          subject: input.subject,
+          content: input.content,
+          isInternal: input.isInternal,
+        });
+        return { success: true };
+      }),
+
+    updateCustomerSegment: adminProcedure
+      .input(z.object({
+        customerId: z.number(),
+        segment: z.enum(['vip', 'regular', 'inactive', 'new', 'at_risk', 'high_value']),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateCustomerSegment(input.customerId, input.segment, input.reason);
+        return { success: true };
+      }),
+
+    customersBySegment: adminProcedure
+      .input(z.enum(['vip', 'regular', 'inactive', 'new', 'at_risk', 'high_value']))
+      .query(async ({ input }) => db.getCustomersBySegment(input)),
+
+    customerNotes: adminProcedure
+      .input(z.object({
+        customerId: z.number(),
+        limit: z.number().default(50),
+      }))
+      .query(async ({ input }) => db.getCustomerNotes(input.customerId, input.limit)),
   }),
 });
 

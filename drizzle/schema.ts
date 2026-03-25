@@ -364,3 +364,48 @@ export const pinCodeZones = mysqlTable("pin_code_zones", {
 
 export type PinCodeZone = typeof pinCodeZones.$inferSelect;
 export type InsertPinCodeZone = typeof pinCodeZones.$inferInsert;
+
+/**
+ * Customer Notes - Track admin communication and interactions with customers
+ */
+export const customerNotes = mysqlTable("customer_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  adminId: int("adminId").notNull().references(() => users.id, { onDelete: "restrict" }),
+  noteType: mysqlEnum("noteType", ["call", "email", "meeting", "follow_up", "issue", "feedback", "other"]).notNull(),
+  subject: varchar("subject", { length: 255 }),
+  content: text("content").notNull(),
+  isInternal: boolean("isInternal").default(true), // Only visible to admin
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  customerIdIdx: index("customer_notes_customer_idx").on(table.customerId),
+  adminIdIdx: index("customer_notes_admin_idx").on(table.adminId),
+  createdAtIdx: index("customer_notes_created_idx").on(table.createdAt),
+}));
+
+export type CustomerNote = typeof customerNotes.$inferSelect;
+export type InsertCustomerNote = typeof customerNotes.$inferInsert;
+
+/**
+ * Customer Segments - Categorize customers for targeting and analysis
+ */
+export const customerSegments = mysqlTable("customer_segments", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  segment: mysqlEnum("segment", ["vip", "regular", "inactive", "new", "at_risk", "high_value"]).notNull(),
+  reason: text("reason"), // Why they're in this segment
+  totalSpent: decimal("totalSpent", { precision: 12, scale: 2 }).default("0"),
+  orderCount: int("orderCount").default(0),
+  lastOrderDate: timestamp("lastOrderDate"),
+  avgOrderValue: decimal("avgOrderValue", { precision: 12, scale: 2 }).default("0"),
+  daysSinceLastOrder: int("daysSinceLastOrder"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  customerIdIdx: index("customer_segments_customer_idx").on(table.customerId),
+  segmentIdx: index("customer_segments_segment_idx").on(table.segment),
+}));
+
+export type CustomerSegment = typeof customerSegments.$inferSelect;
+export type InsertCustomerSegment = typeof customerSegments.$inferInsert;
