@@ -525,3 +525,10 @@
 - [ ] Update AdminProducts form to use category dropdown instead of text input
 - [ ] Update Home page to display all categories dynamically from database
 - [ ] Test category creation and product assignment end-to-end
+
+
+## Phase 82: General Category as Featured Products (User Requested)
+- [x] Update Home page to fetch and display "General" category products as featured product cards - Featured Products section added
+- [x] Update category display logic to exclude "General" from category cards section - Filter added to exclude General
+- [x] Make featured products section display on home page with product grid - Grid layout with 8 products max
+- [x] Test General category products display correctly as featured products

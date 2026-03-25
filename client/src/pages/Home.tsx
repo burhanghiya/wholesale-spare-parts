@@ -19,6 +19,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const { data: stats, isLoading: statsLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: categories, isLoading: catsLoading } = trpc.products.getCategories.useQuery();
+  const { data: generalProducts, isLoading: generalLoading } = trpc.products.getCategories.useQuery();
+  const generalCategoryId = React.useMemo(() => categories?.find((c: any) => c.name === "General")?.id, [categories]);
+  const { data: generalCategoryProducts } = trpc.products.getByCategory.useQuery(generalCategoryId || 0, { enabled: !!generalCategoryId });
 
 
   // Fallback stats
@@ -138,7 +141,7 @@ export default function Home() {
             {catsLoading ? (
               <div className="col-span-full flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
             ) : categories && categories.length > 0 ? (
-              categories.map((cat: any) => (
+              categories.filter((cat: any) => cat.name !== "General").map((cat: any) => (
                 <Card key={cat.id} className="group cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-300" onClick={() => setLocation(`/products?category=${encodeURIComponent(cat.name)}`)}>
                   <CardContent className="p-6 text-center">
                     <div className="text-4xl mb-3">📦</div>
@@ -153,6 +156,37 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Featured Products from General Category */}
+      {generalCategoryProducts && generalCategoryProducts.length > 0 && (
+        <section className="py-16 md:py-20 bg-secondary/30">
+          <div className="container">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-3">Featured Products</h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">Our most popular electrical spare parts available for immediate delivery</p>
+            </div>
+            <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {generalCategoryProducts.slice(0, 8).map((product: any) => (
+                <Card key={product.id} className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer" onClick={() => setLocation(`/product/${product.id}`)}>
+                  <CardContent className="p-4">
+                    {product.image && (
+                      <div className="mb-3 h-32 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
+                        <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                    <h3 className="font-semibold text-sm mb-1 line-clamp-2">{product.name}</h3>
+                    <p className="text-xs text-muted-foreground mb-2">Part: {product.partNumber}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[oklch(0.65_0.15_85)]">₹{product.basePrice}</span>
+                      <Badge variant="outline" className="text-xs">MOQ: {product.minOrderQty}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Shipping Location Banner */}
       <section className="bg-[oklch(0.65_0.15_85)]/10 border-b border-[oklch(0.65_0.15_85)]/30 py-4">
