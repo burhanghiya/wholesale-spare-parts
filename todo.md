@@ -549,3 +549,13 @@
 - [x] Write and run vitest tests for reviews functionality (6 tests passing, 23 total tests passing)
 - [x] Test reviews and order tracking end-to-end
 - [ ] Create admin review moderation panel (next phase)
+
+
+## Phase 85: Admin Reviews Panel & Error Fixes
+- [x] Fix ProductDetail.tsx null reference error (avgRating toFixed on null)
+- [x] Create AdminReviews.tsx page with complete review management UI
+- [x] Add getAllReviews database function to fetch all reviews with product/customer names
+- [x] Add getAllReviews tRPC procedure (admin only)
+- [x] Add /admin/reviews route to App.tsx
+- [x] Add Reviews link to AdminNav in AdminDashboard
+- [x] All 23 tests passing (including new reviews tests)

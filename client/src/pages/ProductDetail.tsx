@@ -167,7 +167,7 @@ export default function ProductDetail() {
                         <Star
                           key={i}
                           className={`h-5 w-5 ${
-                            i <= Math.round(rating.avgRating)
+                            i <= Math.round(rating.avgRating || 0)
                               ? "fill-amber-400 text-amber-400"
                               : "text-muted-foreground"
                           }`}
@@ -175,8 +175,8 @@ export default function ProductDetail() {
                       ))}
                     </div>
                     <div>
-                      <p className="font-semibold">{rating.avgRating.toFixed(1)} / 5</p>
-                      <p className="text-sm text-muted-foreground">{rating.totalReviews} reviews</p>
+                      <p className="font-semibold">{(rating.avgRating || 0).toFixed(1)} / 5</p>
+                      <p className="text-sm text-muted-foreground">{rating.totalReviews || 0} reviews</p>
                     </div>
                   </div>
                 </CardContent>

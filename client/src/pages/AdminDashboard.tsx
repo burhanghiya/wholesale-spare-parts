@@ -19,6 +19,7 @@ function AdminNav({ current }: { current: string }) {
     { label: "Inventory", path: "/admin/inventory" },
     { label: "Orders", path: "/admin/orders" },
     { label: "Quotations", path: "/admin/quotations" },
+    { label: "Reviews", path: "/admin/reviews" },
     { label: "Dealers", path: "/admin/dealers" },
     { label: "Customers", path: "/admin/customers" },
     { label: "Shipping", path: "/admin/shipping" },

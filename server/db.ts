@@ -1288,6 +1288,28 @@ export async function deleteReview(reviewId: number) {
   return true;
 }
 
+export async function getAllReviews() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      id: reviews.id,
+      productId: reviews.productId,
+      productName: products.name,
+      customerId: reviews.customerId,
+      customerName: users.name,
+      rating: reviews.rating,
+      title: reviews.title,
+      content: reviews.content,
+      isApproved: reviews.isApproved,
+      createdAt: reviews.createdAt,
+    })
+    .from(reviews)
+    .innerJoin(products, eq(reviews.productId, products.id))
+    .innerJoin(users, eq(reviews.customerId, users.id))
+    .orderBy(desc(reviews.createdAt));
+}
+
 // ========================
 // ORDER TRACKING
 // ========================

@@ -20,6 +20,7 @@ import AdminShipping from "./pages/AdminShipping";
 import AdminInventory from "./pages/AdminInventory";
 import AdminCustomers from "./pages/AdminCustomers";
 import AdminCategories from "./pages/AdminCategories";
+import AdminReviews from "./pages/AdminReviews";
 
 function Router() {
   return (
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/admin/inventory" component={AdminInventory} />
       <Route path="/admin/customers" component={AdminCustomers} />
       <Route path="/admin/categories" component={AdminCategories} />
+      <Route path="/admin/reviews" component={AdminReviews} />
       
       {/* 404 */}
       <Route path={"/404"} component={NotFound} />

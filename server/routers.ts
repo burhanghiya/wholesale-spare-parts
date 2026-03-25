@@ -642,6 +642,9 @@ export const appRouter = router({
         const success = await db.deleteReview(input);
         return { success };
       }),
+
+    getAllReviews: adminProcedure
+      .query(async () => db.getAllReviews()),
   }),
 
   orderTracking: router({
