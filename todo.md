@@ -537,3 +537,25 @@
 ## Phase 83: Fix Product Navigation (User Reported Bug)
 - [x] Fix featured product card navigation route from /product to /products
 - [x] Test product detail page loads correctly when clicking featured products - Route fixed
+
+
+## Phase 84: Order Reviews & Ratings + Order Tracking (User Requested)
+- [ ] Create reviews and order_tracking tables in database schema
+- [ ] Add backend functions for review CRUD and order status updates
+- [ ] Create order tracking page showing status timeline (pending → confirmed → processing → shipped → delivered)
+- [ ] Add review submission form on customer order detail page
+- [ ] Add admin order status update functionality in AdminOrders
+- [ ] Display reviews and ratings on product pages
+- [ ] Test order tracking and review submission end-to-end
+
+
+## Phase 84: Order Reviews & Ratings and Order Tracking (User Requested)
+- [x] Create database schema for reviews and order_tracking tables
+- [x] Add backend functions for reviews (create, getProductReviews, getProductRating, getCustomerReviews, approve, delete)
+- [x] Add backend functions for order tracking (createOrderTracking, getOrderTracking, getOrderTimeline, updateOrderStatus)
+- [x] Add tRPC procedures for reviews router (create, getProductReviews, getProductRating, getCustomerReviews, approveReview, deleteReview)
+- [x] Add tRPC procedures for orderTracking router (getTimeline, getTracking, updateStatus)
+- [ ] Create customer review submission form on order detail page
+- [ ] Create order tracking timeline page for customers
+- [ ] Create admin review moderation panel
+- [ ] Test reviews and order tracking end-to-end

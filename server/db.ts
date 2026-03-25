@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
   quotations, categories, gstConfiguration, shippingRates, inventoryMovement,
-  customerNotes, customerSegments
+  customerNotes, customerSegments, reviews, orderTracking
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1203,3 +1203,141 @@ export async function getCustomerNotes(customerId: number, limit = 50) {
     .limit(limit);
 }
 
+// ========================
+// REVIEWS & RATINGS
+// ========================
+
+export async function createReview(input: {
+  productId: number;
+  customerId: number;
+  orderId: number;
+  rating: number;
+  title: string;
+  content: string;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return await db.insert(reviews).values(input);
+}
+
+export async function getProductReviews(productId: number, approvedOnly = true) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(reviews.productId, productId)];
+  if (approvedOnly) conditions.push(eq(reviews.isApproved, true));
+  return await db
+    .select({
+      id: reviews.id,
+      rating: reviews.rating,
+      title: reviews.title,
+      content: reviews.content,
+      customerName: users.name,
+      createdAt: reviews.createdAt,
+      helpfulCount: reviews.helpfulCount,
+    })
+    .from(reviews)
+    .innerJoin(users, eq(reviews.customerId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(reviews.createdAt));
+}
+
+export async function getProductRating(productId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select({
+      avgRating: sql<number>`AVG(${reviews.rating})`,
+      totalReviews: sql<number>`COUNT(*)`,
+    })
+    .from(reviews)
+    .where(and(eq(reviews.productId, productId), eq(reviews.isApproved, true)));
+  return result[0];
+}
+
+export async function getCustomerReviews(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      id: reviews.id,
+      productId: reviews.productId,
+      productName: products.name,
+      rating: reviews.rating,
+      title: reviews.title,
+      content: reviews.content,
+      isApproved: reviews.isApproved,
+      createdAt: reviews.createdAt,
+    })
+    .from(reviews)
+    .innerJoin(products, eq(reviews.productId, products.id))
+    .where(eq(reviews.customerId, customerId))
+    .orderBy(desc(reviews.createdAt));
+}
+
+export async function approveReview(reviewId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(reviews).set({ isApproved: true }).where(eq(reviews.id, reviewId));
+  return true;
+}
+
+export async function deleteReview(reviewId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(reviews).where(eq(reviews.id, reviewId));
+  return true;
+}
+
+// ========================
+// ORDER TRACKING
+// ========================
+
+export async function createOrderTracking(input: {
+  orderId: number;
+  status: string;
+  statusChangedBy?: number;
+  notes?: string;
+  estimatedDeliveryDate?: Date;
+  trackingNumber?: string;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return await db.insert(orderTracking).values(input as any);
+}
+
+export async function getOrderTracking(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      id: orderTracking.id,
+      status: orderTracking.status,
+      notes: orderTracking.notes,
+      estimatedDeliveryDate: orderTracking.estimatedDeliveryDate,
+      trackingNumber: orderTracking.trackingNumber,
+      createdAt: orderTracking.createdAt,
+      changedByName: users.name,
+    })
+    .from(orderTracking)
+    .leftJoin(users, eq(orderTracking.statusChangedBy, users.id))
+    .where(eq(orderTracking.orderId, orderId))
+    .orderBy(desc(orderTracking.createdAt));
+}
+
+
+
+export async function getOrderTimeline(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      status: orderTracking.status,
+      createdAt: orderTracking.createdAt,
+      notes: orderTracking.notes,
+      trackingNumber: orderTracking.trackingNumber,
+      estimatedDeliveryDate: orderTracking.estimatedDeliveryDate,
+    })
+    .from(orderTracking)
+    .where(eq(orderTracking.orderId, orderId))
+    .orderBy(asc(orderTracking.createdAt));
+}

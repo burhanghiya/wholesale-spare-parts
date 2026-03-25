@@ -134,6 +134,13 @@
       "when": 1774441166110,
       "tag": "0018_lush_luminals",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1774455320964,
+      "tag": "0019_amazing_mauler",
+      "breakpoints": true
     }
   ]
 }

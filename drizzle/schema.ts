@@ -409,3 +409,49 @@ export const customerSegments = mysqlTable("customer_segments", {
 
 export type CustomerSegment = typeof customerSegments.$inferSelect;
 export type InsertCustomerSegment = typeof customerSegments.$inferInsert;
+
+
+/**
+ * Product Reviews - Customer reviews and ratings for products
+ */
+export const reviews = mysqlTable("reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull().references(() => products.id, { onDelete: "cascade" }),
+  customerId: int("customerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  orderId: int("orderId").notNull().references(() => orders.id, { onDelete: "cascade" }),
+  rating: int("rating").notNull(), // 1-5 stars
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  isApproved: boolean("isApproved").default(false), // Admin moderation
+  helpfulCount: int("helpfulCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  productIdIdx: index("reviews_product_idx").on(table.productId),
+  customerIdIdx: index("reviews_customer_idx").on(table.customerId),
+  orderIdIdx: index("reviews_order_idx").on(table.orderId),
+  approvedIdx: index("reviews_approved_idx").on(table.isApproved),
+  ratingIdx: index("reviews_rating_idx").on(table.rating),
+}));
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = typeof reviews.$inferInsert;
+
+/**
+ * Order Tracking - Track order status changes with timestamps
+ */
+export const orderTracking = mysqlTable("order_tracking", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull().references(() => orders.id, { onDelete: "cascade" }),
+  status: mysqlEnum("status", ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"]).notNull(),
+  statusChangedBy: int("statusChangedBy").references(() => users.id, { onDelete: "set null" }), // Admin who changed status
+  notes: text("notes"), // Additional notes for this status change
+  estimatedDeliveryDate: timestamp("estimatedDeliveryDate"),
+  trackingNumber: varchar("trackingNumber", { length: 100 }), // Courier tracking number
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  orderIdIdx: index("order_tracking_order_idx").on(table.orderId),
+  statusIdx: index("order_tracking_status_idx").on(table.status),
+  createdAtIdx: index("order_tracking_created_idx").on(table.createdAt),
+}));
+export type OrderTracking = typeof orderTracking.$inferSelect;
+export type InsertOrderTracking = typeof orderTracking.$inferInsert;

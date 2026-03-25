@@ -589,13 +589,100 @@ export const appRouter = router({
         return { success };
       }),
 
-    deleteCategory: adminProcedure
+     deleteCategory: adminProcedure
       .input(z.number())
       .mutation(async ({ input }) => {
         const success = await db.deleteCategory(input);
         return { success };
       }),
   }),
-});
 
+  reviews: router({
+    create: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        orderId: z.number(),
+        rating: z.number().min(1).max(5),
+        title: z.string().min(1).max(255),
+        content: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.createReview({
+          productId: input.productId,
+          customerId: ctx.user.id,
+          orderId: input.orderId,
+          rating: input.rating,
+          title: input.title,
+          content: input.content,
+        });
+        return { success: true };
+      }),
+
+    getProductReviews: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => db.getProductReviews(input, true)),
+
+    getProductRating: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => db.getProductRating(input)),
+
+    getCustomerReviews: protectedProcedure
+      .query(async ({ ctx }) => db.getCustomerReviews(ctx.user.id)),
+
+    approveReview: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input }) => {
+        const success = await db.approveReview(input);
+        return { success };
+      }),
+
+    deleteReview: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input }) => {
+        const success = await db.deleteReview(input);
+        return { success };
+      }),
+  }),
+
+  orderTracking: router({
+    getTimeline: protectedProcedure
+      .input(z.number())
+      .query(async ({ input, ctx }) => {
+        const order = await db.getOrderById(input);
+        if (!order || (order.userId !== ctx.user.id && ctx.user.role !== 'admin')) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        return db.getOrderTimeline(input);
+      }),
+
+    getTracking: protectedProcedure
+      .input(z.number())
+      .query(async ({ input, ctx }) => {
+        const order = await db.getOrderById(input);
+        if (!order || (order.userId !== ctx.user.id && ctx.user.role !== 'admin')) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        return db.getOrderTracking(input);
+      }),
+
+    updateStatus: adminProcedure
+      .input(z.object({
+        orderId: z.number(),
+        status: z.string(),
+        notes: z.string().optional(),
+        trackingNumber: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await db.updateOrderStatus(input.orderId, input.status, input.trackingNumber);
+        await db.createOrderTracking({
+          orderId: input.orderId,
+          status: input.status,
+          statusChangedBy: ctx.user.id,
+          notes: input.notes,
+          trackingNumber: input.trackingNumber,
+        });
+        return { success };
+      }),
+  }),
+});
 export type AppRouter = typeof appRouter;
