@@ -445,22 +445,6 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    createCategory: adminProcedure
-      .input(z.object({ name: z.string(), description: z.string().optional() }))
-      .mutation(async ({ input }) => {
-        await db.createCategory(input);
-        return { success: true };
-      }),
-
-    deleteCategory: adminProcedure
-      .input(z.number())
-      .mutation(async ({ input }) => {
-        await db.deleteCategory(input);
-        return { success: true };
-      }),
-
-
-
     // Shipping configuration
     getShippingRates: adminProcedure.query(async () => db.getShippingRates()),
 
@@ -576,6 +560,41 @@ export const appRouter = router({
         limit: z.number().default(50),
       }))
       .query(async ({ input }) => db.getCustomerNotes(input.customerId, input.limit)),
+
+    getAllCategories: adminProcedure
+      .query(async () => db.getAllCategories()),
+
+    createCategory: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.createCategory({
+          name: input.name,
+          description: input.description || null,
+          createdAt: new Date(),
+        });
+        return { success: true };
+      }),
+
+    updateCategory: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.updateCategory(input.id, input.name, input.description);
+        return { success };
+      }),
+
+    deleteCategory: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input }) => {
+        const success = await db.deleteCategory(input);
+        return { success };
+      }),
   }),
 });
 

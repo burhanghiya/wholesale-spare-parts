@@ -19,6 +19,7 @@ import AdminDealers from "./pages/AdminDealers";
 import AdminShipping from "./pages/AdminShipping";
 import AdminInventory from "./pages/AdminInventory";
 import AdminCustomers from "./pages/AdminCustomers";
+import AdminCategories from "./pages/AdminCategories";
 
 function Router() {
   return (
@@ -41,8 +42,9 @@ function Router() {
       <Route path={"/admin/quotations"} component={AdminQuotations} />
       <Route path={"/admin/dealers"} component={AdminDealers} />
       <Route path={"/admin/shipping"} component={AdminShipping} />
-      <Route path={"/admin/inventory"} component={AdminInventory} />
-      <Route path={"/admin/customers"} component={AdminCustomers} />
+      <Route path="/admin/inventory" component={AdminInventory} />
+      <Route path="/admin/customers" component={AdminCustomers} />
+      <Route path="/admin/categories" component={AdminCategories} />
       
       {/* 404 */}
       <Route path={"/404"} component={NotFound} />

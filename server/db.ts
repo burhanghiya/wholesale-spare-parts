@@ -182,6 +182,25 @@ export async function createCategory(data: any) {
   return await db.insert(categories).values(data);
 }
 
+export async function updateCategory(id: number, name: string, description?: string) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(categories)
+    .set({
+      name,
+      description: description || null,
+    })
+    .where(eq(categories.id, id));
+  return true;
+}
+
+export async function deleteCategory(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(categories).where(eq(categories.id, id));
+  return true;
+}
+
 // ========================
 // INVENTORY FUNCTIONS
 // ========================
@@ -457,13 +476,6 @@ export async function getCategoryById(id: number | null) {
   if (!db) return undefined;
   const result = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
-}
-
-export async function deleteCategory(id: number) {
-  const db = await getDb();
-  if (!db) return false;
-  await db.delete(categories).where(eq(categories.id, id));
-  return true;
 }
 
 export async function getShippingRates() {
@@ -1190,3 +1202,4 @@ export async function getCustomerNotes(customerId: number, limit = 50) {
     .orderBy(desc(customerNotes.createdAt))
     .limit(limit);
 }
+

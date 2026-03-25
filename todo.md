@@ -516,3 +516,12 @@
 - [x] Add customer segmentation (VIP, regular, inactive, new) - 6 segment types: vip, high_value, regular, new, at_risk, inactive
 - [x] Implement customer targeting for promotions/campaigns - Segment-based customer filtering
 - [x] Test customer management system end-to-end
+
+
+## Phase 81: Category Management System (User Requested)
+- [x] Create AdminCategories page for viewing, creating, editing, deleting categories - Full CRUD interface created
+- [x] Add category CRUD procedures to admin router (getAllCategories, createCategory, updateCategory, deleteCategory)
+- [x] Add Categories link to admin navigation in AdminNav
+- [ ] Update AdminProducts form to use category dropdown instead of text input
+- [ ] Update Home page to display all categories dynamically from database
+- [ ] Test category creation and product assignment end-to-end
