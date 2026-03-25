@@ -559,3 +559,8 @@
 - [x] Add /admin/reviews route to App.tsx
 - [x] Add Reviews link to AdminNav in AdminDashboard
 - [x] All 23 tests passing (including new reviews tests)
+
+
+## Bug Fixes - Phase 85
+- [x] Fix ProductDetail toFixed error - (rating.avgRating || 0).toFixed is not a function
+- [x] Fix Admin Dashboard chart display - Order Status Distribution pie chart cut off/not visible

@@ -175,7 +175,7 @@ export default function ProductDetail() {
                       ))}
                     </div>
                     <div>
-                      <p className="font-semibold">{(rating.avgRating || 0).toFixed(1)} / 5</p>
+                      <p className="font-semibold">{Number(rating.avgRating || 0).toFixed(1)} / 5</p>
                       <p className="text-sm text-muted-foreground">{rating.totalReviews || 0} reviews</p>
                     </div>
                   </div>
