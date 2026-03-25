@@ -167,7 +167,7 @@ export default function Home() {
             </div>
             <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {generalCategoryProducts.slice(0, 8).map((product: any) => (
-                <Card key={product.id} className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer" onClick={() => setLocation(`/product/${product.id}`)}>
+                <Card key={product.id} className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer" onClick={() => setLocation(`/products/${product.id}`)}>
                   <CardContent className="p-4">
                     {product.image && (
                       <div className="mb-3 h-32 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
