@@ -578,3 +578,13 @@
 - [x] Integrated WhatsApp buttons on Home page (hero CTA and floating button)
 - [x] Integrated WhatsApp and Social Share on ProductDetail page
 - [x] All 23 vitest tests passing
+
+
+## Phase 87: Instagram Share Fix & WhatsApp Order Notifications (User Requested)
+- [x] Fix Instagram share - replaced alert with toast notification and auto-copy link
+- [x] Add WhatsApp order confirmation notification when order is placed
+- [x] Add WhatsApp order tracking updates when order status changes
+- [x] Create WhatsApp notification service/helper in server/_core/whatsappNotification.ts
+- [x] Integrate notifications with order creation flow in routers.ts
+- [x] Integrate notifications with order status updates in routers.ts
+- [x] Test WhatsApp notifications end-to-end (23 tests passing)

@@ -7,6 +7,7 @@ import * as db from "./db";
 import { TRPCError } from "@trpc/server";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import { sendOrderConfirmationWhatsApp, sendOrderTrackingWhatsApp } from "./_core/whatsappNotification";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
@@ -264,6 +265,26 @@ export const appRouter = router({
         }
 
         await db.clearCart(ctx.user.id);
+
+        // Send WhatsApp order confirmation (fire and forget)
+        const user = await db.getUserById(ctx.user.id);
+        const phoneNumber = user?.businessPhone || "918780657095";
+        if (phoneNumber) {
+          sendOrderConfirmationWhatsApp({
+            customerPhone: phoneNumber,
+            customerName: user?.name || "Valued Customer",
+            orderId: String(orderId),
+            orderNumber,
+            totalAmount: finalTotal,
+            items: orderItemsData.map((item) => ({
+              name: `Product #${item.productId}`,
+              quantity: item.quantity,
+              price: Number(item.unitPrice),
+            })),
+            shippingAddress: input.shippingAddress,
+          }).catch((err) => console.error("Failed to send WhatsApp notification:", err));
+        }
+
         return { orderNumber, totalAmount: finalTotal, orderId };
       }),
 
@@ -300,6 +321,24 @@ export const appRouter = router({
         // Restore inventory when order is cancelled
         if (input.status === 'cancelled') {
           await db.restoreInventoryForOrder(input.orderId);
+        }
+        
+        // Send WhatsApp tracking update
+        const order = await db.getOrderById(input.orderId);
+        if (order) {
+          const user = await db.getUserById(order.userId);
+          const phoneNumber = user?.businessPhone || "918780657095";
+          if (phoneNumber) {
+            sendOrderTrackingWhatsApp({
+              customerPhone: phoneNumber,
+              customerName: user?.name || "Valued Customer",
+              orderId: String(input.orderId),
+              orderNumber: order.orderNumber,
+              status: input.status,
+              trackingNumber: input.trackingNumber,
+              estimatedDelivery: input.status === 'shipped' ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN') : undefined,
+            }).catch((err) => console.error("Failed to send WhatsApp tracking update:", err));
+          }
         }
         
         return { success: true };

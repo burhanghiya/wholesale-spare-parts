@@ -1,6 +1,7 @@
 import { Share2, Facebook, Twitter, Instagram, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface SocialShareButtonsProps {
   title: string;
@@ -38,8 +39,15 @@ export function SocialShareButtons({
   };
 
   const handleInstagramShare = () => {
-    // Instagram doesn't support direct sharing via URL, so we'll show a message
-    alert("To share on Instagram, please use the Instagram app or save this link to share manually.");
+    // Instagram doesn't support direct sharing via URL, so we'll copy the link and show a toast
+    navigator.clipboard.writeText(url).then(() => {
+      toast.info("Link copied! Open Instagram and share it in your story or post.");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch((err) => {
+      console.error("Failed to copy link:", err);
+      toast.error("Failed to copy link");
+    });
   };
 
   const handleCopyLink = async () => {
