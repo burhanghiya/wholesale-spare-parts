@@ -8,6 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { sendOrderConfirmationWhatsApp, sendOrderTrackingWhatsApp } from "./_core/whatsappNotification";
+import { generateInvoicePDF } from "./_core/invoiceGenerator";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
@@ -343,6 +344,54 @@ export const appRouter = router({
         }
         
         return { success: true };
+      }),
+
+    generateInvoice: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input: orderId }) => {
+        const order = await db.getOrderById(orderId);
+        if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+        if (order.userId !== ctx.user.id && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have access to this order' });
+        }
+
+        const items = await db.getOrderItems(orderId);
+        const itemsWithProduct = await Promise.all(items.map(async (item) => {
+          const product = await db.getProductById(item.productId);
+          return {
+            name: product?.name || 'Unknown Product',
+            quantity: item.quantity,
+            price: Number(item.unitPrice),
+            total: Number(item.totalPrice),
+          };
+        }));
+
+        const user = await db.getUserById(order.userId);
+        const subtotal = itemsWithProduct.reduce((sum, item) => sum + item.total, 0);
+        const tax = 0;
+        const total = subtotal + tax + Number(order.shippingCost);
+
+        const invoiceData = {
+          orderId,
+          orderNumber: order.orderNumber,
+          customerName: user?.name || 'Customer',
+          customerEmail: user?.email || 'N/A',
+          customerPhone: user?.businessPhone || 'N/A',
+          shippingAddress: order.shippingAddress,
+          items: itemsWithProduct,
+          subtotal,
+          tax,
+          total,
+          orderDate: new Date(order.createdAt),
+          paymentMethod: order.paymentMethod,
+          orderStatus: order.orderStatus,
+        };
+
+        const pdfBuffer = await generateInvoicePDF(invoiceData);
+        const fileName = `Invoice-${order.orderNumber}.pdf`;
+        const { url } = await storagePut(fileName, pdfBuffer, 'application/pdf');
+
+        return { url, fileName };
       }),
   }),
 

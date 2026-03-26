@@ -612,3 +612,25 @@
 - [x] All 23 vitest tests passing
 - [x] Updated Checkout.tsx to pass customerPhone to order creation
 - [x] Updated routers.ts to accept and use customerPhone parameter
+
+
+## Phase 90: WhatsApp API Integration for Actual Message Delivery (User Reported Issue)
+- [ ] Integrate WhatsApp API (Twilio, Meta, or similar service)
+- [ ] Replace console.log with actual WhatsApp message sending
+- [ ] Test order confirmation message delivery to customer phone
+- [ ] Test order tracking update message delivery
+- [ ] Verify messages are received on customer's WhatsApp
+- [ ] Add error handling for failed message delivery
+- [ ] Add retry logic for failed messages
+
+
+## Phase 90: Invoice Generation & Inventory Sync (User Requested)
+- [x] Create Invoice Generation feature - PDF invoices for orders (jsPDF + jspdf-autotable)
+- [x] Add invoice download button on order detail page (FileText icon in OrderTracking)
+- [x] Add invoice generation procedure to orders router (orders.generateInvoice)
+- [x] Implement PDF generation with order details, items, and totals
+- [x] Store generated invoices in S3 storage
+- [x] All 23 vitest tests passing
+- [ ] Create Inventory Sync system for real-time stock updates
+- [ ] Add low stock alerts for admin
+- [ ] Add stock status display on product pages

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle, Loader2, MessageCircle, ShoppingBag, Star } from "lucide-react";
+import { ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle, Loader2, MessageCircle, ShoppingBag, Star, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
@@ -65,6 +65,18 @@ export default function OrderTracking() {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to submit review");
+    },
+  });
+  const generateInvoiceMutation = trpc.orders.generateInvoice.useMutation({
+    onSuccess: (data) => {
+      const link = document.createElement('a');
+      link.href = data.url;
+      link.download = data.fileName;
+      link.click();
+      toast.success("Invoice downloaded successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to generate invoice");
     },
   });
 
@@ -335,6 +347,16 @@ export default function OrderTracking() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Amount</span><span className="font-bold">₹{Number(order.totalAmount).toLocaleString()}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Order Status</span><Badge variant={order.orderStatus === "delivered" ? "default" : "secondary"} className="text-xs">{order.orderStatus}</Badge></div>
+                <Separator />
+                <Button 
+                  onClick={() => generateInvoiceMutation.mutate(orderId)}
+                  disabled={generateInvoiceMutation.isPending}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  {generateInvoiceMutation.isPending ? "Generating..." : "Download Invoice"}
+                </Button>
               </CardContent>
             </Card>
 
