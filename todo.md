@@ -588,3 +588,14 @@
 - [x] Integrate notifications with order creation flow in routers.ts
 - [x] Integrate notifications with order status updates in routers.ts
 - [x] Test WhatsApp notifications end-to-end (23 tests passing)
+
+
+## Phase 88: Instagram Account Link & Cash on Delivery Payment (User Requested)
+- [x] Fix Instagram button to open business account at https://www.instagram.com/patel_electricals_surat?igsh=MWZiNnR6ZWJqdGlrMw==
+- [x] Add Cash on Delivery (COD) payment option to checkout page (already present)
+- [x] Update payment method enum to include 'cod' option (already present)
+- [x] Show COD option alongside Razorpay in payment method selection (already present)
+- [x] Test Instagram button opens correct account
+- [x] Test COD payment flow works correctly
+- [x] Verified WhatsApp notifications are sent on order creation (logs to console)
+- [x] All 23 vitest tests passing

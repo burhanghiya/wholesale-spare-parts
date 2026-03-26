@@ -39,15 +39,8 @@ export function SocialShareButtons({
   };
 
   const handleInstagramShare = () => {
-    // Instagram doesn't support direct sharing via URL, so we'll copy the link and show a toast
-    navigator.clipboard.writeText(url).then(() => {
-      toast.info("Link copied! Open Instagram and share it in your story or post.");
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch((err) => {
-      console.error("Failed to copy link:", err);
-      toast.error("Failed to copy link");
-    });
+    // Open Patel Electricals Instagram account
+    window.open("https://www.instagram.com/patel_electricals_surat?igsh=MWZiNnR6ZWJqdGlrMw==", "_blank");
   };
 
   const handleCopyLink = async () => {
@@ -111,6 +104,7 @@ export function SocialShareButtons({
         size="sm"
         onClick={handleInstagramShare}
         className="gap-2 text-pink-600 hover:text-pink-700"
+        title="Follow us on Instagram"
       >
         <Instagram className="h-4 w-4" />
         {showText && "Instagram"}
