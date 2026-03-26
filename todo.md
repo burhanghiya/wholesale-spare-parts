@@ -634,3 +634,15 @@
 - [ ] Create Inventory Sync system for real-time stock updates
 - [ ] Add low stock alerts for admin
 - [ ] Add stock status display on product pages
+
+
+## Phase 91: Inventory Sync System (User Requested)
+- [x] Create inventory sync service for real-time stock updates (inventorySync.ts)
+- [x] Add low-stock threshold configuration (default: 10 units)
+- [x] Create low-stock alert notifications for admin (getLowStockAlerts procedure)
+- [x] Add inventory sync status dashboard (getInventorySyncStatus procedure)
+- [x] Implement automatic stock reduction on order placement (syncInventoryOnOrder)
+- [x] Implement stock restoration on order cancellation (syncInventoryOnCancellation)
+- [x] Add stock update history/audit log (logInventoryChange)
+- [x] Create bulk inventory import feature (bulkUpdateInventory procedure)
+- [x] All 23 vitest tests passing

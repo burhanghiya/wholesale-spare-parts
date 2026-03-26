@@ -684,6 +684,27 @@ export const appRouter = router({
         const success = await db.deleteCategory(input);
         return { success };
       }),
+
+    getLowStockAlerts: adminProcedure.query(async () => {
+      const { getLowStockAlerts } = await import("./_core/inventorySync");
+      return getLowStockAlerts();
+    }),
+
+    getInventorySyncStatus: adminProcedure.query(async () => {
+      const { getInventorySyncStatus } = await import("./_core/inventorySync");
+      return getInventorySyncStatus();
+    }),
+
+    bulkUpdateInventory: adminProcedure
+      .input(z.array(z.object({
+        productId: z.number(),
+        quantityInStock: z.number().min(0),
+      })))
+      .mutation(async ({ input }) => {
+        const { bulkUpdateInventory } = await import("./_core/inventorySync");
+        const results = await bulkUpdateInventory(input);
+        return { success: true, updatedCount: results.length, results };
+      }),
   }),
 
   reviews: router({
