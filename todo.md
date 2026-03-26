@@ -599,3 +599,16 @@
 - [x] Test COD payment flow works correctly
 - [x] Verified WhatsApp notifications are sent on order creation (logs to console)
 - [x] All 23 vitest tests passing
+
+
+## Phase 89: Remove Social Share Buttons & Fix WhatsApp Notifications (User Requested)
+- [x] Remove Twitter share button from SocialShareButtons component
+- [x] Remove Facebook share button from SocialShareButtons component
+- [x] Keep only Instagram and Copy Link buttons
+- [x] Fix WhatsApp notifications to use customer's phone number from checkout address
+- [x] Ensure order confirmation message goes to customer's phone (via customerPhone parameter)
+- [x] Ensure order tracking updates go to customer's phone (via updateStatus)
+- [x] Test WhatsApp notifications with real customer phone numbers
+- [x] All 23 vitest tests passing
+- [x] Updated Checkout.tsx to pass customerPhone to order creation
+- [x] Updated routers.ts to accept and use customerPhone parameter

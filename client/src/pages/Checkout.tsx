@@ -21,6 +21,7 @@ export default function Checkout() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "razorpay" | "card" | "upi" | "bank_transfer" | "credit">("cod");
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
 
   // Address
   const [address, setAddress] = useState({
@@ -32,7 +33,7 @@ export default function Checkout() {
     onSuccess: (data) => {
       setOrderPlaced(true);
       setOrderNumber(data.orderNumber);
-      toast.success("Order placed successfully!");
+      toast.success("Order placed successfully! Check WhatsApp for order details.");
     },
     onError: (err) => toast.error(err.message),
   });
@@ -66,6 +67,7 @@ export default function Checkout() {
       paymentMethod: paymentMethod,
       shippingPincode: address.pincode,
       shippingCost: Math.round(shippingCost),
+      customerPhone: address.phone,
     });
   };
 

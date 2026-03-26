@@ -1,4 +1,4 @@
-import { Share2, Facebook, Twitter, Instagram, Link as LinkIcon } from "lucide-react";
+import { Share2, Instagram, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -26,17 +26,7 @@ export function SocialShareButtons({
     url,
   };
 
-  const handleFacebookShare = () => {
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-    window.open(facebookUrl, "_blank", "width=600,height=400");
-  };
 
-  const handleTwitterShare = () => {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      title
-    )}&url=${encodeURIComponent(url)}`;
-    window.open(twitterUrl, "_blank", "width=600,height=400");
-  };
 
   const handleInstagramShare = () => {
     // Open Patel Electricals Instagram account
@@ -79,25 +69,7 @@ export function SocialShareButtons({
         </Button>
       )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleFacebookShare}
-        className="gap-2 text-blue-600 hover:text-blue-700"
-      >
-        <Facebook className="h-4 w-4" />
-        {showText && "Facebook"}
-      </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleTwitterShare}
-        className="gap-2 text-sky-500 hover:text-sky-600"
-      >
-        <Twitter className="h-4 w-4" />
-        {showText && "Twitter"}
-      </Button>
 
       <Button
         variant="outline"

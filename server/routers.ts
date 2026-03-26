@@ -216,6 +216,7 @@ export const appRouter = router({
         paymentMethod: z.enum(['upi', 'bank_transfer', 'card', 'cod', 'razorpay', 'credit']),
         shippingPincode: z.string().optional(),
         shippingCost: z.number().optional().default(0),
+        customerPhone: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const cartItemsList = await db.getCartItems(ctx.user.id);
@@ -268,7 +269,7 @@ export const appRouter = router({
 
         // Send WhatsApp order confirmation (fire and forget)
         const user = await db.getUserById(ctx.user.id);
-        const phoneNumber = user?.businessPhone || "918780657095";
+        const phoneNumber = input.customerPhone || user?.businessPhone || "918780657095";
         if (phoneNumber) {
           sendOrderConfirmationWhatsApp({
             customerPhone: phoneNumber,
