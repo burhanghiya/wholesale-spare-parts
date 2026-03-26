@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { WhatsAppButton, WhatsAppFloatingButton } from "@/components/WhatsAppButton";
 
 const WHATSAPP_NUMBER = "918780657095";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%20Patel%20Electricals%2C%20I%20need%20help%20with%20spare%20parts`;
@@ -119,9 +120,10 @@ export default function Home() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <button className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-white/30 text-white hover:bg-white/10 font-semibold transition-colors" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
-                  <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp Us
-                </button>
+                <WhatsAppButton
+                  message="Hi Patel Electricals, I need help with spare parts"
+                  showText={true}
+                />
               </div>
             </div>
 
@@ -252,9 +254,10 @@ export default function Home() {
             <Button size="lg" className="bg-[oklch(0.65_0.15_85)] text-[oklch(0.15_0.04_260)] hover:bg-[oklch(0.70_0.15_85)] font-semibold px-8" onClick={() => setLocation("/products")}>
               Browse Products <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => window.open(WHATSAPP_URL, "_blank")}>
-              <Phone className="mr-2 h-4 w-4" /> Call: 8780657095
-            </Button>
+            <WhatsAppButton
+              message="Hi Patel Electricals, I'm interested in your products"
+              showText={true}
+            />
           </div>
         </div>
       </section>
@@ -307,9 +310,7 @@ export default function Home() {
       </footer>
 
       {/* WhatsApp Floating Button */}
-      <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg hover:bg-green-600 transition-colors hover:scale-110" title="Chat on WhatsApp">
-        <MessageCircle className="h-7 w-7" />
-      </a>
+      <WhatsAppFloatingButton message="Hi Patel Electricals, I need help with spare parts" />
     </div>
   );
 }

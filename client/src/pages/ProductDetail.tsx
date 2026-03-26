@@ -12,8 +12,10 @@ import Footer from "@/components/Footer";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { SocialShareButtons } from "@/components/SocialShareButtons";
 
-const WHATSAPP_URL = `https://wa.me/918780657095?text=`;
+
 
 export default function ProductDetail() {
   const [, setLocation] = useLocation();
@@ -316,13 +318,18 @@ export default function ProductDetail() {
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     {addToCartMutation.isPending ? "Adding..." : isQuantityExceeded ? "Quantity Exceeds Stock" : "Add to Cart"}
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => window.open(`${WHATSAPP_URL}Hi, I want to enquire about ${product.name} (Part #${product.partNumber}), Qty: ${quantity}`, "_blank")}
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
+                  <WhatsAppButton
+                    message={`Hi, I want to enquire about ${product.name} (Part #${product.partNumber}), Price: ₹${Number(product.basePrice).toLocaleString()}, Qty: ${quantity}`}
+                    showText={true}
+                  />
+                </div>
+
+                <div className="border-t border-border pt-4">
+                  <SocialShareButtons
+                    title={product.name}
+                    description={`Check out ${product.name} (Part #${product.partNumber}) at Patel Electricals - ₹${Number(product.basePrice).toLocaleString()}`}
+                    showText={true}
+                  />
                 </div>
               </CardContent>
             </Card>
