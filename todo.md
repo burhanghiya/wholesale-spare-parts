@@ -675,3 +675,20 @@
   - Updated OrderTracking.tsx to use new endpoint instead of S3 URL
   - Result: PDF now downloads properly on mobile browsers with correct filename
   - Tested: Invoice download works with proper success message and file handling
+
+
+## Phase 92: Loyalty Points & Referral Rewards System
+- [ ] Design database schema for loyalty points and referral system
+- [ ] Create loyaltySettings table for admin configuration
+- [ ] Create loyaltyPoints table for tracking customer points
+- [ ] Create referralProgram table for referral configuration
+- [ ] Create referralLinks table for tracking referral codes
+- [ ] Create referralTransactions table for tracking referral rewards
+- [ ] Add backend procedures for loyalty points operations
+- [ ] Add backend procedures for referral operations
+- [ ] Create admin settings UI for loyalty points configuration
+- [ ] Create admin settings UI for referral rewards configuration
+- [ ] Create customer loyalty dashboard page
+- [ ] Add referral link generation and sharing
+- [ ] Test loyalty points system
+- [ ] Test referral rewards system

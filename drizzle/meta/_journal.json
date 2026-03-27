@@ -141,6 +141,13 @@
       "when": 1774455320964,
       "tag": "0019_amazing_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1774592394915,
+      "tag": "0020_flippant_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }
