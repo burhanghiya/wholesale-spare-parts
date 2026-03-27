@@ -69,10 +69,14 @@ export default function OrderTracking() {
   });
   const generateInvoiceMutation = trpc.orders.generateInvoice.useMutation({
     onSuccess: (data) => {
+      const downloadUrl = `/api/download-invoice/${orderId}`;
       const link = document.createElement('a');
-      link.href = data.url;
+      link.href = downloadUrl;
       link.download = data.fileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       toast.success("Invoice downloaded successfully!");
     },
     onError: (error) => {

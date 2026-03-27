@@ -38,6 +38,73 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Chat API with streaming and tool calling
   registerChatRoutes(app);
+  // Invoice download endpoint with proper headers for mobile
+  app.get('/api/download-invoice/:orderId', async (req, res) => {
+    try {
+      const orderId = Number(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ error: 'Invalid order ID' });
+      }
+      
+      // Get order from database
+      const db = await import('../db');
+      const order = await db.getOrderById(orderId);
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+      
+      // Get order items
+      const items = await db.getOrderItems(orderId);
+      const itemsWithProduct = await Promise.all(items.map(async (item) => {
+        const product = await db.getProductById(item.productId);
+        return {
+          name: product?.name || 'Unknown Product',
+          quantity: item.quantity,
+          price: Number(item.unitPrice),
+          total: Number(item.totalPrice),
+        };
+      }));
+      
+      // Get user
+      const user = await db.getUserById(order.userId);
+      const subtotal = itemsWithProduct.reduce((sum, item) => sum + item.total, 0);
+      const tax = 0;
+      const total = subtotal + tax + Number(order.shippingCost);
+      
+      // Generate invoice
+      const { generateInvoicePDF } = await import('./invoiceGenerator');
+      const invoiceData = {
+        orderId,
+        orderNumber: order.orderNumber,
+        customerName: user?.name || 'Customer',
+        customerEmail: user?.email || 'N/A',
+        customerPhone: user?.businessPhone || 'N/A',
+        shippingAddress: order.shippingAddress,
+        items: itemsWithProduct,
+        subtotal,
+        tax,
+        total,
+        orderDate: new Date(order.createdAt),
+        paymentMethod: order.paymentMethod,
+        orderStatus: order.orderStatus,
+      };
+      
+      const pdfBuffer = await generateInvoicePDF(invoiceData);
+      
+      // Set proper headers for download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Invoice-${order.orderNumber}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Invoice download error:', error);
+      res.status(500).json({ error: 'Failed to generate invoice' });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

@@ -664,3 +664,14 @@
   - Added timestamp to invoice filename for fresh PDF generation
   - Result: Summary section now properly positioned below table with correct alignment
   - All formatting correct: table columns aligned, summary right-aligned, professional layout
+
+
+## Bug Fixes - Phase 91 Mobile Invoice Download
+- [x] Fixed invoice PDF not downloading to mobile device
+  - Problem: Success message showed but file didn't appear in mobile downloads folder
+  - Root cause: Frontend was using S3 URL directly without proper download headers
+  - Solution: Created Express endpoint /api/download-invoice/:orderId with proper HTTP headers
+  - Headers added: Content-Disposition: attachment, Content-Type: application/pdf, Cache-Control headers
+  - Updated OrderTracking.tsx to use new endpoint instead of S3 URL
+  - Result: PDF now downloads properly on mobile browsers with correct filename
+  - Tested: Invoice download works with proper success message and file handling
