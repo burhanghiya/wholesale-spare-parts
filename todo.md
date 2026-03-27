@@ -702,3 +702,10 @@
 - [ ] Add reset stats button to admin dashboard for testing
 - [ ] Make "How It Works" section dynamic based on admin settings
 - [ ] Display real loyalty data on customer dashboard
+
+
+## Phase 95: Loyalty System Fixes
+- [ ] Implement Reset Stats button functionality to clear test data
+- [ ] Add tRPC query to fetch loyalty stats for customer dashboard
+- [ ] Make "How It Works" section dynamic based on admin settings
+- [ ] Test all three fixes end-to-end

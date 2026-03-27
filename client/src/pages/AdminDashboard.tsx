@@ -63,7 +63,7 @@ function AdminNav({ current }: { current: string }) {
 export { AdminNav };
 
 export default function AdminDashboard() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { data: stats, isLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
