@@ -109,9 +109,10 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     `₹${item.total.toFixed(2)}`,
   ]);
 
+  // Create items table
   autoTable(doc, {
     startY: yPosition,
-    margin: { left: margin, right: margin },
+    margin: { left: margin, right: margin, top: 5, bottom: 5 },
     head: [['Product', 'Qty', 'Unit Price', 'Total']],
     body: tableData,
     theme: 'grid',
@@ -120,16 +121,19 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
       textColor: [255, 255, 255],
       fontSize: 10,
       fontStyle: 'bold',
+      halign: 'center',
+      valign: 'middle',
     },
     bodyStyles: {
       fontSize: 9,
       textColor: [0, 0, 0],
+      valign: 'middle',
     },
     columnStyles: {
-      0: { halign: 'left', cellWidth: contentWidth * 0.5 },
+      0: { halign: 'left', cellWidth: contentWidth * 0.45 },
       1: { halign: 'center', cellWidth: contentWidth * 0.15 },
-      2: { halign: 'right', cellWidth: contentWidth * 0.175 },
-      3: { halign: 'right', cellWidth: contentWidth * 0.175 },
+      2: { halign: 'right', cellWidth: contentWidth * 0.2 },
+      3: { halign: 'right', cellWidth: contentWidth * 0.2 },
     },
     didDrawPage: (data: any) => {
       // Footer
@@ -149,32 +153,41 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     },
   });
 
-  yPosition = (doc as any).lastAutoTable?.finalY || yPosition + 50;
+  // Get position after table - autoTable modifies doc.lastAutoTable
+  const tableData_finalY = (doc as any).lastAutoTable?.finalY;
+  if (!tableData_finalY) {
+    throw new Error('autoTable failed to set finalY');
+  }
+  yPosition = tableData_finalY + 10;
 
-  // Summary Section
-  const summaryX = margin + contentWidth * 0.6;
+  // Summary Section - Manual drawing (NOT using autoTable)
+  const summaryStartX = margin + contentWidth * 0.55;
+  const summaryValueX = pageWidth - margin - 5;
 
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
 
-  doc.text('Subtotal:', summaryX, yPosition);
-  doc.text(`₹${data.subtotal.toFixed(2)}`, pageWidth - margin - 20, yPosition, { align: 'right' } as any);
+  // Subtotal
+  doc.text('Subtotal:', summaryStartX, yPosition);
+  doc.text(`₹${data.subtotal.toFixed(2)}`, summaryValueX, yPosition, { align: 'right' } as any);
   yPosition += 6;
 
-  doc.text('Tax (GST):', summaryX, yPosition);
-  doc.text(`₹${data.tax.toFixed(2)}`, pageWidth - margin - 20, yPosition, { align: 'right' } as any);
-  yPosition += 6;
+  // Tax
+  doc.text('Tax (GST):', summaryStartX, yPosition);
+  doc.text(`₹${data.tax.toFixed(2)}`, summaryValueX, yPosition, { align: 'right' } as any);
+  yPosition += 8;
 
-  // Total with background
+  // Total with background box
   doc.setDrawColor(25, 42, 86);
   doc.setFillColor(240, 240, 240);
-  doc.rect(summaryX - 5, yPosition - 4, contentWidth * 0.4 + 10, 8, 'F');
+  const boxWidth = summaryValueX - summaryStartX + 5;
+  doc.rect(summaryStartX - 3, yPosition - 5, boxWidth, 10, 'F');
 
   doc.setFontSize(11);
   doc.setTextColor(25, 42, 86);
   doc.setFont(undefined as any, 'bold');
-  doc.text('Total Amount:', summaryX, yPosition + 2);
-  doc.text(`₹${data.total.toFixed(2)}`, pageWidth - margin - 20, yPosition + 2, { align: 'right' } as any);
+  doc.text('Total Amount:', summaryStartX, yPosition + 1);
+  doc.text(`₹${data.total.toFixed(2)}`, summaryValueX, yPosition + 1, { align: 'right' } as any);
 
   yPosition += 15;
 

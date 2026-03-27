@@ -388,7 +388,8 @@ export const appRouter = router({
         };
 
         const pdfBuffer = await generateInvoicePDF(invoiceData);
-        const fileName = `Invoice-${order.orderNumber}.pdf`;
+        const timestamp = Date.now();
+        const fileName = `Invoice-${order.orderNumber}-${timestamp}.pdf`;
         const { url } = await storagePut(fileName, pdfBuffer, 'application/pdf');
 
         return { url, fileName };

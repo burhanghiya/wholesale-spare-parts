@@ -656,3 +656,11 @@
   - Invoice PDF now generates correctly and downloads without errors
   - Tested: Invoice download button works perfectly, PDF displays all order details
   - All 23 vitest tests passing
+
+- [x] Fixed invoice table and summary section layout
+  - Problem: Summary section was appearing inside the table
+  - Root cause: doc.lastAutoTable?.finalY was undefined, causing fallback yPosition to be within table
+  - Solution: Used doc.lastAutoTable?.finalY directly after autoTable call with error check
+  - Added timestamp to invoice filename for fresh PDF generation
+  - Result: Summary section now properly positioned below table with correct alignment
+  - All formatting correct: table columns aligned, summary right-aligned, professional layout
