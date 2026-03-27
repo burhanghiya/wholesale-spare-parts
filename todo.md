@@ -646,3 +646,13 @@
 - [x] Add stock update history/audit log (logInventoryChange)
 - [x] Create bulk inventory import feature (bulkUpdateInventory procedure)
 - [x] All 23 vitest tests passing
+
+
+## Bug Fixes - Phase 90 Invoice Generation
+- [x] Fixed jsPDF-autoTable error in invoice generation
+  - Changed import from `import 'jspdf-autotable'` to `import autoTable from 'jspdf-autotable'`
+  - Updated autoTable call from `(doc as any).autoTable({...})` to `autoTable(doc, {...})`
+  - Added safety check for lastAutoTable.finalY with fallback value
+  - Invoice PDF now generates correctly and downloads without errors
+  - Tested: Invoice download button works perfectly, PDF displays all order details
+  - All 23 vitest tests passing

@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface InvoiceItem {
   name: string;
@@ -109,7 +109,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     `₹${item.total.toFixed(2)}`,
   ]);
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: yPosition,
     margin: { left: margin, right: margin },
     head: [['Product', 'Qty', 'Unit Price', 'Total']],
@@ -149,7 +149,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     },
   });
 
-  yPosition = (doc as any).lastAutoTable.finalY + 10;
+  yPosition = (doc as any).lastAutoTable?.finalY || yPosition + 50;
 
   // Summary Section
   const summaryX = margin + contentWidth * 0.6;
