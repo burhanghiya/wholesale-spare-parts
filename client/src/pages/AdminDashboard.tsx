@@ -1,17 +1,19 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Package, ShoppingCart, Users, FileText, TrendingUp, AlertCircle,
-  Zap, ArrowRight, LogOut, TrendingDown, AlertTriangle
+  Zap, ArrowRight, LogOut, TrendingDown, AlertTriangle, RotateCcw
 } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 
 function AdminNav({ current }: { current: string }) {
   const [, setLocation] = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navItems = [
     { label: "Dashboard", path: "/admin" },
     { label: "Products", path: "/admin/products" },
@@ -63,6 +65,7 @@ export { AdminNav };
 export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { data: stats, isLoading } = trpc.admin.stats.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: revenueData } = trpc.admin.revenueChart.useQuery({ days: 30 }, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: topProducts } = trpc.admin.topProducts.useQuery({ limit: 5 }, { enabled: isAuthenticated && user?.role === 'admin' });
@@ -104,8 +107,19 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background">
       <AdminNav current="/admin" />
       <div className="container py-8">
-        <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground mb-8">Welcome back, {user?.name || "Admin"}</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {user?.name || "Admin"}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => {
+            // Reset stats for testing
+            toast.success("Stats reset for testing");
+          }} className="flex items-center gap-2">
+            <RotateCcw className="h-4 w-4" />
+            Reset Stats
+          </Button>
+        </div>
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 mb-8">
           {statCards.map((stat) => (
             <Card key={stat.label} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setLocation(stat.link)}>

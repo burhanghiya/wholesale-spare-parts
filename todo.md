@@ -696,3 +696,9 @@
 - [ ] Integrate points earning logic when orders are delivered
 - [ ] Add points redemption logic to checkout
 - [ ] Test loyalty system end-to-end
+
+
+## Phase 94: Loyalty Dashboard Fixes
+- [ ] Add reset stats button to admin dashboard for testing
+- [ ] Make "How It Works" section dynamic based on admin settings
+- [ ] Display real loyalty data on customer dashboard
