@@ -798,5 +798,99 @@ export const appRouter = router({
         return { success };
       }),
   }),
+
+  loyalty: router({
+    // Get loyalty settings
+    getSettings: adminProcedure.query(async () => {
+      const settings = await db.getLoyaltySettings();
+      return settings || {
+        isEnabled: true,
+        pointsPerRupee: 1,
+        redemptionRate: 1,
+        minPointsToRedeem: 100,
+        maxPointsPerOrder: null,
+        pointsExpiryDays: 365,
+      };
+    }),
+
+    // Update loyalty settings
+    updateSettings: adminProcedure
+      .input(z.object({
+        isEnabled: z.boolean(),
+        pointsPerRupee: z.number().positive(),
+        redemptionRate: z.number().positive(),
+        minPointsToRedeem: z.number().nonnegative(),
+        maxPointsPerOrder: z.number().positive().nullable(),
+        pointsExpiryDays: z.number().positive().nullable(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateLoyaltySettings(input);
+      }),
+
+    // Get customer loyalty points
+    getMyPoints: protectedProcedure.query(async ({ ctx }) => {
+      const points = await db.getCustomerLoyaltyPoints(ctx.user.id);
+      const transactions = await db.getLoyaltyTransactions(ctx.user.id);
+      return {
+        currentPoints: points?.currentBalance || 0,
+        totalEarned: points?.totalEarned || 0,
+        totalRedeemed: points?.totalRedeemed || 0,
+        transactions: transactions || [],
+      };
+    }),
+
+    // Award points to customer (called when order is delivered)
+    awardPoints: adminProcedure
+      .input(z.object({
+        customerId: z.number(),
+        orderId: z.number(),
+        amount: z.number().positive(),
+        reason: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const settings = await db.getLoyaltySettings();
+        if (!settings?.isEnabled) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Loyalty program is disabled' });
+        
+        return await db.awardLoyaltyPoints({
+          customerId: input.customerId,
+          orderId: input.orderId,
+          points: input.amount,
+          transactionType: 'earn',
+          reason: input.reason,
+        });
+      }),
+
+    // Redeem points
+    redeemPoints: protectedProcedure
+      .input(z.object({
+        points: z.number().positive(),
+        orderId: z.number(),
+        reason: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const settings = await db.getLoyaltySettings();
+        if (!settings?.isEnabled) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Loyalty program is disabled' });
+        if (input.points < (settings.minPointsToRedeem || 0)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `Minimum ${settings.minPointsToRedeem} points required` });
+        }
+
+        const customerPoints = await db.getCustomerLoyaltyPoints(ctx.user.id);
+        if (!customerPoints || customerPoints.currentBalance < input.points) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Insufficient points' });
+        }
+
+        return await db.redeemLoyaltyPoints({
+          customerId: ctx.user.id,
+          orderId: input.orderId,
+          points: input.points,
+          reason: input.reason,
+        });
+      }),
+
+    // Get all customers loyalty stats (admin)
+    getAllCustomersStats: adminProcedure.query(async () => {
+      return await db.getAllCustomersLoyaltyStats();
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Loader2, Gift, AlertCircle } from "lucide-react";
 import { AdminNav } from "./AdminDashboard";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
 
 export default function AdminLoyaltyReferral() {
   const { user, isAuthenticated } = useAuth();
@@ -24,10 +25,32 @@ export default function AdminLoyaltyReferral() {
   const [loyaltyEnabled, setLoyaltyEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  // Load loyalty settings on mount
+  const { data: settings } = trpc.loyalty.getSettings.useQuery();
+  const updateSettingsMutation = trpc.loyalty.updateSettings.useMutation();
+
+  useEffect(() => {
+    if (settings) {
+      setLoyaltyEnabled(settings.isEnabled || true);
+      setLoyaltyPointsPerRupee(String(settings.pointsPerRupee || 1));
+      setLoyaltyRedemptionRate(String(settings.redemptionRate || 1));
+      setLoyaltyMinPoints(String(settings.minPointsToRedeem || 100));
+      setLoyaltyMaxPoints(String(settings.maxPointsPerOrder || ""));
+      setLoyaltyExpiryDays(String(settings.pointsExpiryDays || 365));
+    }
+  }, [settings]);
+
   const handleSaveLoyalty = async () => {
     setLoading(true);
     try {
-      // TODO: Add tRPC mutation to save loyalty settings
+      await updateSettingsMutation.mutateAsync({
+        isEnabled: loyaltyEnabled,
+        pointsPerRupee: parseFloat(loyaltyPointsPerRupee) || 1,
+        redemptionRate: parseFloat(loyaltyRedemptionRate) || 1,
+        minPointsToRedeem: parseInt(loyaltyMinPoints) || 100,
+        maxPointsPerOrder: loyaltyMaxPoints ? parseInt(loyaltyMaxPoints) : null,
+        pointsExpiryDays: loyaltyExpiryDays ? parseInt(loyaltyExpiryDays) : null,
+      });
       toast.success("Loyalty settings saved successfully!");
     } catch (error) {
       toast.error("Failed to save loyalty settings");

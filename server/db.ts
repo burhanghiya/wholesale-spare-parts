@@ -1523,3 +1523,113 @@ export async function updateReferralTransaction(transactionId: number, status: s
   await db.update(referralTransactions).set({ status: status as any, updatedAt: new Date() }).where(eq(referralTransactions.id, transactionId));
   return true;
 }
+
+
+// ========================
+// LOYALTY POINTS FUNCTIONS
+// ========================
+
+export async function getCustomerLoyaltyPoints(customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(loyaltyPoints).where(eq(loyaltyPoints.userId, customerId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function awardLoyaltyPoints(data: {
+  customerId: number;
+  orderId: number;
+  points: number;
+  transactionType: 'earn' | 'redeem' | 'expire';
+  reason: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get or create loyalty points record
+  let pointsRecord = await getCustomerLoyaltyPoints(data.customerId);
+  
+  if (!pointsRecord) {
+    await db.insert(loyaltyPoints).values({
+      userId: data.customerId,
+      currentBalance: data.points,
+      totalEarned: data.points,
+      totalRedeemed: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+  } else {
+    const newBalance = pointsRecord.currentBalance + data.points;
+    const newTotalEarned = pointsRecord.totalEarned + (data.points > 0 ? data.points : 0);
+    
+    await db.update(loyaltyPoints).set({
+      currentBalance: newBalance,
+      totalEarned: newTotalEarned,
+      updatedAt: new Date(),
+    }).where(eq(loyaltyPoints.userId, data.customerId));
+  }
+
+  // Create transaction record
+  await db.insert(loyaltyTransactions).values({
+    userId: data.customerId,
+    orderId: data.orderId,
+    points: data.points,
+    transactionType: data.transactionType as any,
+    reason: data.reason,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as any);
+
+  return { success: true };
+}
+
+export async function redeemLoyaltyPoints(data: {
+  customerId: number;
+  orderId: number;
+  points: number;
+  reason: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const pointsRecord = await getCustomerLoyaltyPoints(data.customerId);
+  if (!pointsRecord || pointsRecord.currentBalance < data.points) {
+    throw new Error('Insufficient points');
+  }
+
+  const newBalance = pointsRecord.currentBalance - data.points;
+  const newTotalRedeemed = pointsRecord.totalRedeemed + data.points;
+
+  await db.update(loyaltyPoints).set({
+    currentBalance: newBalance,
+    totalRedeemed: newTotalRedeemed,
+    updatedAt: new Date(),
+    }).where(eq(loyaltyPoints.userId, data.customerId));
+
+  // Create transaction record
+  await db.insert(loyaltyTransactions).values({
+    userId: data.customerId,
+    orderId: data.orderId,
+    points: -data.points,
+    transactionType: 'redeem',
+    reason: data.reason,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as any);
+
+  return { success: true };
+}
+
+export async function getAllCustomersLoyaltyStats() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select({
+    customerId: loyaltyPoints.userId,
+    currentPoints: loyaltyPoints.currentBalance,
+    totalEarned: loyaltyPoints.totalEarned,
+    totalRedeemed: loyaltyPoints.totalRedeemed,
+    createdAt: loyaltyPoints.createdAt,
+  }).from(loyaltyPoints)
+    .orderBy(desc(loyaltyPoints.balance));
+}
