@@ -71,6 +71,15 @@ export default function AdminDashboard() {
   const { data: paymentBreakdown } = trpc.admin.paymentMethodBreakdown.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: lowStock } = trpc.admin.lowStockProducts.useQuery({ threshold: 10 }, { enabled: isAuthenticated && user?.role === 'admin' });
   const { data: customerMetrics } = trpc.admin.customerMetrics.useQuery(undefined, { enabled: isAuthenticated && user?.role === 'admin' });
+  const resetMutation = trpc.admin.resetStats.useMutation({
+    onSuccess: () => {
+      toast.success("Stats reset successfully!");
+      window.location.reload();
+    },
+    onError: () => {
+      toast.error("Failed to reset stats");
+    },
+  });
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
@@ -110,18 +119,7 @@ export default function AdminDashboard() {
             <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
             <p className="text-muted-foreground">Welcome back, {user?.name || "Admin"}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => {
-            const resetMutation = trpc.admin.resetStats.useMutation({
-              onSuccess: () => {
-                toast.success("Stats reset successfully!");
-                window.location.reload();
-              },
-              onError: () => {
-                toast.error("Failed to reset stats");
-              },
-            });
-            resetMutation.mutate();
-          }} className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => resetMutation.mutate()} className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
             Reset Stats
           </Button>
