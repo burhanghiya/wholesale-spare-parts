@@ -77,12 +77,12 @@ export const appRouter = router({
           ...rest,
           categoryId,
           basePrice: String(input.basePrice),
-          compatibleModels: input.compatibleModels ? JSON.stringify(input.compatibleModels) : null,
-          compatibleBrands: input.compatibleBrands ? JSON.stringify(input.compatibleBrands) : null,
-          alternatePartNumbers: input.alternatePartNumbers ? JSON.stringify(input.alternatePartNumbers) : null,
-          productImages: productImages ? JSON.stringify(productImages) : null,
-          colorOptions: colorOptions ? JSON.stringify(colorOptions) : null,
-          sizeOptions: sizeOptions ? JSON.stringify(sizeOptions) : null,
+          compatibleModels: input.compatibleModels || null,
+          compatibleBrands: input.compatibleBrands || null,
+          alternatePartNumbers: input.alternatePartNumbers || null,
+          productImages: productImages || null,
+          colorOptions: colorOptions || null,
+          sizeOptions: sizeOptions || null,
         };
         await db.createProduct(productData);
         const productResult = await db.getProductByPartNumber(input.partNumber);
@@ -113,9 +113,9 @@ export const appRouter = router({
         const { categoryName, stock, moq, productImages, colorOptions, sizeOptions, ...restData } = input.data;
         const updateData: any = { ...restData };
         if (updateData.basePrice) updateData.basePrice = String(updateData.basePrice);
-        if (productImages) updateData.productImages = JSON.stringify(productImages);
-        if (colorOptions) updateData.colorOptions = JSON.stringify(colorOptions);
-        if (sizeOptions) updateData.sizeOptions = JSON.stringify(sizeOptions);
+        if (productImages) updateData.productImages = productImages;
+        if (colorOptions) updateData.colorOptions = colorOptions;
+        if (sizeOptions) updateData.sizeOptions = sizeOptions;
         if (categoryName) {
           updateData.categoryId = await db.findOrCreateCategory(categoryName);
         }

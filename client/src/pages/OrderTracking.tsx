@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle, Loader2, MessageCircle, ShoppingBag, Star, FileText } from "lucide-react";
+import { ArrowLeft, Package, Truck, CheckCircle2, Clock, XCircle, Loader2, MessageCircle, ShoppingBag, Star, FileText, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
@@ -195,6 +195,32 @@ export default function OrderTracking() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Invoice Download */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Invoice & Documents</CardTitle>
+                  <Button
+                    onClick={() => generateInvoiceMutation.mutate(order.id)}
+                    disabled={generateInvoiceMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {generateInvoiceMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    {generateInvoiceMutation.isPending ? "Generating..." : "Download Invoice"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Download your invoice with product details and labels for delivery verification.</p>
+              </CardContent>
+            </Card>
 
             {/* Order Items */}
             <Card>
