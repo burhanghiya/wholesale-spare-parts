@@ -110,15 +110,17 @@ export default function AdminDashboard() {
             <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
             <p className="text-muted-foreground">Welcome back, {user?.name || "Admin"}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={async () => {
-            try {
-              await trpc.admin.resetStats.mutate();
-              toast.success("Stats reset successfully!");
-              // Refresh the page to see updated stats
-              window.location.reload();
-            } catch (error) {
-              toast.error("Failed to reset stats");
-            }
+          <Button variant="outline" size="sm" onClick={() => {
+            const resetMutation = trpc.admin.resetStats.useMutation({
+              onSuccess: () => {
+                toast.success("Stats reset successfully!");
+                window.location.reload();
+              },
+              onError: () => {
+                toast.error("Failed to reset stats");
+              },
+            });
+            resetMutation.mutate();
           }} className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
             Reset Stats
