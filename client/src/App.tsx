@@ -21,9 +21,7 @@ import AdminInventory from "./pages/AdminInventory";
 import AdminCustomers from "./pages/AdminCustomers";
 import AdminCategories from "./pages/AdminCategories";
 import AdminReviews from "./pages/AdminReviews";
-import AdminLoyaltyReferral from "./pages/AdminLoyaltyReferral";
-import AdminCustomerLoyalty from "./pages/AdminCustomerLoyalty";
-import LoyaltyDashboard from "./pages/LoyaltyDashboard";
+
 
 function Router() {
   return (
@@ -50,11 +48,7 @@ function Router() {
       <Route path="/admin/customers" component={AdminCustomers} />
       <Route path="/admin/categories" component={AdminCategories} />
       <Route path="/admin/reviews" component={AdminReviews} />
-      <Route path="/admin/loyalty-referral" component={AdminLoyaltyReferral} />
-      <Route path="/admin/customer-loyalty" component={AdminCustomerLoyalty} />
-      
-      {/* Customer Pages */}
-      <Route path="/loyalty" component={LoyaltyDashboard} />
+
       
       {/* 404 */}
       <Route path={"/404"} component={NotFound} />

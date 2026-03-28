@@ -25,8 +25,6 @@ function AdminNav({ current }: { current: string }) {
     { label: "Dealers", path: "/admin/dealers" },
     { label: "Customers", path: "/admin/customers" },
     { label: "Shipping", path: "/admin/shipping" },
-    { label: "Loyalty & Referral", path: "/admin/loyalty-referral" },
-    { label: "Customer Loyalty", path: "/admin/customer-loyalty" },
   ];
   return (
     <div className="bg-[oklch(0.22_0.05_260)] text-white">

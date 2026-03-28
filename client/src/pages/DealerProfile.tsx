@@ -10,7 +10,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { User, ShoppingCart, FileText, CreditCard, ChevronLeft, Gift } from "lucide-react";
+import { User, ShoppingCart, FileText, CreditCard, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
 
@@ -81,7 +81,6 @@ export default function DealerProfile() {
           <TabsList className="mb-6">
             <TabsTrigger value="orders"><ShoppingCart className="h-4 w-4 mr-1" /> My Orders</TabsTrigger>
             <TabsTrigger value="quotations"><FileText className="h-4 w-4 mr-1" /> Quotations</TabsTrigger>
-            <TabsTrigger value="loyalty"><Gift className="h-4 w-4 mr-1" /> Loyalty Points</TabsTrigger>
             <TabsTrigger value="profile"><User className="h-4 w-4 mr-1" /> Profile</TabsTrigger>
           </TabsList>
 
@@ -127,44 +126,6 @@ export default function DealerProfile() {
             )}
           </TabsContent>
 
-          <TabsContent value="loyalty">
-            <Card>
-              <CardHeader><CardTitle>Loyalty Points</CardTitle></CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Current Points</p>
-                      <p className="text-3xl font-bold text-primary">0</p>
-                      <p className="text-xs text-muted-foreground mt-1">Worth ₹0</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Total Earned</p>
-                      <p className="text-3xl font-bold text-green-600">0</p>
-                      <p className="text-xs text-muted-foreground mt-1">All time</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5">
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-muted-foreground mb-1">Total Redeemed</p>
-                      <p className="text-3xl font-bold text-amber-600">0</p>
-                      <p className="text-xs text-muted-foreground mt-1">All time</p>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-3">How It Works</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✓ Earn 1 point for every ₹1 spent on orders</li>
-                    <li>✓ Redeem 100 points for ₹100 discount on next order</li>
-                    <li>✓ Points expire after 365 days of inactivity</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="profile">
             <Card>
