@@ -11,96 +11,107 @@ export interface ShippingLabelData {
   shippingZip: string;
   items: Array<{ name: string; quantity: number; partNumber?: string }>;
   totalAmount: string;
+  shopName?: string;
+  shopPhone?: string;
+  shopEmail?: string;
+  shopAddress?: string;
 }
 
 export async function generateShippingLabel(data: ShippingLabelData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ size: "A4", margin: 30 });
+      const doc = new PDFDocument({ size: "A4", margin: 40 });
       const buffers: Buffer[] = [];
 
       doc.on("data", (chunk: Buffer) => buffers.push(chunk));
       doc.on("end", () => resolve(Buffer.concat(buffers)));
       doc.on("error", reject);
 
-      // Header
-      doc.fontSize(24).font("Helvetica-Bold").text("SHIPPING LABEL", { align: "center" });
-      doc.moveDown(0.2);
-      doc.fontSize(11).font("Helvetica").text(`Order #${data.orderNumber}`, { align: "center" });
-      doc.moveDown(0.8);
+      // Shop Details (Top Right)
+      const shopX = 350;
+      const shopY = 40;
+      doc.fontSize(9).font("Helvetica-Bold").text(data.shopName || "Patel Electricals", shopX, shopY);
+      doc.fontSize(8).font("Helvetica");
+      doc.text(data.shopPhone || "8780657095", shopX, shopY + 15);
+      doc.text(data.shopEmail || "burhanghiya26@gmail.com", shopX, shopY + 28);
+      
+      // Title
+      doc.fontSize(28).font("Helvetica-Bold").text("SHIPPING LABEL", { align: "center" });
+      doc.moveDown(0.3);
+      doc.fontSize(12).font("Helvetica").text(`Order #${data.orderNumber}`, { align: "center" });
+      doc.moveDown(1);
 
-      // Shipping Address Box
-      const boxX = 30;
+      // Address Box
+      const boxX = 40;
       const boxY = doc.y;
-      const boxWidth = 540;
-      const boxHeight = 130;
+      const boxWidth = 515;
+      const boxHeight = 140;
       
       doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
       
-      doc.fontSize(12).font("Helvetica-Bold").text("SHIP TO:", boxX + 10, boxY + 10);
-      doc.fontSize(11).font("Helvetica");
+      // SHIP TO header
+      doc.fontSize(13).font("Helvetica-Bold").text("SHIP TO:", boxX + 15, boxY + 12);
       
-      let addressY = boxY + 30;
-      doc.text(data.customerName, boxX + 10, addressY);
-      addressY += 18;
+      // Address content
+      let contentY = boxY + 35;
+      doc.fontSize(12).font("Helvetica-Bold").text(data.customerName, boxX + 15, contentY);
       
-      // Format address properly
-      const addressLine = `${data.shippingAddress}`;
-      doc.fontSize(10).text(addressLine, boxX + 10, addressY, { width: boxWidth - 20 });
-      addressY += 18;
+      contentY += 22;
+      doc.fontSize(11).font("Helvetica").text(data.shippingAddress, boxX + 15, contentY);
       
-      const cityStateZip = `${data.shippingCity}, ${data.shippingState} ${data.shippingZip}`;
-      doc.text(cityStateZip, boxX + 10, addressY);
-      addressY += 18;
+      contentY += 22;
+      const cityLine = `${data.shippingCity}, ${data.shippingState} ${data.shippingZip}`;
+      doc.text(cityLine, boxX + 15, contentY);
       
-      doc.text(`Phone: ${data.customerPhone}`, boxX + 10, addressY);
+      contentY += 22;
+      doc.text(`Phone: ${data.customerPhone}`, boxX + 15, contentY);
       
-      doc.moveDown(7);
+      doc.moveDown(8);
 
-      // Order Details Section
-      doc.fontSize(12).font("Helvetica-Bold").text("ORDER DETAILS", 30, doc.y);
-      doc.moveDown(0.4);
+      // Order Details
+      doc.fontSize(13).font("Helvetica-Bold").text("ORDER DETAILS", 40, doc.y);
+      doc.moveDown(0.5);
 
       // Table Header
-      const tableTop = doc.y;
-      const col1 = 30;
-      const col2 = 280;
-      const col3 = 420;
-      const col4 = 500;
+      const tableY = doc.y;
+      const col1X = 40;
+      const col2X = 280;
+      const col3X = 420;
+      const col4X = 480;
 
-      doc.fontSize(10).font("Helvetica-Bold");
-      doc.text("Item", col1, tableTop);
-      doc.text("Part #", col2, tableTop);
-      doc.text("Qty", col3, tableTop);
-      doc.text("Amount", col4, tableTop);
+      doc.fontSize(11).font("Helvetica-Bold");
+      doc.text("Item", col1X, tableY);
+      doc.text("Part #", col2X, tableY);
+      doc.text("Qty", col3X, tableY);
+      doc.text("Amount", col4X, tableY);
 
-      // Table line
-      doc.moveTo(30, tableTop + 15).lineTo(570, tableTop + 15).stroke();
+      // Separator line
+      doc.moveTo(40, tableY + 18).lineTo(555, tableY + 18).stroke();
 
       // Items
-      let itemY = tableTop + 20;
-      doc.font("Helvetica").fontSize(10);
+      let itemY = tableY + 25;
+      doc.fontSize(10).font("Helvetica");
       
       data.items.forEach((item) => {
-        doc.text(item.name.substring(0, 30), col1, itemY);
-        doc.text(item.partNumber || "-", col2, itemY);
-        doc.text(item.quantity.toString(), col3, itemY);
-        itemY += 18;
+        doc.text(item.name.substring(0, 35), col1X, itemY);
+        doc.text(item.partNumber || "-", col2X, itemY);
+        doc.text(item.quantity.toString(), col3X, itemY);
+        itemY += 20;
       });
 
       // Total line
-      doc.moveTo(30, itemY).lineTo(570, itemY).stroke();
-      itemY += 10;
+      doc.moveTo(40, itemY).lineTo(555, itemY).stroke();
+      itemY += 12;
       
-      doc.fontSize(11).font("Helvetica-Bold");
-      doc.text("TOTAL AMOUNT:", col1, itemY);
-      doc.text(`₹${data.totalAmount}`, col4, itemY);
+      doc.fontSize(12).font("Helvetica-Bold");
+      doc.text("TOTAL AMOUNT:", col1X, itemY);
+      doc.text(`₹${data.totalAmount}`, col4X, itemY);
       
-      doc.moveDown(2);
+      doc.moveDown(3);
 
       // Footer
-      doc.fontSize(8).font("Helvetica").text("Please keep this label safe. Do not fold or damage.", 30, doc.y, { align: "center" });
-      doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 30, doc.y, { align: "center" });
+      doc.fontSize(9).font("Helvetica").text("Please keep this label safe. Do not fold or damage.", 40, doc.y, { align: "center" });
+      doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 40, doc.y, { align: "center" });
 
       doc.end();
     } catch (error) {

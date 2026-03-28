@@ -413,19 +413,29 @@ export const appRouter = router({
         }));
 
         const user = await db.getUserById(order.userId);
-        const [city, state, zip] = order.shippingAddress.split(',').map(s => s.trim());
+        
+        // Parse address properly - format: "Street, City, State - Zip"
+        const addressParts = order.shippingAddress.split(',');
+        const streetAddress = addressParts[0]?.trim() || 'N/A';
+        const city = addressParts[1]?.trim() || 'N/A';
+        const stateZip = addressParts[2]?.trim() || '';
+        const [state, zip] = stateZip.split('-').map(s => s.trim());
 
         const labelData = {
           orderId,
           orderNumber: order.orderNumber,
           customerName: user?.name || 'Customer',
           customerPhone: user?.businessPhone || 'N/A',
-          shippingAddress: order.shippingAddress,
-          shippingCity: city || 'N/A',
+          shippingAddress: streetAddress,
+          shippingCity: city,
           shippingState: state || 'N/A',
           shippingZip: zip || 'N/A',
           items: itemsWithProduct,
           totalAmount: String(order.totalAmount),
+          shopName: 'Patel Electricals',
+          shopPhone: '8780657095',
+          shopEmail: 'burhanghiya26@gmail.com',
+          shopAddress: 'Udhana Asha Nagar, Surat - 394210',
         };
 
         const pdfBuffer = await generateShippingLabel(labelData);
