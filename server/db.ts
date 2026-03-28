@@ -155,19 +155,26 @@ export async function createProduct(data: any) {
   const db = await getDb();
   if (!db) return undefined;
   
-  // Ensure required fields have defaults
-  const sanitizedData = {
+  const insertData: any = {
     partNumber: data.partNumber || `PART-${Date.now()}`,
     name: data.name || 'Unnamed Product',
+    description: data.description || null,
     categoryId: data.categoryId || 1,
-    basePrice: data.basePrice || '0',
-    stockQty: data.stockQty || 0,
-    minOrderQty: data.minOrderQty || 1,
-    isActive: data.isActive !== undefined ? data.isActive : true,
-    ...data,
+    basePrice: String(data.basePrice || '0'),
+    compatibleModels: data.compatibleModels || null,
+    compatibleBrands: data.compatibleBrands || null,
+    alternatePartNumbers: data.alternatePartNumbers || null,
+    imageUrl: data.imageUrl || null,
+    productImages: data.productImages || null,
+    explodedViewUrl: data.explodedViewUrl || null,
+    colorOptions: data.colorOptions || null,
+    sizeOptions: data.sizeOptions || null,
+    stockQty: Number(data.stockQty || 0),
+    minOrderQty: Number(data.minOrderQty || 1),
+    isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
   };
   
-  const result = await db.insert(products).values(sanitizedData);
+  const result = await db.insert(products).values(insertData);
   return result;
 }
 
