@@ -1631,5 +1631,25 @@ export async function getAllCustomersLoyaltyStats() {
     totalRedeemed: loyaltyPoints.totalRedeemed,
     createdAt: loyaltyPoints.createdAt,
   }).from(loyaltyPoints)
-    .orderBy(desc(loyaltyPoints.balance));
+    .orderBy(desc(loyaltyPoints.currentBalance));
+}
+
+// Get loyalty dashboard stats for admin
+export async function getLoyaltyDashboardStats() {
+  const db = await getDb();
+  if (!db) return { totalCustomers: 0, totalPointsIssued: 0, totalPointsRedeemed: 0, outstandingPoints: 0 };
+  
+  const stats = await db.select({
+    totalCustomers: sql`COUNT(DISTINCT ${loyaltyPoints.userId})`,
+    totalPointsIssued: sql`SUM(${loyaltyPoints.totalEarned})`,
+    totalPointsRedeemed: sql`SUM(${loyaltyPoints.totalRedeemed})`,
+    outstandingPoints: sql`SUM(${loyaltyPoints.currentBalance})`,
+  }).from(loyaltyPoints);
+  
+  return {
+    totalCustomers: Number(stats[0]?.totalCustomers || 0),
+    totalPointsIssued: Number(stats[0]?.totalPointsIssued || 0),
+    totalPointsRedeemed: Number(stats[0]?.totalPointsRedeemed || 0),
+    outstandingPoints: Number(stats[0]?.outstandingPoints || 0),
+  };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,22 +6,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Gift, Share2, TrendingUp, Copy, Check } from "lucide-react";
+import { Gift, Share2, TrendingUp, Copy, Check, Loader } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 export default function LoyaltyDashboard() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("points");
 
-  // Mock data - replace with actual tRPC queries
+  // Fetch real loyalty data from database
+  const { data: myPoints, isLoading: pointsLoading } = trpc.loyalty.getMyPoints.useQuery(undefined, {
+    enabled: !!user,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+  });
+
+  const { data: settings } = trpc.loyalty.getSettings.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  // Calculate points value based on redemption rate
+  const pointsValue = myPoints ? (myPoints.currentPoints / ((settings?.redemptionRate as number) || 1)) : 0;
+  const nextTierAt = 5000;
+  const tier = myPoints && myPoints.totalEarned >= nextTierAt ? "Gold" : "Silver";
+
   const loyaltyData = {
-    currentPoints: 2450,
-    totalEarned: 5000,
-    totalRedeemed: 2550,
-    pointsValue: 24.50, // Based on redemption rate
-    nextTierAt: 5000,
-    tier: "Silver",
+    currentPoints: myPoints?.currentPoints || 0,
+    totalEarned: myPoints?.totalEarned || 0,
+    totalRedeemed: myPoints?.totalRedeemed || 0,
+    pointsValue: pointsValue,
+    nextTierAt: nextTierAt,
+    tier: tier,
   };
 
   const referralData = {
@@ -32,11 +47,15 @@ export default function LoyaltyDashboard() {
     totalEarnings: 1500,
   };
 
-  const recentTransactions = [
-    { id: 1, type: "earned", points: 500, reason: "Order #1350002", date: "2026-03-27", balance: 2450 },
-    { id: 2, type: "redeemed", points: -150, reason: "Discount applied", date: "2026-03-25", balance: 1950 },
-    { id: 3, type: "earned", points: 1200, reason: "Order #1350001", date: "2026-03-20", balance: 2100 },
-  ];
+  // Format transactions from database
+  const recentTransactions = (myPoints?.transactions || []).slice(0, 10).map((tx: any) => ({
+    id: tx.id,
+    type: tx.transactionType,
+    points: tx.transactionType === 'earn' ? tx.points : -tx.points,
+    reason: tx.reason,
+    date: new Date(tx.createdAt).toLocaleDateString('en-IN'),
+    balance: tx.balanceAfter,
+  }));
 
   const referralTransactions = [
     { id: 1, referred: "Raj Patel", status: "completed", amount: 500, type: "cash", date: "2026-03-26" },
@@ -144,13 +163,13 @@ export default function LoyaltyDashboard() {
                       Earn Points
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      Earn 1 point for every ₹1 you spend on orders
+                      Earn {settings?.pointsPerRupee || 1} point{(settings?.pointsPerRupee || 1) !== 1 ? 's' : ''} for every ₹1 you spend on orders
                     </p>
                   </div>
                   <div className="space-y-2">
                     <h4 className="font-semibold">Redeem Points</h4>
                     <p className="text-sm text-muted-foreground">
-                      Redeem 100 points for ₹100 discount on your next order
+                      Redeem {settings?.minPointsToRedeem || 100} points for ₹{Math.round(((settings?.minPointsToRedeem as number) || 100) / ((settings?.redemptionRate as number) || 1))} discount on your next order
                     </p>
                   </div>
                 </div>
@@ -163,20 +182,28 @@ export default function LoyaltyDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentTransactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between border-b pb-4 last:border-0">
-                      <div className="flex-1">
-                        <p className="font-medium">{tx.reason}</p>
-                        <p className="text-xs text-muted-foreground">{tx.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`font-semibold ${tx.type === "earned" ? "text-green-600" : "text-red-600"}`}>
-                          {tx.type === "earned" ? "+" : ""}{tx.points}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Balance: {tx.balance}</p>
-                      </div>
+                  {pointsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader className="h-6 w-6 animate-spin" />
                     </div>
-                  ))}
+                  ) : recentTransactions.length > 0 ? (
+                    recentTransactions.map((tx) => (
+                      <div key={tx.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                        <div className="flex-1">
+                          <p className="font-medium">{tx.reason}</p>
+                          <p className="text-xs text-muted-foreground">{tx.date}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-semibold ${tx.type === "earn" ? "text-green-600" : "text-red-600"}`}>
+                            {tx.type === "earn" ? "+" : ""}{tx.points}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Balance: {tx.balance}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">No transactions yet</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

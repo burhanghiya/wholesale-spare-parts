@@ -891,6 +891,11 @@ export const appRouter = router({
     getAllCustomersStats: adminProcedure.query(async () => {
       return await db.getAllCustomersLoyaltyStats();
     }),
+
+    // Get loyalty dashboard stats (admin)
+    getDashboardStats: adminProcedure.query(async () => {
+      return await db.getLoyaltyDashboardStats();
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;
