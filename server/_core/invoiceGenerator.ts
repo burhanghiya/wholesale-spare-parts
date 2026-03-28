@@ -156,7 +156,8 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   });
 
   // Add product details section with labels
-  yPosition = (doc as any).lastAutoTable?.finalY + 15;
+  const tableEndY = (doc as any).lastAutoTable?.finalY || yPosition;
+  yPosition = tableEndY + 15;
   
   if (data.items.length > 0) {
     doc.setFontSize(11);

@@ -154,7 +154,20 @@ export async function getAllProductsAdmin(limit = 100, offset = 0) {
 export async function createProduct(data: any) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(products).values(data);
+  
+  // Ensure required fields have defaults
+  const sanitizedData = {
+    partNumber: data.partNumber || `PART-${Date.now()}`,
+    name: data.name || 'Unnamed Product',
+    categoryId: data.categoryId || 1,
+    basePrice: data.basePrice || '0',
+    stockQty: data.stockQty || 0,
+    minOrderQty: data.minOrderQty || 1,
+    isActive: data.isActive !== undefined ? data.isActive : true,
+    ...data,
+  };
+  
+  const result = await db.insert(products).values(sanitizedData);
   return result;
 }
 
