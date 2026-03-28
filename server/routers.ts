@@ -9,6 +9,7 @@ import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { sendOrderConfirmationWhatsApp, sendOrderTrackingWhatsApp } from "./_core/whatsappNotification";
 import { generateInvoicePDF } from "./_core/invoiceGenerator";
+import { generateShippingLabel } from "./_core/shippingLabelGenerator";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
@@ -390,6 +391,46 @@ export const appRouter = router({
         const pdfBuffer = await generateInvoicePDF(invoiceData);
         const timestamp = Date.now();
         const fileName = `Invoice-${order.orderNumber}-${timestamp}.pdf`;
+        const { url } = await storagePut(fileName, pdfBuffer, 'application/pdf');
+
+        return { url, fileName };
+      }),
+
+    generateShippingLabel: adminProcedure
+      .input(z.number())
+      .mutation(async ({ input: orderId }) => {
+        const order = await db.getOrderById(orderId);
+        if (!order) throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+
+        const items = await db.getOrderItems(orderId);
+        const itemsWithProduct = await Promise.all(items.map(async (item) => {
+          const product = await db.getProductById(item.productId);
+          return {
+            name: product?.name || 'Unknown Product',
+            quantity: item.quantity,
+            partNumber: product?.partNumber,
+          };
+        }));
+
+        const user = await db.getUserById(order.userId);
+        const [city, state, zip] = order.shippingAddress.split(',').map(s => s.trim());
+
+        const labelData = {
+          orderId,
+          orderNumber: order.orderNumber,
+          customerName: user?.name || 'Customer',
+          customerPhone: user?.businessPhone || 'N/A',
+          shippingAddress: order.shippingAddress,
+          shippingCity: city || 'N/A',
+          shippingState: state || 'N/A',
+          shippingZip: zip || 'N/A',
+          items: itemsWithProduct,
+          totalAmount: String(order.totalAmount),
+        };
+
+        const pdfBuffer = await generateShippingLabel(labelData);
+        const timestamp = Date.now();
+        const fileName = `ShippingLabel-${order.orderNumber}-${timestamp}.pdf`;
         const { url } = await storagePut(fileName, pdfBuffer, 'application/pdf');
 
         return { url, fileName };
