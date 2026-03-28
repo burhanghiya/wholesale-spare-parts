@@ -54,15 +54,17 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
       let contentY = boxY + 30;
       doc.fontSize(10).font("Helvetica-Bold").text(data.customerName, boxX + 12, contentY);
 
-      contentY += 18;
+      contentY += 16;
       doc.fontSize(9).font("Helvetica").text(data.shippingAddress, boxX + 12, contentY);
 
-      contentY += 15;
-      const cityStateZip = `${data.shippingCity}, ${data.shippingState} ${data.shippingZip}`;
+      contentY += 14;
+      const cityStateZip = `${data.shippingCity}, ${data.shippingState} - ${data.shippingZip}`;
       doc.text(cityStateZip, boxX + 12, contentY);
 
-      contentY += 15;
-      doc.text(`Phone: ${data.customerPhone}`, boxX + 12, contentY);
+      contentY += 14;
+      if (data.customerPhone && data.customerPhone !== 'N/A') {
+        doc.text(`Phone: ${data.customerPhone}`, boxX + 12, contentY);
+      }
 
       doc.moveDown(7);
 
@@ -82,6 +84,9 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
       doc.text("Part #", col2X, tableY);
       doc.text("Qty", col3X, tableY);
       doc.text("Amount", col4X, tableY);
+      
+      // Amount in header
+      doc.text(`₹${data.totalAmount}`, col4X, tableY);
 
       // Separator line
       doc.moveTo(40, tableY + 16).lineTo(555, tableY + 16).stroke();
@@ -103,9 +108,8 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
 
       doc.fontSize(10).font("Helvetica-Bold");
       doc.text("TOTAL:", col1X, itemY);
-      doc.text(`₹${data.totalAmount}`, col4X, itemY);
 
-      doc.moveDown(3);
+      doc.moveDown(2);
 
       // Footer
       doc.fontSize(8).font("Helvetica").text("Please keep this label safe. Do not fold or damage.", 40, doc.y, { align: "center" });
