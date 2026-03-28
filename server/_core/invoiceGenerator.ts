@@ -6,6 +6,8 @@ interface InvoiceItem {
   quantity: number;
   price: number;
   total: number;
+  sku?: string;
+  imageUrl?: string;
 }
 
 interface InvoiceData {
@@ -101,7 +103,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   doc.text(addressLines, margin + contentWidth / 2, yPosition - 3);
   yPosition += Math.max(20, addressLines.length * 4);
 
-  // Items Table
+  // Items Table with Product Details
   const tableData = data.items.map((item) => [
     item.name,
     item.quantity.toString(),
@@ -153,12 +155,49 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     },
   });
 
-  // Get position after table - autoTable modifies doc.lastAutoTable
-  const tableData_finalY = (doc as any).lastAutoTable?.finalY;
-  if (!tableData_finalY) {
-    throw new Error('autoTable failed to set finalY');
+  // Add product details section with labels
+  yPosition = (doc as any).lastAutoTable?.finalY + 15;
+  
+  if (data.items.length > 0) {
+    doc.setFontSize(11);
+    doc.setTextColor(25, 42, 86);
+    doc.setFont(undefined as any, 'bold');
+    doc.text('Product Details:', margin, yPosition);
+    yPosition += 8;
+
+    // Add each product with labels
+    data.items.forEach((item, index) => {
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined as any, 'normal');
+      
+      // Product name
+      doc.text(`${index + 1}. ${item.name}`, margin, yPosition);
+      yPosition += 5;
+      
+      // Product details with labels
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`   Quantity: ${item.quantity} unit(s)`, margin + 2, yPosition);
+      yPosition += 4;
+      
+      doc.text(`   Unit Price: ₹${item.price.toFixed(2)}`, margin + 2, yPosition);
+      yPosition += 4;
+      
+      doc.text(`   Total: ₹${item.total.toFixed(2)}`, margin + 2, yPosition);
+      yPosition += 4;
+      
+      if (item.sku) {
+        doc.text(`   SKU: ${item.sku}`, margin + 2, yPosition);
+        yPosition += 4;
+      }
+      
+      yPosition += 3;
+    });
   }
-  yPosition = tableData_finalY + 10;
+
+  // Add some space before summary
+  yPosition += 8;
 
   // Summary Section - Manual drawing (NOT using autoTable)
   const summaryStartX = margin + contentWidth * 0.55;
