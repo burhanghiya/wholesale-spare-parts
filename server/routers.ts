@@ -706,6 +706,22 @@ export const appRouter = router({
         const results = await bulkUpdateInventory(input);
         return { success: true, updatedCount: results.length, results };
       }),
+
+    resetStats: adminProcedure.mutation(async () => {
+      try {
+        await db.executeRaw(`DELETE FROM order_items`);
+        await db.executeRaw(`DELETE FROM order_tracking`);
+        await db.executeRaw(`DELETE FROM orders`);
+        await db.executeRaw(`DELETE FROM quotations`);
+        await db.executeRaw(`DELETE FROM cart_items`);
+        await db.executeRaw(`DELETE FROM reviews`);
+        await db.executeRaw(`UPDATE inventory SET quantityInStock = 100, reorderLevel = 10`);
+        return { success: true, message: "All stats have been reset" };
+      } catch (error) {
+        console.error("Reset stats error:", error);
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to reset stats' });
+      }
+    }),
   }),
 
   reviews: router({

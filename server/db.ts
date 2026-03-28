@@ -21,6 +21,12 @@ export async function getDb() {
   return _db;
 }
 
+export async function executeRaw(sql: string): Promise<any> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await (db as any).execute(sql);
+}
+
 // ========================
 // USER FUNCTIONS
 // ========================
