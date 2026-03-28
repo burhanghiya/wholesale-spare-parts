@@ -29,8 +29,18 @@ export function SocialShareButtons({
 
 
   const handleInstagramShare = () => {
-    // Open Patel Electricals Instagram account
-    window.open("https://www.instagram.com/patel_electricals_surat?igsh=MWZiNnR6ZWJqdGlrMw==", "_blank");
+    try {
+      // Open Patel Electricals Instagram account
+      const instagramUrl = "https://www.instagram.com/patel_electricals_surat";
+      const newWindow = window.open(instagramUrl, "_blank");
+      if (!newWindow) {
+        // If popup blocked, try direct navigation
+        window.location.href = instagramUrl;
+      }
+    } catch (error) {
+      console.error("Failed to open Instagram:", error);
+      toast.error("Could not open Instagram. Please try again.");
+    }
   };
 
   const handleCopyLink = async () => {
@@ -75,8 +85,9 @@ export function SocialShareButtons({
         variant="outline"
         size="sm"
         onClick={handleInstagramShare}
-        className="gap-2 text-pink-600 hover:text-pink-700"
+        className="gap-2 text-pink-600 hover:text-pink-700 hover:bg-pink-50"
         title="Follow us on Instagram"
+        type="button"
       >
         <Instagram className="h-4 w-4" />
         {showText && "Instagram"}
