@@ -714,3 +714,20 @@
 - [x] Calculate points value based on redemption rate
 - [x] All 23 vitest tests passing
 - [x] Dev server running without errors
+
+
+## Phase 96: Remove Loyalty & Referral Features (User Requested)
+- [x] Delete LoyaltyDashboard.tsx page
+- [x] Delete AdminLoyaltyReferral.tsx page
+- [x] Delete AdminCustomerLoyalty.tsx page
+- [x] Remove loyalty routes from App.tsx
+- [x] Remove loyalty navigation from AdminDashboard
+- [x] Remove loyalty tab from customer profile (DealerProfile)
+- [x] Remove entire loyalty router from server/routers.ts
+- [x] Remove all loyalty database functions from server/db.ts
+- [x] Remove loyalty table definitions from drizzle/schema.ts
+- [x] Remove loyalty imports from db.ts
+- [x] Generate migration to drop loyalty tables
+- [x] All 23 vitest tests passing
+- [x] Dev server running without errors
+- [x] No loyalty code references remaining

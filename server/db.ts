@@ -3,9 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, products, inventory, cartItems, orders, orderItems,
   quotations, categories, gstConfiguration, shippingRates, inventoryMovement,
-  customerNotes, customerSegments, reviews, orderTracking,
-  loyaltySettings, loyaltyPoints, loyaltyTransactions,
-  referralSettings, referralLinks, referralTransactions
+  customerNotes, customerSegments, reviews, orderTracking
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
