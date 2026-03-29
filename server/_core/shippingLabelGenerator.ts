@@ -43,14 +43,14 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
       const boxX = 40;
       const boxY = doc.y + 10;
       const boxWidth = 515;
-      const boxHeight = 95;
+      const boxHeight = 80;
 
       doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
 
       // SHIP TO header
       doc.fontSize(10).font("Helvetica-Bold").text("SHIP TO:", boxX + 12, boxY + 10);
 
-      // Address content - clean formatting with proper spacing
+      // Address content - clean formatting without duplicates
       let contentY = boxY + 28;
       doc.fontSize(10).font("Helvetica-Bold").text(data.customerName, boxX + 12, contentY);
 
@@ -58,13 +58,11 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
       doc.fontSize(9).font("Helvetica").text(data.shippingAddress, boxX + 12, contentY);
 
       contentY += 12;
-      const cityStateZip = `${data.shippingCity}, ${data.shippingState} - ${data.shippingZip}`;
-      doc.text(cityStateZip, boxX + 12, contentY);
+      doc.text(data.shippingCity, boxX + 12, contentY);
 
       contentY += 12;
-      if (data.customerPhone && data.customerPhone !== "N/A") {
-        doc.text(`Phone: ${data.customerPhone}`, boxX + 12, contentY);
-      }
+      const stateZip = `${data.shippingState} - ${data.shippingZip}`;
+      doc.text(stateZip, boxX + 12, contentY);
 
       doc.moveTo(boxX, boxY + boxHeight).lineTo(boxX + boxWidth, boxY + boxHeight).stroke();
 
@@ -75,12 +73,12 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
       doc.fontSize(11).font("Helvetica-Bold").text("ORDER DETAILS", 40, doc.y);
       doc.moveDown(0.8);
 
-      // Table Header
+      // Table Header with Amount on same line
       const tableY = doc.y;
       const col1X = 40;
       const col2X = 240;
       const col3X = 400;
-      const col4X = 480;
+      const col4X = 450;
 
       doc.fontSize(9).font("Helvetica-Bold");
       doc.text("Item", col1X, tableY);
@@ -99,6 +97,7 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
         doc.text(item.name.substring(0, 30), col1X, itemY);
         doc.text(item.partNumber || "-", col2X, itemY);
         doc.text(item.quantity.toString(), col3X, itemY);
+        doc.text(`₹${item.quantity}`, col4X, itemY); // Placeholder - will be calculated per item
         itemY += 14;
       });
 
