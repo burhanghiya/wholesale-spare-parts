@@ -731,3 +731,22 @@
 - [x] All 23 vitest tests passing
 - [x] Dev server running without errors
 - [x] No loyalty code references remaining
+
+
+## Phase 97: Shipment Tracking Feature
+- [ ] Add shipment tracking page for customers
+- [ ] Create tRPC procedure to get order tracking details
+- [ ] Display order status timeline with delivery updates
+- [ ] Add tracking link in order confirmation
+
+## Phase 98: Advanced Search & Filters
+- [ ] Add search filters to products page (category, price range, brand)
+- [ ] Create tRPC query for filtered product search
+- [ ] Add filter UI with checkboxes and sliders
+- [ ] Implement filter persistence in URL params
+
+## Phase 99: Search Suggestions/Autocomplete
+- [ ] Add search suggestions API endpoint
+- [ ] Implement autocomplete dropdown in search bar
+- [ ] Show product names and categories in suggestions
+- [ ] Add click-to-search functionality from suggestions

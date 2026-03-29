@@ -10,6 +10,8 @@ import ProductDetail from "./pages/ProductDetail";
 import ShoppingCart from "./pages/ShoppingCart";
 import Checkout from "./pages/Checkout";
 import OrderTracking from "./pages/OrderTracking";
+import ShipmentTracking from "./pages/ShipmentTracking";
+import AdvancedSearch from "./pages/AdvancedSearch";
 import DealerProfile from "./pages/DealerProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProducts from "./pages/AdminProducts";
@@ -35,6 +37,8 @@ function Router() {
       <Route path={"/cart"} component={ShoppingCart} />
       <Route path={"/checkout"} component={Checkout} />
       <Route path={"/orders/:id"} component={OrderTracking} />
+      <Route path={"/shipment-tracking"} component={ShipmentTracking} />
+      <Route path={"/search"} component={AdvancedSearch} />
       <Route path={"/profile"} component={DealerProfile} />
       
       {/* Admin Pages */}
