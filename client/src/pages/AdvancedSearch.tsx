@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,22 +12,50 @@ export default function AdvancedSearch() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 100000 });
   const [showFilters, setShowFilters] = useState(false);
+  
+  const minPriceRef = useRef<HTMLInputElement>(null);
+  const maxPriceRef = useRef<HTMLInputElement>(null);
 
   const { data: categories } = trpc.products.getCategories.useQuery();
-  const { data: searchResults, isLoading } = trpc.products.search.useQuery(
-    { query: searchQuery, categoryId: selectedCategory || undefined },
+  const { data: searchResults, isLoading, refetch } = trpc.products.search.useQuery(
+    { 
+      query: searchQuery, 
+      categoryId: selectedCategory || undefined,
+      minPrice: priceRange.min,
+      maxPrice: priceRange.max
+    },
     { enabled: searchQuery.length > 0 }
   );
 
-  const filteredResults = searchResults?.filter((product: any) => {
-    const price = parseFloat(product.basePrice || "0");
-    return price >= priceRange.min && price <= priceRange.max;
-  }) || [];
+  // Refetch when filters change
+  const handleFilterChange = () => {
+    if (searchQuery.length > 0) {
+      refetch();
+    }
+  };
+
+  // Debounce price range changes
+  const [priceTimeout, setPriceTimeout] = useState<NodeJS.Timeout | null>(null);
+  const handlePriceChange = (newPriceRange: typeof priceRange) => {
+    setPriceRange(newPriceRange);
+    if (priceTimeout) clearTimeout(priceTimeout);
+    const timeout = setTimeout(() => {
+      if (searchQuery.length > 0) {
+        refetch();
+      }
+    }, 300);
+    setPriceTimeout(timeout);
+  };
+
+  const filteredResults = searchResults || [];
 
   const handleReset = () => {
     setSearchQuery("");
     setSelectedCategory(null);
     setPriceRange({ min: 0, max: 100000 });
+    if (minPriceRef.current) minPriceRef.current.value = "0";
+    if (maxPriceRef.current) maxPriceRef.current.value = "100000";
+    toast.success("Filters reset");
   };
 
   return (
@@ -88,7 +116,11 @@ export default function AdvancedSearch() {
                   <Button
                     variant={selectedCategory === null ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setSelectedCategory(null)}
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      toast.success("Category filter cleared");
+                      handleFilterChange();
+                    }}
                   >
                     All Categories
                   </Button>
@@ -97,7 +129,11 @@ export default function AdvancedSearch() {
                       key={cat.id}
                       variant={selectedCategory === cat.id ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setSelectedCategory(cat.id)}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        toast.success(`Filtered by ${cat.name}`);
+                        handleFilterChange();
+                      }}
                     >
                       {cat.name}
                     </Button>
@@ -113,24 +149,28 @@ export default function AdvancedSearch() {
                 <div className="flex gap-4 items-end">
                   <div className="flex-1">
                     <label className="text-xs text-slate-600 mb-1 block">Min</label>
-                    <Input
+                    <input
+                      ref={minPriceRef}
                       type="number"
-                      value={priceRange.min}
-                      onChange={(e) =>
-                        setPriceRange({ ...priceRange, min: parseInt(e.target.value) || 0 })
-                      }
-                      className="w-full"
+                      defaultValue={0}
+                      onBlur={(e) => {
+                        const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
+                        handlePriceChange({ ...priceRange, min: isNaN(val) ? 0 : val });
+                      }}
+                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                     />
                   </div>
                   <div className="flex-1">
                     <label className="text-xs text-slate-600 mb-1 block">Max</label>
-                    <Input
+                    <input
+                      ref={maxPriceRef}
                       type="number"
-                      value={priceRange.max}
-                      onChange={(e) =>
-                        setPriceRange({ ...priceRange, max: parseInt(e.target.value) || 100000 })
-                      }
-                      className="w-full"
+                      defaultValue={100000}
+                      onBlur={(e) => {
+                        const val = e.target.value === '' ? 100000 : parseInt(e.target.value, 10);
+                        handlePriceChange({ ...priceRange, max: isNaN(val) ? 100000 : val });
+                      }}
+                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                     />
                   </div>
                 </div>

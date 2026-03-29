@@ -754,3 +754,16 @@
 - [x] Integrate SearchSuggestions component into Home page
 - [x] All 23 vitest tests passing
 - [x] Dev server running without errors
+
+## Phase 100: Fix Advanced Search Filters Bug
+- [x] Fix Advanced Search filters not working with search query
+  - Converted price inputs to uncontrolled components with useRef
+  - Added onBlur event handler to trigger search refetch
+  - Fixed price range filtering logic in backend
+  - Tested: Search + category filter + price range all working correctly
+- [x] Verified search results filter properly by:
+  - Search "Cooler" returns 1 result (₹5000)
+  - Set max price to 3000 returns 0 results (correctly filtered out)
+  - Category filters work with search query
+- [x] All 23 vitest tests passing
+- [x] Dev server running without errors

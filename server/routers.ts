@@ -36,8 +36,13 @@ export const appRouter = router({
       .query(async ({ input }) => db.getAllProducts(input.limit, input.offset)),
 
     search: publicProcedure
-      .input(z.object({ query: z.string().min(1), categoryId: z.number().optional() }))
-      .query(async ({ input }) => db.searchProducts(input.query, input.categoryId)),
+      .input(z.object({ 
+        query: z.string().min(1), 
+        categoryId: z.number().optional(),
+        minPrice: z.number().optional(),
+        maxPrice: z.number().optional()
+      }))
+      .query(async ({ input }) => db.searchProducts(input.query, input.categoryId, input.minPrice, input.maxPrice)),
 
     getById: publicProcedure
       .input(z.number())

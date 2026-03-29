@@ -109,11 +109,11 @@ export async function getProductsByCategory(categoryId: number) {
   return await db.select().from(products).where(and(eq(products.categoryId, categoryId), eq(products.isActive, true)));
 }
 
-export async function searchProducts(query: string, categoryId?: number) {
+export async function searchProducts(query: string, categoryId?: number, minPrice?: number, maxPrice?: number) {
   const db = await getDb();
   if (!db) return [];
   const searchPattern = `%${query}%`;
-  const conditions = [
+  const conditions: any[] = [
     eq(products.isActive, true),
     or(
       like(products.partNumber, searchPattern),
@@ -122,6 +122,15 @@ export async function searchProducts(query: string, categoryId?: number) {
     )
   ];
   if (categoryId) conditions.push(eq(products.categoryId, categoryId));
+  
+  // Add price range filtering - compare as DECIMAL
+  if (minPrice !== undefined) {
+    conditions.push(gte(sql`CAST(${products.basePrice} AS DECIMAL(10,2))`, minPrice));
+  }
+  if (maxPrice !== undefined) {
+    conditions.push(lte(sql`CAST(${products.basePrice} AS DECIMAL(10,2))`, maxPrice));
+  }
+  
   return await db.select().from(products).where(and(...conditions));
 }
 
