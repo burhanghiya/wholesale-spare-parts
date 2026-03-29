@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
-import { Zap, ShoppingCart, Search, Package, Truck, Shield, Phone, Mail, MapPin, ArrowRight, TrendingUp, Clock, MessageCircle, Loader2 } from "lucide-react";
+import { Zap, ShoppingCart, Search, Package, Truck, Shield, Phone, Mail, MapPin, ArrowRight, TrendingUp, Clock, MessageCircle, Loader2, Filter, Sliders } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
@@ -204,8 +204,9 @@ export default function Home() {
               { icon: Truck, title: "Fast Delivery", desc: "Quick dispatch for in-stock items. Real-time order tracking available." },
               { icon: MessageCircle, title: "WhatsApp Support", desc: "Quick assistance via WhatsApp. Get quotes, track orders, and resolve issues." },
               { icon: Package, title: "Bulk Order Management", desc: "Easy bulk ordering system with quotation requests and order history." },
+              { icon: Sliders, title: "Advanced Filters", desc: "Filter by category, price range, and specifications. Clear filters with one click." },
             ].map((feature) => (
-              <Card key={feature.title} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={feature.title} className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => feature.title === "Advanced Filters" ? setLocation("/search") : null}>
                 <CardContent className="p-6">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 mb-4">
                     <feature.icon className="h-6 w-6 text-primary" />
