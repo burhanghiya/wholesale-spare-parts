@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, ShoppingCart, Grid3X3, List, Package, FileText } from "lucide-react";
+import { Search, ShoppingCart, Grid3X3, List, Package, FileText, Sliders } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -144,6 +144,15 @@ export default function ProductCatalog() {
           </div>
           )}
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setLocation("/search")}
+            >
+              <Sliders className="h-4 w-4" />
+              Advanced Search
+            </Button>
             <span className="text-sm text-muted-foreground">{displayProducts.length} products</span>
             <div className="flex border border-border rounded-md">
               <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="sm" className="rounded-r-none" onClick={() => setViewMode("grid")}>

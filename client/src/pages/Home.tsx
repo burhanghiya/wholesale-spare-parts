@@ -10,6 +10,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { WhatsAppButton, WhatsAppFloatingButton } from "@/components/WhatsAppButton";
+import SearchSuggestions from "@/components/SearchSuggestions";
 
 const WHATSAPP_NUMBER = "918780657095";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%20Patel%20Electricals%2C%20I%20need%20help%20with%20spare%20parts`;
@@ -99,24 +100,13 @@ export default function Home() {
                 Wholesale <span className="text-[oklch(0.65_0.15_85)]">Electrical</span> Spare Parts
               </h1>
 
-              <div className="mb-6 max-w-md relative">
-                <input 
-                  type="text" 
-                  placeholder="Search parts..." 
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const query = e.target.value;
-                    setSearchQuery(query);
+              <div className="mb-6 max-w-md">
+                <SearchSuggestions
+                  placeholder="Search parts..."
+                  onSelect={(productId, productName) => {
+                    setLocation(`/products/${productId}`);
                   }}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && searchQuery.trim()) {
-                      setLocation(`/products?search=${encodeURIComponent(searchQuery)}`);
-                      setSearchQuery("");
-                    }
-                  }}
-                  className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm" 
                 />
-
               </div>
 
               <div className="flex flex-wrap gap-3">
