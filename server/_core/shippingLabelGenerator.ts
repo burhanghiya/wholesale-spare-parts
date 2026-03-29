@@ -20,63 +20,66 @@ export interface ShippingLabelData {
 export async function generateShippingLabel(data: ShippingLabelData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ size: "A4", margin: 30 });
+      const doc = new PDFDocument({ size: "A4", margin: 25 });
       const buffers: Buffer[] = [];
 
       doc.on("data", (chunk: Buffer) => buffers.push(chunk));
       doc.on("end", () => resolve(Buffer.concat(buffers)));
       doc.on("error", reject);
 
-      // Header: Shop info (left) and Order # (right)
-      doc.fontSize(10).font("Helvetica-Bold").text(data.shopName || "Patel Electricals", 40, 40);
+      // Header: Shop info (left)
+      doc.fontSize(11).font("Helvetica-Bold").text(data.shopName || "Patel Electricals", 40, 35);
       doc.fontSize(8).font("Helvetica");
-      doc.text(data.shopPhone || "8780657095", 40, 52);
-      doc.text(data.shopEmail || "burhanghiya26@gmail.com", 40, 62);
+      doc.text(data.shopPhone || "8780657095", 40, 48);
+      doc.text(data.shopEmail || "burhanghiya26@gmail.com", 40, 56);
 
-      // Title and Order Number (right aligned)
-      doc.fontSize(20).font("Helvetica-Bold").text("SHIPPING LABEL", 350, 42, { align: "right" });
-      doc.fontSize(10).font("Helvetica").text(`Order #${data.orderNumber}`, 350, 68, { align: "right" });
+      // Title (right aligned)
+      doc.fontSize(18).font("Helvetica-Bold").text("SHIPPING LABEL", 300, 40, { align: "right" });
+      doc.fontSize(9).font("Helvetica").text(`Order #${data.orderNumber}`, 300, 62, { align: "right" });
 
-      doc.moveDown(2);
+      doc.moveDown(1);
 
       // Address Box
       const boxX = 40;
-      const boxY = doc.y;
+      const boxY = doc.y + 10;
       const boxWidth = 515;
-      const boxHeight = 110;
+      const boxHeight = 95;
 
       doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
 
       // SHIP TO header
-      doc.fontSize(11).font("Helvetica-Bold").text("SHIP TO:", boxX + 12, boxY + 10);
+      doc.fontSize(10).font("Helvetica-Bold").text("SHIP TO:", boxX + 12, boxY + 10);
 
-      // Address content - clean formatting
-      let contentY = boxY + 30;
+      // Address content - clean formatting with proper spacing
+      let contentY = boxY + 28;
       doc.fontSize(10).font("Helvetica-Bold").text(data.customerName, boxX + 12, contentY);
 
-      contentY += 16;
+      contentY += 14;
       doc.fontSize(9).font("Helvetica").text(data.shippingAddress, boxX + 12, contentY);
 
-      contentY += 14;
+      contentY += 12;
       const cityStateZip = `${data.shippingCity}, ${data.shippingState} - ${data.shippingZip}`;
       doc.text(cityStateZip, boxX + 12, contentY);
 
-      contentY += 14;
-      if (data.customerPhone && data.customerPhone !== 'N/A') {
+      contentY += 12;
+      if (data.customerPhone && data.customerPhone !== "N/A") {
         doc.text(`Phone: ${data.customerPhone}`, boxX + 12, contentY);
       }
 
-      doc.moveDown(7);
+      doc.moveTo(boxX, boxY + boxHeight).lineTo(boxX + boxWidth, boxY + boxHeight).stroke();
+
+      // Move to next section
+      doc.y = boxY + boxHeight + 15;
 
       // Order Details Section
       doc.fontSize(11).font("Helvetica-Bold").text("ORDER DETAILS", 40, doc.y);
-      doc.moveDown(0.6);
+      doc.moveDown(0.8);
 
-      // Table Header with Amount
+      // Table Header
       const tableY = doc.y;
       const col1X = 40;
-      const col2X = 280;
-      const col3X = 420;
+      const col2X = 240;
+      const col3X = 400;
       const col4X = 480;
 
       doc.fontSize(9).font("Helvetica-Bold");
@@ -84,9 +87,6 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
       doc.text("Part #", col2X, tableY);
       doc.text("Qty", col3X, tableY);
       doc.text("Amount", col4X, tableY);
-      
-      // Amount in header
-      doc.text(`₹${data.totalAmount}`, col4X, tableY);
 
       // Separator line
       doc.moveTo(40, tableY + 16).lineTo(555, tableY + 16).stroke();
@@ -96,10 +96,10 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
       doc.fontSize(9).font("Helvetica");
 
       data.items.forEach((item) => {
-        doc.text(item.name.substring(0, 35), col1X, itemY);
+        doc.text(item.name.substring(0, 30), col1X, itemY);
         doc.text(item.partNumber || "-", col2X, itemY);
         doc.text(item.quantity.toString(), col3X, itemY);
-        itemY += 16;
+        itemY += 14;
       });
 
       // Total line
@@ -108,8 +108,9 @@ export async function generateShippingLabel(data: ShippingLabelData): Promise<Bu
 
       doc.fontSize(10).font("Helvetica-Bold");
       doc.text("TOTAL:", col1X, itemY);
+      doc.text(`₹${data.totalAmount}`, col4X, itemY, { align: "right" });
 
-      doc.moveDown(2);
+      doc.moveDown(3);
 
       // Footer
       doc.fontSize(8).font("Helvetica").text("Please keep this label safe. Do not fold or damage.", 40, doc.y, { align: "center" });
