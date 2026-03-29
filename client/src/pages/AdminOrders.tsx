@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AdminNav } from "./AdminDashboard";
-import { ShoppingCart, Download, Loader2 } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
@@ -33,16 +33,7 @@ export default function AdminOrders() {
     onError: (e) => toast.error(e.message),
   });
 
-  const shippingLabelMutation = trpc.orders.generateShippingLabel.useMutation({
-    onSuccess: (data) => {
-      const link = document.createElement('a');
-      link.href = data.url;
-      link.download = data.fileName;
-      link.click();
-      toast.success("Shipping label downloaded");
-    },
-    onError: (e) => toast.error(e.message),
-  });
+
 
 
 
@@ -143,20 +134,7 @@ export default function AdminOrders() {
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button
-                        onClick={() => shippingLabelMutation.mutate(order.id)}
-                        disabled={shippingLabelMutation.isPending}
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                      >
-                        {shippingLabelMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                        {shippingLabelMutation.isPending ? "Generating..." : "Shipping Label"}
-                      </Button>
+
                     </div>
                   </div>
                 </CardContent>
