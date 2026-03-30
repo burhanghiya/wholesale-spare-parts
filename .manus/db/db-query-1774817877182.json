@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, name, categoryId FROM products WHERE name LIKE '%Bajaj%' OR name LIKE '%Cooler%' OR name LIKE '%Hsis%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name, categoryId FROM products WHERE name LIKE '%Bajaj%' OR name LIKE '%Cooler%' OR name LIKE '%Hsis%';",
+  "rows": [
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    },
+    {
+      "id": "210001",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    },
+    {
+      "id": "210002",
+      "name": "Bajaj",
+      "categoryId": "120003"
+    },
+    {
+      "id": "270001",
+      "name": "Hsis",
+      "categoryId": "120003"
+    },
+    {
+      "id": "330005",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategoryId\n120001\tBajaj \t1\n210001\tBajaj \t1\n210002\tBajaj\t120003\n270001\tHsis\t120003\n330005\tBajaj \t1\n",
+  "stderr": "",
+  "execution_time_ms": 1542
+}

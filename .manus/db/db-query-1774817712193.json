@@ -1,0 +1,90 @@
+{
+  "query": "SELECT id, name, categoryId FROM products LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name, categoryId FROM products LIMIT 20;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Hiwa celing fan",
+      "categoryId": "1"
+    },
+    {
+      "id": "30001",
+      "name": "Celing fan ",
+      "categoryId": "1"
+    },
+    {
+      "id": "60001",
+      "name": "Fan",
+      "categoryId": "30001"
+    },
+    {
+      "id": "90001",
+      "name": "Test Product",
+      "categoryId": "1"
+    },
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    },
+    {
+      "id": "150001",
+      "name": "Vhi",
+      "categoryId": "1"
+    },
+    {
+      "id": "180001",
+      "name": "Hasn",
+      "categoryId": "90002"
+    },
+    {
+      "id": "210001",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    },
+    {
+      "id": "210002",
+      "name": "Bajaj",
+      "categoryId": "90002"
+    },
+    {
+      "id": "240001",
+      "name": "Sbsj",
+      "categoryId": "30001"
+    },
+    {
+      "id": "240002",
+      "name": "Jdjd",
+      "categoryId": "120003"
+    },
+    {
+      "id": "240003",
+      "name": "Gajak",
+      "categoryId": "120003"
+    },
+    {
+      "id": "270001",
+      "name": "Hsis",
+      "categoryId": "120003"
+    },
+    {
+      "id": "270002",
+      "name": "Shjs",
+      "categoryId": "120003"
+    },
+    {
+      "id": "270003",
+      "name": "Shsi",
+      "categoryId": "120003"
+    },
+    {
+      "id": "330005",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategoryId\n1\tHiwa celing fan\t1\n30001\tCeling fan \t1\n60001\tFan\t30001\n90001\tTest Product\t1\n120001\tBajaj \t1\n150001\tVhi\t1\n180001\tHasn\t90002\n210001\tBajaj \t1\n210002\tBajaj\t90002\n240001\tSbsj\t30001\n240002\tJdjd\t120003\n240003\tGajak\t120003\n270001\tHsis\t120003\n270002\tShjs\t120003\n270003\tShsi\t120003\n330005\tBajaj \t1\n",
+  "stderr": "",
+  "execution_time_ms": 1648
+}

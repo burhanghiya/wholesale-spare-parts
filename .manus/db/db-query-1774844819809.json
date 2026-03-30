@@ -1,0 +1,60 @@
+{
+  "query": "\n-- First, let's see what we have\nSELECT id, name, categoryId FROM products LIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute \n-- First, let's see what we have\nSELECT id, name, categoryId FROM products LIMIT 10;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Hiwa celing fan",
+      "categoryId": "1"
+    },
+    {
+      "id": "30001",
+      "name": "Celing fan ",
+      "categoryId": "1"
+    },
+    {
+      "id": "60001",
+      "name": "Fan",
+      "categoryId": "120003"
+    },
+    {
+      "id": "90001",
+      "name": "Test Product",
+      "categoryId": "1"
+    },
+    {
+      "id": "120001",
+      "name": "Bajaj ",
+      "categoryId": "90002"
+    },
+    {
+      "id": "150001",
+      "name": "Vhi",
+      "categoryId": "1"
+    },
+    {
+      "id": "180001",
+      "name": "Hasn",
+      "categoryId": "120003"
+    },
+    {
+      "id": "210001",
+      "name": "Bajaj ",
+      "categoryId": "1"
+    },
+    {
+      "id": "210002",
+      "name": "Bajaj",
+      "categoryId": "120003"
+    },
+    {
+      "id": "240001",
+      "name": "Sbsj",
+      "categoryId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategoryId\n1\tHiwa celing fan\t1\n30001\tCeling fan \t1\n60001\tFan\t120003\n90001\tTest Product\t1\n120001\tBajaj \t90002\n150001\tVhi\t1\n180001\tHasn\t120003\n210001\tBajaj \t1\n210002\tBajaj\t120003\n240001\tSbsj\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1699
+}

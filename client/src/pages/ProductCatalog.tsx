@@ -76,7 +76,7 @@ export default function ProductCatalog() {
     let products = debouncedSearch.length > 0 && searchResults ? searchResults : productsData;
     if (!products) return [];
     if (selectedCategory && selectedCategory !== "all") {
-      products = products.filter((p) => p.categoryId === parseInt(selectedCategory));
+      products = products.filter((p) => String(p.categoryId) === selectedCategory);
     }
     switch (sortBy) {
       case "price-low": return [...products].sort((a, b) => Number(a.basePrice) - Number(b.basePrice));

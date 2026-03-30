@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name FROM categories;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2NqATnTdpeWJ7Kc.root --database ebujeUui4GaxaRzt7B3UYu --execute SELECT id, name FROM categories;",
+  "rows": [
+    {
+      "id": "90002",
+      "name": "Cooler "
+    },
+    {
+      "id": "1",
+      "name": "Fan"
+    },
+    {
+      "id": "120003",
+      "name": "General"
+    },
+    {
+      "id": "120002",
+      "name": "Iron"
+    },
+    {
+      "id": "60001",
+      "name": "Mixture"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n90002\tCooler \n1\tFan\n120003\tGeneral\n120002\tIron\n60001\tMixture\n",
+  "stderr": "",
+  "execution_time_ms": 1551
+}
