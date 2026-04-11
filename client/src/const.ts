@@ -6,4 +6,3 @@ export const getLoginUrl = () => {
   
   return `${oauthPortalUrl}/login?appId=${appId}&state=${state}`;
 };
-
