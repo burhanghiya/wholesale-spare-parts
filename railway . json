@@ -14,16 +14,10 @@
     "NODE_ENV": "production",
     "DATABASE_URL": "${{ Postgres.DATABASE_URL }}",
     "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
-    "OAUTH_SERVER_URL":https://wholesale-spare-parts-production.up.railway.app
-    "VITE_APP_ID": "${{ secrets.VITE_APP_ID }}",
-    "OWNER_OPEN_ID": "${{ secrets.OWNER_OPEN_ID }}",
-    "OWNER_NAME": "${{ secrets.OWNER_NAME }}",
-    "BUILT_IN_FORGE_API_KEY": "${{ secrets.BUILT_IN_FORGE_API_KEY }}",
-    "VITE_FRONTEND_FORGE_API_URL":https://wholesale-spare-parts-production.up.railway.app"
-    "VITE_FRONTEND_FORGE_API_KEY": "${{ secrets.VITE_FRONTEND_FORGE_API_KEY }}",
-    "VITE_APP_TITLE": "Wholesale Spare Parts Shop",
-    "VITE_APP_LOGO": "",
-    "VITE_ANALYTICS_ENDPOINT"
-    "VITE_ANALYTICS_WEBSITE_ID": "${{ secrets.VITE_ANALYTICS_WEBSITE_ID }}"
+    "OAUTH_SERVER_URL": "https://wholesale-spare-parts-production.up.railway.app",
+"VITE_OAUTH_PORTAL_URL": "https://wholesale-spare-parts-production.up.railway.app",
+"BUILT_IN_FORGE_API_URL": "https://wholesale-spare-parts-production.up.railway.app",
+"VITE_FRONTEND_FORGE_API_URL": "https://wholesale-spare-parts-production.up.railway.app",
+"VITE_ANALYTICS_ENDPOINT": "https://wholesale-spare-parts-production.up.railway.app"}
   }
 }
