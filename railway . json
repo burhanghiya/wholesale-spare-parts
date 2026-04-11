@@ -12,7 +12,7 @@
   },
   "env": {
     "NODE_ENV": "production",
-    "DATABASE_URL": "${{ Postgres.DATABASE_URL }}",
+    "DATABASE_URL": "${{ DATABASE_URL }}",
     "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
     "OAUTH_SERVER_URL": "https://wholesale-spare-parts-production.up.railway.app",
 "VITE_OAUTH_PORTAL_URL": "https://wholesale-spare-parts-production.up.railway.app",
