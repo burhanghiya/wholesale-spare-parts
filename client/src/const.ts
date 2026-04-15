@@ -1,3 +1,3 @@
 export const getLoginUrl = () => {
-  return "/login"; 
+  return "https://patelspares.com/login"; 
 };
